@@ -1,0 +1,77 @@
+---
+title: "Google Sheets Data Extraction using Apps Script"
+description: "One-click data extraction from Google Sheets, using Apps Script. Criteria for data extraction is user defined."
+date: 2025-01-22
+tags: [Google Sheets, Google Apps Script, Data Extraction, Automation]
+image: "/projects/googlesheets-extraction-apps-script/gsheets-extraction-preview.png"
+featured: true
+---
+
+import Button from '../../components/Button.astro';
+import RandomColor from '../../components/RandomColor.astro';
+
+## Overview
+
+We can extract specific data from google sheets, using Apps Script.
+
+We use a simple button, which can also be set in the Menu, which runs the extraction script. This script <RandomColor>filters</RandomColor> the data using our criteria and pastes the result into a new sheet.
+Using 1-click button, we can extract data from google sheets using any criteria.
+
+---
+
+## <RandomColor>Demo (Video)</RandomColor>
+
+
+<video
+  controls
+  preload="metadata"
+  poster="/projects/googlesheets-extraction-apps-script/gsheets-extraction-preview.png"
+  style="width:100%; height: auto; aspect-ratio: 16 / 9; border-radius:8px;"
+>
+  <source
+    src="https://pub-21da2bddd9cf4685b4374f3e9115db36.r2.dev/google%20sheet%20extraction%20video.mp4"
+    type="video/mp4"
+  />
+  Your browser does not support the vsideo tag.
+</video>
+
+
+---
+
+## Google Sheets Interface
+
+The Google sheet interface allows users to define their extraction criteria and <RandomColor>click a button</RandomColor> for extraction to occur to a new sheet.
+
+![Google Sheets source data preview](/projects/googlesheets-extraction-apps-script/gsheets-source-data.png)
+
+Below is the extracted data
+
+![Google Sheets extracted data preview](/projects/googlesheets-extraction-apps-script/gsheets-extracted-data.png)
+
+---
+
+## Google Apps Script <RandomColor>Logic</RandomColor>
+
+The Apps Script:
+- Fetches the Google Sheet, the source and destination sheets
+- Gets the user input for setting the criteria
+- Filters the source data based on criteria
+- Pastes the filtered results into the destination sheet
+- This Script is linked to a button in Google Sheets, and runs when the button is clicked 
+
+![Apps Script code for extraction](/projects/googlesheets-extraction-apps-script/apps-script-extractor.png)
+
+---
+
+## <RandomColor>Tech Stack</RandomColor>
+
+- **EGoogle Sheets for storing the source data, extracted data and button**
+- **Google Apps Script for automating the extraction process**
+
+---
+
+## Key Learnings
+
+- Fetching Google Sheets by their unique ID and all the sheets within that workbook
+- Filtering a table and retrieving filtered data
+- Linking a button to an Apps Script

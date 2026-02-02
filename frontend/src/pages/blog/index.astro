@@ -1,0 +1,35 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import RandomColor from '../../components/RandomColor.astro';
+import { getCollection, type CollectionEntry } from "astro:content";
+
+type Blog = CollectionEntry<"blog">;
+
+const posts = (await getCollection("blog"))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout title="Blog">
+  <section class="projects">
+    <h1><RandomColor>Blog</RandomColor></h1>
+
+    <div class="grid">
+      {posts.map((post: Blog) => (
+        <a class="project-card" href={`/blog/${post.slug}`}>
+          <img src={post.data.image} alt={post.data.title} />
+
+          <div class="card-body">
+            <h2>{post.data.title}</h2>
+            <p>{post.data.description}</p>
+
+            {post.data.tags && (
+              <ul class="tags">
+                {post.data.tags.map(tag => <li>{tag}</li>)}
+              </ul>
+            )}
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

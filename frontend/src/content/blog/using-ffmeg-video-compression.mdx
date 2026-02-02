@@ -1,0 +1,96 @@
+---
+title: "Using FFmpeg for video compression" 
+description: "Mastering Video Compression: How to Optimize for the Web with FFmpeg"
+date: 2026-01-30
+tags: ["FFmpeg", "Web Development", "Video", "Optimization"]
+summary: "Learn how to shrink your video file sizes without sacrificing quality using the power of FFmpeg."
+image: "/blogassets/ffmpeg-blog-pic.png"
+---
+import Button from '../../components/Button.astro';
+import RandomColor from '../../components/RandomColor.astro';
+
+## Why to <RandomColor>compress videos?</RandomColor>
+
+Large video files are the enemy of a fast user experience. Whether you are hosting videos on your own server or trying to stay under upload limits, knowing how to use **FFmpeg** is a superpower for any web professional.
+
+In this guide, we’ll cover how to install FFmpeg on Windows and the most effective commands to get your videos web-ready.
+
+---
+
+## Demo (Video)
+Sample ffmpeg testing which converts an <RandomColor>81MB video to 1.8MB</RandomColor>> without much loss of quality.
+
+<video
+  controls
+  preload="metadata"
+  poster="/blogassets/ffmpeg-blog-pic.png"
+  style="width:100%; height: auto; aspect-ratio: 16 / 9; border-radius:8px;"
+>
+  <source
+    src="https://pub-21da2bddd9cf4685b4374f3e9115db36.r2.dev/ffmpeg-test-video.mp4"
+    type="video/mp4"
+  />
+  Your browser does not support the vsideo tag.
+</video>
+
+
+---
+
+## 1. Installation on Windows (The Easy Way)
+The most efficient way to manage FFmpeg on Windows is via **Scoop**, a command-line installer that handles path variables automatically.
+
+### Step 1: Install Scoop
+Open PowerShell and run:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+iwr -useb get.scoop.sh | iex
+```
+
+### Step 2: Install FFmpeg
+Once Scoop is installed, run:
+`scoop install ffmpeg`
+
+To verify the installation, type ffmpeg -version. If you see a wall of text with version numbers, you're ready to go!
+
+## 2. The Standard Web Export
+For a video that plays on every browser (Chrome, Safari, Edge) and device, use the H.264 codec. This command is the <RandomColor>"Golden Rule"</RandomColor> for web video:
+`ffmpeg -i input.mp4 -vcodec libx264 -crf 23 -preset medium -acodec aac -movflags +faststart output.mp4`
+
+**Key Parameters:**
+- crf 23: The "Sweet Spot." Range is 0–51. Lower is better quality; 23 is the perfect balance for web.
+- movflags +faststart: Essential. It moves metadata to the start of the file so the video plays while it's still downloading.
+- preset medium: Balance between compression time and file size.
+
+## 3. Advanced Compression Strategies
+**A. Modern Efficiency (H.265/HEVC)**
+H.265 can provide the same visual quality as H.264 at roughly 50% the file size.
+`ffmpeg -i input.mp4 -vcodec libx265 -crf 28 output.mp4`
+
+*Note: Best for modern mobile devices and Safari.*
+
+**B. Downscaling Resolution**
+If your source is 4K but you’re displaying it in a small container, downscale to 1080p or 720p to save massive amounts of bandwidth:
+
+```bash
+# Scales to 720p height, maintains aspect ratio
+ffmpeg -i input.mp4 -vf "scale=-1:720" -c:v libx264 -crf 23 output.mp4
+```
+
+**C. Removing Audio for Hero Backgrounds**
+If the video is just a background loop, strip the audio to save extra space:
+`ffmpeg -i input.mp4 -an -vcodec libx264 -crf 23 output.mp4`
+
+| Goal | Command/Flag | Recommendation |
+|---|---|----|
+| Compatibility | `-vcodec libx264` | Standard for all browsers |
+| Better Quality | `-crf [value]` | Lower (e.g., 18-20) |
+| Smaller File | `-crf [value]` | Higher (e.g., 26-30) |
+| Fast Loading | `-movflags +faststart` | Always use for web |
+
+## Conclusion
+Optimizing video doesn't have to be a guessing game. By using FFmpeg, you ensure your website remains fast and your videos look crisp.
+
+
+
+
+

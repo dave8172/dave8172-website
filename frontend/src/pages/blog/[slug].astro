@@ -1,0 +1,29 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import RandomColor from '../../components/RandomColor.astro';
+import { getCollection, type CollectionEntry } from "astro:content";
+
+type Blog = CollectionEntry<"blog">;
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props as { post: Blog };
+const { Content } = await post.render();
+const { data } = post;
+---
+
+<BaseLayout title={data.title} description={data.description}>
+  <article class="prose">
+    <h1>{data.title}</h1>
+    <p class="muted">{data.description}</p>
+
+    <Content />
+  </article>
+</BaseLayout>

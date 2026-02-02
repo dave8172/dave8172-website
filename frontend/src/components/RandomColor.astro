@@ -1,0 +1,44 @@
+---
+import { highlightColors } from '../content/color.ts';
+
+// Define the interface to match your colors.js objects
+interface Color {
+  name: string;
+  hex: string;
+}
+
+// Convert the import into our typed interface
+const colors = highlightColors as Color[];
+
+// Pick the first color for the initial page load (Server-side)
+const initial = colors[Math.floor(Math.random() * colors.length)];
+---
+
+<span 
+  class="random-word dynamic-color-target" 
+  style={`--chosen-color: ${initial.hex};`}
+  data-all-colors={JSON.stringify(colors)}
+>
+  <slot />
+</span>
+
+<script>
+  document.querySelectorAll('.dynamic-color-target').forEach((el) => {
+    const data = el.getAttribute('data-all-colors');
+    if (data) {
+      const colors = JSON.parse(data);
+
+      // Function to change the color
+        const changeColor = () => {
+        const randomObj = colors[Math.floor(Math.random() * colors.length)];
+        (el as HTMLElement).style.setProperty('--chosen-color', randomObj.hex);
+        };  
+      
+       // Trigger on Mouse Hover (Desktop)
+        el.addEventListener('mouseenter', changeColor);
+
+        // Trigger on Touch Start (Mobile)
+        el.addEventListener('touchstart', changeColor, { passive: true });
+    }
+  });
+</script>

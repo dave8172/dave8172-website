@@ -1,0 +1,345 @@
+:root {
+  --bg: #ffffff;
+  --text: #111111;
+  --muted: #666666;
+  --accent: #2563eb;
+  --border: #e5e7eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0b0c;        /* near-black */
+    --text: #e6e6e6;      /* soft white */
+    --muted: #a1a1aa;     /* muted gray */
+    --border: #1f1f23;    /* subtle border */
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+/* Layout */
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* Navigation */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav a {
+  text-decoration: none;
+  color: var(--text);
+  margin-left: 1rem;
+}
+
+.nav a:hover {
+  color: var(--accent);
+}
+
+.brand {
+  font-weight: 600;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+main h1,
+main h2,
+main h3 {
+  margin-top: 2rem;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 2.25rem;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-size: 1.6rem;
+  margin-top: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+h3 {
+  font-size: 1.2rem;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+main p {
+  margin: 1rem 0;
+}
+
+p {
+  margin-bottom: 1.25rem;
+  color: var(--text);
+}
+
+main a {
+  color: var(--text);
+}
+
+a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 3px;
+  transition: all 0.2s ease;
+}
+
+a:hover {
+  text-decoration-color: var(--muted);
+}
+
+main code {
+  background: #f3f4f6;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.card {
+  background: #111113;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: #2a2a2e;
+}
+
+/* Content media safety */
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Optional: nicer spacing in articles */
+main img,
+main video {
+  margin: 1.5rem auto;
+  border-radius: 8px;
+}
+
+section {
+  margin-bottom: 4rem;
+}
+
+section ul {
+  padding-left: 1.2rem;
+}
+
+section li {
+  margin: 0.5rem 0;
+}
+
+a[href^="mailto:"] {
+  font-weight: 500;
+}
+
+.prose {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.projects {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.project-card {
+  display: block;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card-bg, #111);
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+}
+
+.project-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.card-body {
+  padding: 1rem;
+}
+
+.card-body h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+}
+
+.card-body p {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding: 0;
+  list-style: none;
+}
+
+.tags li {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+}
+
+/* Base state for the random words */
+.random-word {
+  color: var(--chosen-color);
+  display: inline-block; /* Required for the 'lift' animation to work */
+  font-weight: bold;
+  transition: all 0.25s ease; /* Smooth transition for color and position */
+  cursor: default;
+}
+
+/* Hover state: This is where the magic happens */
+.random-word:hover {
+  transform: translateY(-2px); /* Subtle lift */
+  filter: brightness(1.2);
+}
+
+/* --- BUTTON SYSTEM --- */
+
+/* 1. The Base Style (Neutral state) */
+/* --- BUTTON BASE --- */
+.btn-portfolio {
+  display: inline-block;
+  padding: 10px 24px;
+  background-color: #ffffff; /* light background */
+  color: #1a1a1a !important;
+  font-weight: bold;
+  text-decoration: none !important;
+  border-radius: 8px;
+  border: 1px solid #333;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  transition: 
+    background-color 0.3s ease, 
+    transform 0.3s ease, 
+    border-color 0.3s ease;
+}
+
+.btn-portfolio:hover {
+  background-color: var(--chosen-color);
+  border-color: var(--chosen-color);
+  transform: translateY(-3px);
+  color: #1a1a1a !important; /* Ensures text stays black when BG turns bright */
+}
+
+/* Add this to your Button CSS */
+.btn-portfolio:active {
+  transform: scale(0.95); /* Shrinks slightly when pressed */
+  filter: brightness(0.9); /* Gets slightly darker */
+  transition: transform 0.1s; /* Faster snap-back */
+}
+
+/* Only apply the shadow glow on devices with a real pointer (mouse) */
+@media (hover: hover) {
+  .btn-portfolio:hover {
+    box-shadow: 0 10px 20px -10px var(--chosen-color);
+  }
+}
+
+/* Let Shiki control code block colors */
+pre.astro-code {
+  background: var(--shiki-background) !important;
+  color: var(--shiki-foreground) !important;
+}
+
+/* Prevent global prose styles from breaking code */
+pre.astro-code code {
+  background: none !important;
+  color: inherit !important;
+}
+
+.prose pre {
+  background: var(--shiki-background) !important;
+}
+
+.prose code {
+  color: inherit !important;
+}
+
+/* Inline code inside prose */
+.prose :not(pre) > code {
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  padding: 0.15rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

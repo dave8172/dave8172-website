@@ -1,0 +1,45 @@
+---
+import RandomColor from "../components/RandomColor.astro";
+
+const { title = "Dave" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+
+    <link rel="icon" href="/favicons/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png">
+
+    <title>{title}</title>
+
+    <!-- Global styles -->
+    <link rel="stylesheet" href="/styles/global.css" />
+  </head>
+  <body>
+    <header>
+      <nav class="nav">
+        <a href="/" class="brand">Dave</a>
+        <div class="links">
+          <a href="/about">About</a>
+          <a href="/projects">Projects</a>
+          <a href="/blog">Blog</a>
+        </div>
+      </nav>
+    </header>
+
+    <body>
+        <main class="prose">
+            <slot />
+        </main>
+    </body>
+
+    <footer class="footer">
+      © {new Date().getFullYear()} <RandomColor>Dave</RandomColor>
+    </footer>
+  </body>
+</html>

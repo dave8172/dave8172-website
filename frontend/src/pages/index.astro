@@ -1,0 +1,139 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import RandomColor from '../components/RandomColor.astro';
+import Button from '../components/Button.astro';
+import { getCollection, type CollectionEntry } from "astro:content";
+
+// Fetch all projects
+const projects = await getCollection("projects");
+
+// Compute featured projects
+const featured = projects
+  .filter((p) => p.data.featured)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 3);
+---
+
+<BaseLayout title="Home">
+  <!-- Hero -->
+  <section>
+    <h1>
+      I help businesses <RandomColor>automate</RandomColor> processes and build clean data <RandomColor>dashboards.</RandomColor>
+    </h1>
+
+    <p>
+      I have experience in building end-to-end data systems transforming fragmented workflows 
+	  and messy data into automated, brand-aligned visual dashboards and interactive charts.
+    </p>
+  </section>
+
+  <!-- What you do -->
+  <section>
+    <h2>What I do</h2>
+
+    <ul>
+      <li><strong>Excel & VBA automation</strong> — faster reporting, fewer errors</li>
+      <li><strong>Google Sheets & Apps Script</strong> — connected, automated workflows</li>
+      <li><strong>Power BI & Looker Studio</strong> — decision-ready dashboards</li>
+      <li><strong>Python & R scripting</strong> — data cleaning, automation and modeling</li>
+      <li><strong>Custom visualizations</strong> — D3.js, Svelte for data-storytelling and scrollytelling</li>
+      <li><strong>Web Development</strong> — Astro, React, Svelte with Vercel for clean web apps and front-end</li>
+    </ul>
+
+	<!-- <p>
+      Take a look at some of the common problem statements I have solved:
+    </p>
+
+    
+	<ul style = "list-style-type: '+ ';">
+		<li><strong>Make sense of data from multiple sources</strong> - I can integrate data from multiple sources into powerful and simple dashboards or sheets and tables, 
+			to gain insights from multiple channels, and have a single source of truth systems.</li>
+		<li><strong>Streamline data processes to structure and clean data</strong> - Often, data entry or collection can have inconsistencies, generating confusion. 
+			I can help with automating data flows so that final data is structured and normalized, be it Excel or Google Sheets, having expertise in VBA and Apps Script.</li>
+		<li><strong>Build clean dashboards to drive business decisions</strong> - I design and build clean and powerful dashboards 
+			in PowerBI and Looker Studio, so that KPIs and important metrics can be monitored easily. It includes including marketing analytics, operations, sales, inventory forecasting, etc.
+			As dashboards are as powerful as backend, I like to implement end-to-end data systems, which are scalable and robust.</li>
+		<li><strong>Excel/ Google Sheets calculators, planners and automated tools</strong> - Having expertise in advanced VBA coding and Google Apps Script, I can build complex calculators in Excel and 
+			Google Sheets, to increase efficiency, automate workflows and get real-time data views.</li>
+	</ul> -->
+
+  </section>
+
+  <section class="projects">
+    <h2>Featured <RandomColor>Projects</RandomColor></h2>
+    <div class="grid">
+      {featured.map((project: CollectionEntry<"projects">) => (
+        <a
+          href={`/projects/${project.slug}`}
+          class="project-card"
+        >
+          <img
+            src={project.data.image}
+            alt={project.data.title}
+            loading="lazy"
+          />
+
+          <div class="card-body">
+            <h3>{project.data.title}</h3>
+            <p>{project.data.description}</p>
+
+            {project.data.tags && (
+              <ul class="tags">
+                {project.data.tags.map(tag => (
+                  <li>{tag}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </a>
+      ))}
+    </div>
+
+    <p style="margin-top:1.5rem">
+      <Button href="/projects">View all projects →</Button>
+    </p>
+  </section>
+
+  <!-- Skillset -->
+  <section>
+    <h2>Skillset</h2>
+
+    <ul>
+	<li>Scripting and Automation - Excel Formulas & VBA/ macros, Python in Excel for data science, Google Sheets and Apps Script </li>
+	<li>Data analytics - Python, R </li>
+	<li>Data Visualization - PowerBI, Google Looker studio, Python charts, d3.js </li>
+	<li>Webdev - HTML, CSS, Astro, Vercel deployment, Svelte, React </li>
+	<li>Databases: AccessDB, most SQL based databases </li>
+	<li>CMS: Wordpress, Shopify </li>
+	<li>Graphic design: Adobe Photoshop, InDesign, Coreldraw, Canva</li>
+	</ul>
+
+	<p>I do use LLMs(Claude, Gemini) to generate boilerplate code and help me focus on implementing <RandomColor>efficient</RandomColor>, secure and robust systems.</p>
+
+  </section>
+
+  <!-- CTA -->
+   <!-- Credibility -->
+  <section>
+    <h2>How I work</h2>
+
+    <p>
+      I focus on understanding the problem first, then building clean,
+      maintainable solutions that clients can actually use.
+    </p>
+
+    <p>
+      Most of my work comes from real business needs — reporting bottlenecks,
+      messy spreadsheets, and dashboards that don’t answer the right questions.
+    </p>
+	
+	<p>
+	 My Ethos: <RandomColor>Respect. Integrity. Simplicity.</RandomColor>
+	 I prioritize clear communication to build sustainable long term relationships and collaborations
+    </p>
+	
+	<p>
+      <Button href="/about">Contact me →</Button>
+    </p>
+  </section>
+</BaseLayout>

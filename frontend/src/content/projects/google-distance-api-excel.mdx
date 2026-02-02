@@ -1,0 +1,77 @@
+---
+title: "Excel Automation using Google Distance API"
+description: "Automated, real-time distance and travel-time calculation in Excel using Google Distance Matrix API and VBA."
+date: 2025-01-20
+tags: [Excel, VBA, Google API, Automation]
+image: "/projects/google-distance-api-excel/excel-preview.png"
+featured: true
+---
+
+import Button from '../../components/Button.astro';
+import RandomColor from '../../components/RandomColor.astro';
+
+## Overview
+
+This project <RandomColor>automates</RandomColor> distance and travel-time calculations inside Excel using the **Google Distance Matrix API**.
+
+Instead of manually checking routes on Google Maps, users can enter source and destination addresses directly in Excel, and the sheet automatically fetches distance and duration using VBA.
+All selectable addresses are stored in a master sheet, and user can select them via dropdowns to 
+calculate distance and driving duration between. 
+By default, duration is for driving under no-traffic(optimistic) model. User can be giving options to change
+driving mode to "driving, biking, walking or public transport", and traffic mode as "worst case, avg case, optimistic". 
+
+---
+
+## <RandomColor>Demo (Video)</RandomColor>
+
+
+<video
+  controls
+  preload="metadata"
+  poster="/projects/google-distance-api-excel/excel-preview.png"
+  style="width:100%; height: auto; aspect-ratio: 16 / 9; border-radius:8px;"
+>
+  <source
+    src="https://pub-21da2bddd9cf4685b4374f3e9115db36.r2.dev/google-distance-api-excel-video.mp4"
+    type="video/mp4"
+  />
+  Your browser does not support the vsideo tag.
+</video>
+
+
+---
+
+## Excel Interface
+
+The Excel sheet allows users to input addresses via dropdowns and <RandomColor>instantly</RandomColor> get results.
+
+![Excel Distance Calculation Preview](/projects/google-distance-api-excel/excel-preview.png)
+
+---
+
+## VBA Automation Logic
+
+The VBA script:
+- Builds the API request URL with the source and destination address selected by the user
+- Sends HTTP requests to Google Distance Matrix API 
+- Parses the JSON response
+- Writes distance and duration back to Excel cells in realtime
+
+![VBA Code for Google Distance API](/projects/google-distance-api-excel/vba-code.png)
+
+---
+
+## <RandomColor>Tech Stack</RandomColor>
+
+- **Excel with address master-sheet + dropdowns for easy user interface**
+- **VBA with HTTP requests and JSON parsing**
+- **Google Distance Matrix API with driving mode and traffic defaults**
+
+---
+
+## Key Learnings
+
+- Handling external APIs from Excel using VBA
+- Parsing JSON responses without native JSON support
+- Managing API limits and error handling
+- Better user interface by linking dropdown to address master sheet, user can type and select an address 

@@ -1,0 +1,45 @@
+---
+import { highlightColors } from '../content/color.ts';
+
+// Define the shape
+interface Color {
+  name: string;
+  hex: string;
+}
+
+const { href, external = false } = Astro.props;
+
+
+const colors = highlightColors as Color[];
+const initial = colors[Math.floor(Math.random() * colors.length)];
+---
+
+<a 
+  href={Astro.props.href} 
+  class="btn-portfolio dynamic-color-target"
+  style={`--chosen-color: ${initial.hex};`}
+  data-all-colors={JSON.stringify(highlightColors)}
+>
+  <slot />
+</a>
+
+<script>
+  document.querySelectorAll('.dynamic-color-target').forEach((el) => {
+    const data = el.getAttribute('data-all-colors');
+    if (data) {
+        const colors = JSON.parse(data);
+      
+        // Function to change the color
+        const changeColor = () => {
+        const randomObj = colors[Math.floor(Math.random() * colors.length)];
+        (el as HTMLElement).style.setProperty('--chosen-color', randomObj.hex);
+        };  
+
+      // Trigger on Mouse Hover (Desktop)
+    el.addEventListener('mouseenter', changeColor);
+
+    // Trigger on Touch Start (Mobile)
+    el.addEventListener('touchstart', changeColor, { passive: true });
+    }
+  });
+</script>

@@ -1,0 +1,17 @@
+0000000000000000000000000000000000000000 25db0bb85dea0df2afed84e532954abce502a0cb Dhawal <dhawal.1294@gmail.com> 1769615120 +0530	commit (initial): Initial commit from Astro
+25db0bb85dea0df2afed84e532954abce502a0cb 25db0bb85dea0df2afed84e532954abce502a0cb Dhawal <dhawal.1294@gmail.com> 1769617435 +0530	Branch: renamed refs/heads/master to refs/heads/main
+25db0bb85dea0df2afed84e532954abce502a0cb 13ffe074cc7e3343bfbd4a0e662690b479b1a0a8 Dhawal <dhawal.1294@gmail.com> 1769619313 +0530	commit: Add abou and blog page
+13ffe074cc7e3343bfbd4a0e662690b479b1a0a8 2225ac76a37a121a5369e602c274690e6a3680e6 Dhawal <dhawal.1294@gmail.com> 1769623040 +0530	commit: Add package-lock.json
+2225ac76a37a121a5369e602c274690e6a3680e6 cf74cb535f1d28d7c6e47c9831e15580f22d5683 Dhawal <dhawal.1294@gmail.com> 1769687106 +0530	commit: baselayout, home and about page
+cf74cb535f1d28d7c6e47c9831e15580f22d5683 44121d9106a5beae10dc37888aec2d753a5c180b Dhawal <dhawal.1294@gmail.com> 1769688732 +0530	commit: visual chamges in favicon, global css and baseLayout
+44121d9106a5beae10dc37888aec2d753a5c180b 413ebb8e4a6558933bfd9210862ba7128ff9b67a Dhawal <dhawal.1294@gmail.com> 1769696423 +0530	commit: adding first project excel google distance api
+413ebb8e4a6558933bfd9210862ba7128ff9b67a e445228960740c46c116745a528d7c062e3b61fc Dhawal <dhawal.1294@gmail.com> 1769709468 +0530	commit: added mdx, 2nd project, some layout changes
+e445228960740c46c116745a528d7c062e3b61fc 274bbf74e9c6aac4b530d9aa666c6e7dd8db2d28 Dhawal <dhawal.1294@gmail.com> 1769709514 +0530	commit: minor change
+274bbf74e9c6aac4b530d9aa666c6e7dd8db2d28 8f61c42a22fe3168f564e113042a43868dc09011 Dhawal <dhawal.1294@gmail.com> 1769711093 +0530	commit: added featured project in home page
+8f61c42a22fe3168f564e113042a43868dc09011 fe8d07c04fb9a11e25a8ca9b1f73c01275f7eb7c Dhawal <dhawal.1294@gmail.com> 1769771944 +0530	commit: added demo private page
+fe8d07c04fb9a11e25a8ca9b1f73c01275f7eb7c 9a4ef56d8c2c1de8cc7bbd49624be5df25fa6ebc Dhawal <dhawal.1294@gmail.com> 1769773111 +0530	commit: added robots.txt
+9a4ef56d8c2c1de8cc7bbd49624be5df25fa6ebc aa2b191cdf55ce8294fce557fa1e90b9523a4a7c Dhawal <dhawal.1294@gmail.com> 1769777343 +0530	commit: added randomword, button components
+aa2b191cdf55ce8294fce557fa1e90b9523a4a7c 3d460a0d945f2ed1019bf5d72701202d678d4d64 Dhawal <dhawal.1294@gmail.com> 1769786814 +0530	commit: added color hover effect
+3d460a0d945f2ed1019bf5d72701202d678d4d64 1ae3d883e7e3e1e65a0e0814963c9fec795017da Dhawal <dhawal.1294@gmail.com> 1769789035 +0530	commit: minor randomColor splashes
+1ae3d883e7e3e1e65a0e0814963c9fec795017da ed259e7cad1a6947aae5e34c8dff31d447388b51 Dhawal <dhawal.1294@gmail.com> 1769981843 +0530	commit: adding first blog
+ed259e7cad1a6947aae5e34c8dff31d447388b51 e3de4544b65994c9a1a946270ca5535a6ecef583 Dhawal <dhawal.1294@gmail.com> 1770038501 +0530	commit: backup before adding backend
