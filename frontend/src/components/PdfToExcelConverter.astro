@@ -1,0 +1,62 @@
+<form id="pdfForm" class="pdf-converter-form">
+  <input type="file" id="pdfFile" accept=".pdf" required />
+  <button type="submit">Convert PDF → Excel</button>
+</form>
+
+<p id="status"></p>
+<a id="downloadLink" style="display:none;" download>Download Excel</a>
+
+<script>
+  const form = document.getElementById("pdfForm") as HTMLFormElement | null;
+  const fileInput = document.getElementById("pdfFile") as HTMLInputElement | null;
+  const status = document.getElementById("status") as HTMLElement | null;
+  const downloadLink = document.getElementById("downloadLink") as HTMLAnchorElement | null;
+
+  if (!form || !fileInput || !status || !downloadLink) {
+    console.error("Converter elements not found in DOM");
+  } else {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const file = fileInput.files?.[0];
+      if (!file) return;
+
+      status.textContent = "Uploading and converting…";
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/convert", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Conversion failed");
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+
+        downloadLink.href = url;
+        downloadLink.style.display = "inline";
+        downloadLink.textContent = "Download Excel";
+
+        status.textContent = "Done!";
+      } catch (err) {
+        status.textContent = "Error converting PDF.";
+        console.error(err);
+      }
+    });
+  }
+</script>
+
+<style>
+.pdf-converter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+</style>

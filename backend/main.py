@@ -1,22 +1,27 @@
-from fastapi import FastAPI, UploadFile, File
+# backend/main.py
+from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
+from pathlib import Path
+from converter import pdf_to_excel
 import shutil
-import os
 
 app = FastAPI()
 
+UPLOAD_FOLDER = Path("uploads")
+OUTPUT_FOLDER = Path("outputs")
+UPLOAD_FOLDER.mkdir(exist_ok=True)
+OUTPUT_FOLDER.mkdir(exist_ok=True)
+
 @app.post("/convert")
 async def convert_pdf(file: UploadFile = File(...)):
-    input_path = f"temp_{file.filename}"
-    output_path = "output.xlsx"
+    # Save uploaded PDF
+    pdf_path = UPLOAD_FOLDER / file.filename
+    with pdf_path.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
 
-    # save uploaded file
-    with open(input_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # Convert PDF → Excel
+    excel_filename = file.filename.replace(".pdf", ".xlsx")
+    excel_path = OUTPUT_FOLDER / excel_filename
+    pdf_to_excel(str(pdf_path), str(excel_path))
 
-    # TODO: your OCR + conversion logic here
-    # For now: dummy Excel file
-    with open(output_path, "wb") as f:
-        f.write(b"Excel placeholder")
-
-    return FileResponse(output_path, filename="converted.xlsx")
+    return FileResponse(str(excel_path), filename=excel_filename)
