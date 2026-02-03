@@ -11,7 +11,10 @@ const posts = (await getCollection("blog"))
 
 <BaseLayout title="Blog">
   <section class="projects">
-    <h1><RandomColor>Blog</RandomColor></h1>
+    <div class ="wide-header">
+      <h1><RandomColor>Blog</RandomColor></h1>
+    </div>
+
 
     <div class="grid">
       {posts.map((post: Blog) => (

@@ -8,7 +8,9 @@ const projects = await getCollection("projects");
 
 <BaseLayout title="Projects">
   <section class="projects">
-    <h1><RandomColor>Projects</RandomColor></h1>
+    <div class="wide-header">
+      <h1><RandomColor>Projects</RandomColor></h1>
+    </div>
 
     <div class="grid">
       {projects.map((project) => (

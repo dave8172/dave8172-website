@@ -1,0 +1,248 @@
+---
+title: "Dynamic Excel-to-Word Reporting Engine"
+description: "A centralized VBA-driven control-center that automates the batch export of complex Excel report sections into a perfectly formatted, brand-consistent Word document."
+date: 2025-02-01
+tags: [Excel, VBA, Word, Automation, Reporting]
+image: "/projects/excel-to-word-automation/excel-control-center-preview.png"
+featured: true
+---
+
+import Button from '../../components/Button.astro';
+import RandomColor from '../../components/RandomColor.astro';
+
+<style>{`
+  /* 1. The Grid - Stack on mobile, side-by-side on desktop */
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* Stacked by default */
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  @media (min-width: 768px) {
+    .comparison-grid {
+      grid-template-columns: 1fr 1fr; /* Side-by-side for tablets/PC */
+    }
+  }
+
+  /* 2. The Image Container */
+  .img-container {
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid #333;
+    background: #111;
+    touch-action: manipulation; /* Prevents accidental double-tap zoom on mobile */
+  }
+
+  .comparison-img {
+    width: 100%;
+    height: 250px; /* Shorter for mobile screens */
+    object-fit: cover;
+    object-position: top;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+
+  @media (min-width: 768px) {
+    .comparison-img {
+      height: 350px; /* Taller for desktop */
+    }
+  }
+
+  .img-container:hover .comparison-img {
+    transform: scale(1.1); /* Zooms in by 10% */
+    cursor: zoom-in;       /* Changes cursor to a magnifying glass */
+  }
+
+  /* 3. The Lightbox (Full Screen) */
+  .lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 9999;
+    padding: 10px; /* Less padding to give image more room */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .lightbox.active {
+    display: flex;
+  }
+
+  .lightbox img {
+    max-width: 100%; /* Use full width on mobile */
+    max-height: 85vh;
+    object-fit: contain;
+  }
+`}</style>
+
+## Overview
+This project was born out of the need to eliminate the manual, error-prone process of "copy-pasting" dozens of report sheets from Excel 
+into Word. The challenge was twofold: 
+- maintaining a strict corporate aesthetic (logos, specific font types, and borders) and 
+- handling the "long-text" problem where Excel rows would jump to new pages, leaving massive white gaps.
+
+The solution is a self-building <RandomColor>Control Center</RandomColor> that scans the workbook, provides a checkbox interface for sheet selection, and 
+executes a multi-stage export. It handles everything from global data replication (syncing headers across sheets) to sophisticated 
+Word API commands that ensure tables fit the page margins perfectly every time.
+
+---
+
+## <RandomColor>Demo (Video)</RandomColor>
+<video
+  controls
+  preload="metadata"
+  poster="/projects/excel-to-word-automation/excel-control-center-preview.png"
+  style="width:100%; height: auto; aspect-ratio: 16 / 9; border-radius:8px;"
+>
+  <source
+    src="https://pub-21da2bddd9cf4685b4374f3e9115db36.r2.dev/excel-to-word-automation-video.mp4"
+    type="video/mp4"
+  />
+  Your browser does not support the vsideo tag.
+</video>
+
+## Conversion Result
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+
+  <div>
+    ### Input (Excel sheet)
+    <div class="img-container">
+        <img 
+            src="/projects/excel-to-word-automation/excel-layout.png" 
+            class="comparison-img" 
+            alt="Excel sheet layout" 
+            onclick="openLightbox(this.src)"
+        />
+    </div>
+    *Standard Excel sheet layout*
+  </div>
+
+  <div>
+    ### Output (Word doc)
+    <div class="img-container">
+        <img 
+            src="/projects/excel-to-word-automation/exported-word-layout.png" 
+            class="comparison-img" 
+            alt="Exported Word doc layout"
+            onclick="openLightbox(this.src)" 
+            />
+    </div>
+    *Exported word doc layout*
+  </div>
+
+</div>
+
+---
+
+## Excel Interface & <RandomColor>Control Center</RandomColor>
+The heart of the tool is the Dynamic Control Center.
+
+- Automated Indexing: A "Refresh" script that scans all worksheets and creates a list with descriptions.
+- Checkbox Logic: Users can batch-select exactly which reports they want to include in the final export.
+
+Command Hub: Dynamic buttons that allow for instant sheet synchronization and the final "Export RA" command.
+
+![Command center sheet](/projects/excel-to-word-automation/excel-control-center-preview.png)
+
+---
+
+## VBA Scripting Logic
+The automation is divided into three core logical blocks:
+
+- **The Replicator:** Uses a "Source to All" logic to ensure that project metadata updated in the master sheet is instantly pushed to 
+all 50+ child sheets, maintaining data integrity.
+
+- **The Formatting Bridge:** A sequence of PasteAndFormat commands tailored to the content type. It uses Match Destination for headers to 
+ensure alignment and Keep Source for data tables to <RandomColor>preserve complex borders.</RandomColor>
+
+- **The Flow Optimizer:** This is the most technical part of the script. It uses ParagraphFormat.Reset and Rows.HeightRule = 0 to "strip" Excel’s 
+hidden formatting, allowing long text to break across Word pages naturally without layout breaks. 
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+
+  <div>
+    ### VBA Control Center Script
+    <div class="img-container">
+        <img 
+            src="/projects/excel-to-word-automation/vba-control-center-script.png" 
+            class="comparison-img" 
+            alt="VBA Control Center Script" 
+            onclick="openLightbox(this.src)"
+        />
+    </div>
+    *VBA script to build control center*
+  </div>
+
+  <div>
+    ### VBA Export to Word Script
+    <div class="img-container">
+        <img 
+            src="/projects/excel-to-word-automation/vba-export-to-word-script.png" 
+            class="comparison-img" 
+            alt="VBA Export to Word Script"
+            onclick="openLightbox(this.src)" 
+            />
+    </div>
+    *VBA script to export selected sheets to word doc*
+  </div>
+
+</div>
+
+---
+
+## Key Learnings
+
+- **Word Object Model Mastery:** Learned how to manipulate Word’s "hidden" paragraph flags (KeepWithNext) which are the primary cause of 
+formatting issues when pasting from Excel.
+
+- **Efficiency at Scale:** Discovered that utilizing .Value = .Value and disabling ScreenUpdating is <RandomColor>significantly faster</RandomColor>
+than standard copy-paste methods for large workbooks.
+
+- **Dynamic UI Design:** Gained experience in creating a "living" interface where buttons and checkboxes are positioned mathematically based 
+on the length of the sheet list.
+
+- **Brand-Safe Automation:** Proved that VBA can be used to enforce brand standards (Arial font, specific margins) even when the source data 
+is inconsistent.
+
+
+---
+
+
+
+
+
+
+
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img" src="" alt="Expanded view" />
+  <span style="color: white; font-size: 0.9rem; opacity: 0.8; font-family: sans-serif;">
+    Click anywhere to close
+  </span>
+</div>
+
+<script is:inline>{`
+  window.openLightbox = function(src) {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    
+    if (lightbox && lightboxImg) {
+      lightboxImg.src = src;
+      lightbox.classList.add('active');
+      // Prevent body from scrolling while looking at the image
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  window.closeLightbox = function() {
+    const lightbox = document.getElementById('lightbox');
+    if (lightbox) {
+      lightbox.classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+  };
+`}</script>
