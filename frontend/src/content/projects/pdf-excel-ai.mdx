@@ -1,0 +1,101 @@
+---
+title: "AI Data Extraction: Benchmarking GPT-4o vs. Veryfi"
+description: "A comparative AI pipeline, extracting structured financial data from irregular scans into Excel using Python."
+date: 2025-02-12
+tags: [AI, GPT4-o, Veryfi, Excel, Automation]
+image: "/projects/pdf-excel-ai/pdf-excel-ai-preview.png"
+featured: true
+---
+
+import Button from '../../components/Button.astro';
+import RandomColor from '../../components/RandomColor.astro';
+
+## Overview
+
+![PDF to Excel using AI](/projects/pdf-excel-ai/pdf-excel-ai-preview.png)
+
+This project addresses the challenge of "dark data" trapped in irregular, low-quality scans and PDFs. By building a dual-engine 
+extraction system, I compared <RandomColor>**OpenAI’s GPT-4o**</RandomColor> (a general-purpose Multimodal LLM) and <RandomColor>**Veryfi**</RandomColor> 
+(a specialized financial OCR API). 
+
+The goal was to evaluate which system better handles real-world "noise" like faded text, line-item multipliers, and 
+complex document layouts for downstream financial analysis.
+
+---
+
+## <RandomColor>Demo (Video)</RandomColor>
+
+
+<video
+  controls
+  preload="metadata"
+  poster="/projects/pdf-excel-ai/pdf-excel-ai-preview.png"
+  style="width:100%; height: auto; aspect-ratio: 16 / 9; border-radius:8px;"
+>
+  <source
+    src="https://pub-21da2bddd9cf4685b4374f3e9115db36.r2.dev/pdf-excel-ai.mp4"
+    type="video/mp4"
+  />
+  Your browser does not support the vsideo tag.
+</video>
+
+
+---
+
+## Tech Stack
+
+* **Language:** Python 3.11+
+* <RandomColor>**AI/OCR:**  </RandomColor> OpenAI API (GPT-4o), Veryfi SDK
+* **Data Orchestration:** `instructor` (Pydantic-based extraction), `pandas`
+* **Preprocessing:** `pdf2image`, `Poppler`
+* **Storage and Analysis:** Microsoft Excel (`openpyxl`)
+
+---
+
+## Python Scripts Explanation
+
+<video
+  controls
+  preload="metadata"
+  poster="/projects/pdf-excel-ai/python-script-ss.png"
+  style="width:100%; height: auto; aspect-ratio: 16 / 9; border-radius:8px;"
+>
+  <source
+    src="https://pub-21da2bddd9cf4685b4374f3e9115db36.r2.dev/python-script-pdf-ai.mp4"
+    type="video/mp4"
+  />
+  Your browser does not support the vsideo tag.
+</video>
+
+###  OpenAI GPT-4o Integration
+The OpenAI script utilizes the **`instructor`** library to enforce a strict **Pydantic schema**. Because GPT-4o is a reasoning model, 
+the script uses specialized "System Prompts" to <RandomColor>handle mathematical extraction.</RandomColor>
+* **Process:** Converts PDF to JPEG -> Base64 Encoding -> Vision-to-JSON extraction.
+* **The Logic:** It doesn't just "read" text; it interprets it. When it sees "Item A 39.9x2", it calculates the unit price and quantity 
+even if the receipt layout is cluttered.
+
+
+###  Veryfi API Integration
+The Veryfi script uses a dedicated financial OCR engine designed specifically for receipts and invoices.
+* **Process:** Direct PDF/Image upload via the `veryfi` Python SDK.
+* **The Logic:** It uses deterministic OCR rules to identify tax, subtotal, and vendor information instantly. It is pre-trained on 
+millions of financial documents, making it <RandomColor>extremely fast</RandomColor> at identifying standard fields without complex prompting.
+
+---
+
+## Key Learnings & Conclusion
+
+![Excel Output](/projects/pdf-excel-ai/excel-ai-output.png)
+
+* **Reasoning vs. Recognition:** GPT-4o showed superior "reasoning" for non-standard multipliers, whereas Veryfi showed superior 
+"recognition" for standard tax and total fields.
+* **Accuracy vs. Cost:**
+    * **OpenAI GPT-4o** is the more **economical** choice with slightly lower raw OCR precision but higher adaptability.
+    * **Veryfi** is highly **accurate** and purpose-built for finance, but comes at a significantly **higher operational cost** per 
+    document.
+
+<br />
+* <RandomColor>**The Verdict:**</RandomColor> GPT-4o is the optimal solution for cost-sensitive, high-volume projects, while Veryfi remains the benchmark for mission-critical financial auditing.
+
+---
+
