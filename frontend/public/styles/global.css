@@ -121,23 +121,14 @@ a:hover {
   text-decoration-color: var(--muted);
 }
 
-main code {
-  background: #f3f4f6;
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
+
+/* KEEP THIS - it's what actually applies */
+.prose :not(pre) > code {
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  padding: 0.15rem 0.35rem;
+  border-radius: 6px;
   font-size: 0.9em;
-}
-
-.card {
-  background: #111113;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  transition: transform 0.15s ease, border-color 0.15s ease;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  border-color: #2a2a2e;
 }
 
 /* Content media safety */
@@ -176,95 +167,7 @@ a[href^="mailto:"] {
   margin: 0 auto;
 }
 
-.projects {
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
 
-.grid {
-  display: grid;
-  /* 3 columns on desktop for a premium feel */
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
-  margin-bottom: 2rem;
-  
-  /* The Secret Sauce: Break out of the 720px parent */
-  width: min(1200px, 90vw); 
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-/* Tablet (2 columns) */
-@media (max-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: 100%; /* Stay within container on smaller screens */
-    left: 0;
-    transform: none;
-  }
-}
-
-/* Mobile (1 column) */
-@media (max-width: 768px) {
-  .grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-}
-
-.project-card {
-  display: block;
-  border-radius: 12px;
-  /* overflow: hidden; */
-  background: var(--card-bg, #111);
-  text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.project-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
-}
-
-.project-card img {
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  width: 100%;
-  border-radius: 8px;
-}
-
-.card-body {
-  padding: 1rem;
-}
-
-.card-body h2 {
-  margin: 0 0 0.4rem;
-  font-size: 1.1rem;
-}
-
-.card-body p {
-  font-size: 0.9rem;
-  opacity: 0.85;
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.6rem;
-  padding: 0;
-  list-style: none;
-}
-
-.tags li {
-  font-size: 0.7rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.08);
-}
 
 /* Base state for the random words */
 .random-word {
@@ -288,18 +191,14 @@ a[href^="mailto:"] {
 .btn-portfolio {
   display: inline-block;
   padding: 10px 24px;
-  background-color: #ffffff; /* light background */
+  background-color: #ffffff;
   color: #1a1a1a !important;
   font-weight: bold;
   text-decoration: none !important;
   border-radius: 8px;
   border: 1px solid #333;
-  transition: all 0.3s ease;
   cursor: pointer;
-  transition: 
-    background-color 0.3s ease, 
-    transform 0.3s ease, 
-    border-color 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
 }
 
 .btn-portfolio:hover {
@@ -352,40 +251,149 @@ pre.astro-code code {
   font-size: 0.9em;
 }
 
-.full-width {
+
+
+/* Projects Section */
+.projects {
+  /* Break out of the .prose max-width so the grid can span the viewport */
   width: 100vw;
+  max-width: 100vw;
   margin-left: calc(50% - 50vw);
-  border: 3px solid red; /* debug */
+  padding: 3rem 6rem;
+  box-sizing: border-box;
 }
 
-/* This wrapper ensures the content inside aligns with the 1200px grid */
+/* Restore normal flow on narrower screens */
+@media (max-width: 1024px) {
+  .projects {
+    width: auto;
+    max-width: 100%;
+    margin-left: 0;
+    padding: 3rem 2rem;
+  }
+}
+
+/* Clean up .wide-header - remove breakout logic */
 .wide-header {
-  width: min(1200px, 90vw);
-  margin: 0 auto;
-  padding: 0 0rem; /* Matches the grid's internal breathing room */
-  
-  /* The Breakout logic */
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
-  
-  margin-bottom: 1rem;
+  margin-bottom: 3rem;
+  padding: 0;
 }
 
 .wide-header h1 {
   margin: 0;
-  text-align: left;
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-/* Adjust for mobile/tablet to match grid behavior */
+/* SINGLE grid rule - 3 columns on desktop */
+.grid {
+  width: 100%;
+  display: grid;
+  gap: 3rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* Tablet: 2 columns */
 @media (max-width: 1024px) {
-  .wide-header {
-    width: 100%;
-    left: 0;
-    transform: none;
-    /* On tablet/mobile, it should align with your standard container padding */
-    padding: 0 0rem; 
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2.5rem;
   }
+  
+  .projects {
+    padding: 3rem 3rem;
+  }
+}
+
+/* Mobile: 1 column */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .projects {
+    padding: 2rem 1rem;
+  }
+}
+
+/* Project card - clean and simple */
+.project-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--muted);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  .project-card:hover {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.project-card img {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  width: 100%;
+  transition: transform 0.3s ease;
+}
+
+.project-card:hover img {
+  transform: scale(1.02);
+}
+
+/* Minimal card body */
+.card-body {
+  padding: 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-body h2 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.card-body p {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--muted);
+  flex-grow: 1;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tags li {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  background: var(--border);
+  color: var(--muted);
+  font-weight: 500;
 }
 
 

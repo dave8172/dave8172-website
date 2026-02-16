@@ -32,11 +32,9 @@ const { title = "Dave" } = Astro.props;
       </nav>
     </header>
 
-    <body>
-        <main class="prose">
-            <slot />
-        </main>
-    </body>
+    <main class="prose">
+        <slot />
+    </main>
 
     <footer class="footer">
       © {new Date().getFullYear()} <RandomColor>Dave</RandomColor>
