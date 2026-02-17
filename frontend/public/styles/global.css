@@ -205,7 +205,7 @@ a[href^="mailto:"] {
   background-color: var(--chosen-color);
   border-color: var(--chosen-color);
   transform: translateY(-3px);
-  color: #1a1a1a !important; /* Ensures text stays black when BG turns bright */
+  color: #ffffff !important; /* Ensures text stays black when BG turns bright */
 }
 
 /* Add this to your Button CSS */

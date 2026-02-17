@@ -39,3 +39,5 @@ backend/.env
 Thumbs.db
 .vscode/
 
+venv/
+
