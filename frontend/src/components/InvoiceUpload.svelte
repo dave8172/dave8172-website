@@ -21,7 +21,7 @@
     formData.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:8000/api/upload-invoice", {
+      const res = await fetch("https://davewebsite-invoiceai.onrender.com/api/upload-invoice", {
         method: "POST",
         body: formData
       });
