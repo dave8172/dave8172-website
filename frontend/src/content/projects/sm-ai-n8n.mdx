@@ -1,0 +1,106 @@
+---
+title: "Self-Hosted AI Social Media Engine"
+description: "A high-control automation pipeline with Human-in-the-Loop (HITL) verification for social media automation."
+date: 2025-02-28
+tags: [AI, n8n, social-media, Python, Automation]
+image: "/projects/sm-ai-n8n/n8n-workflow-explanation.png"
+featured: true
+---
+
+import Button from '../../components/Button.astro';
+import RandomColor from '../../components/RandomColor.astro';
+
+## Overview
+
+![Social Media Automation with AI](/projects/sm-ai-n8n/n8n-workflow-explanation.png)
+
+Most small business owners know they need to post daily to stay relevant, but they lack the time or the 
+budget for a full-time social media manager. Current tools are either too expensive 
+or require the owner to still do 90% of the work.
+
+I built this <RandomColor>**Custom AI Social Media Engine**</RandomColor> to bridge that gap—allowing businesses to automate 95% of the 
+content creation while maintaining 100% control over the final post.
+
+The system transforms a simple **Google Sheet** into a powerful content command center, featuring a 
+<RandomColor>"Human-in-the-Loop" (HITL)</RandomColor> approval trigger via email.
+
+---
+
+## <RandomColor>Demo (Video)</RandomColor>
+
+---
+
+<video
+  controls
+  preload="metadata"
+  poster="/projects/sm-ai-n8n/n8n-workflow-explanation.png"
+  style="width:100%; height: auto; aspect-ratio: 16 / 9; border-radius:8px;"
+>
+  <source
+    src="https://pub-21da2bddd9cf4685b4374f3e9115db36.r2.dev/sm-ai-n8n.mp4"
+    type="video/mp4"
+  />
+  Your browser does not support the vsideo tag.
+</video>
+
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **User Interface** | **Google Sheets** | The "Remote Control" where the business owner drops links. |
+| **Brain** | **OpenAI GPT-4o (can be changed)** | Analyzes products/links to write professional, on-brand captions. |
+| **Orchestrator** | **n8n (Self-Hosted)** | Manages the "plumbing" between the sheet, the AI, and the social apps. |
+| **Custom Worker** | **Python / FastAPI** | Ensures <RandomColor>"Fail-Proof"</RandomColor> posting and handles complex media uploads. |
+| **Hosting** | **Docker / DigitalOcean** | Private, secure hosting with minimal monthly subscription fees. |
+
+Below is the Google Sheets sample table, where the owner only needs to paste the link and set a date/time for when they want the post to go live. 
+The <RandomColor>AI and n8n</RandomColor> handle the rest—from content creation to posting and logging.
+![Google Sheets where the URL and date time has to be entered](/projects/sm-ai-n8n/google-sheets-pic.png)
+
+Below is the Apps Script which automatically triggers the workflow.
+![Apps Script which automatically triggers the workflow](/projects/sm-ai-n8n/apps-script-pic.png)
+
+Below is the email approval system, which allows the owner to have the final say on what goes live. They can approve or reject the post before it hits their social media channels.
+![Email approval](/projects/sm-ai-n8n/email-approval-pic.png)
+
+---
+
+## The Logic: From Link to Live Post
+
+The system is designed to be <RandomColor>invisible</RandomColor> to the user, requiring only two "touchpoints":
+
+1.  **The Trigger:** The owner pastes a product URL or a blog link into a Google Sheet.
+2.  **The AI Analysis:** My custom Python worker scrapes the website to understand the product context, price, and benefits—generating a platform-specific caption (X, LinkedIn, Instagram).
+3.  **Human-in-the-Loop (HITL) Verification:** The owner receives an <RandomColor>automated email</RandomColor> with the draft. They can click **"Approve"** to post instantly or **"Edit"** to make a quick tweak.
+4.  **Auto-Logging:** Once posted, the system logs the live URL back into the Google Sheet for easy tracking and reporting.
+
+---
+
+## Business Use Cases
+
+### 1. The Busy Founder (Time Recovery)
+Instead of spending 10 hours a month fighting with social media apps, a founder can spend <RandomColor>**10 minutes a week**</RandomColor> dropping links into a spreadsheet. The system handles the rest.
+
+### 2. High-Control Branding (The "Safety Net")
+Most automation tools post "junk" that can hurt a brand. My <RandomColor>**Email Approval**</RandomColor> system ensures that no AI hallucination ever goes live without a human "thumbs up."
+
+### 3. Cost-Effective Scaling
+Because this system is self-hosted on a private server, there are no "per-post" or "per-account" fees. A business can scale from 1 post a week to <RandomColor>**10 posts a day**</RandomColor> for the exact same cost.
+
+---
+
+## Why This is Better Than "Standard" Tools
+
+* **Zero Subscription Bloat:** Own your infrastructure instead of renting it.
+* **Custom Prompting:** The AI is tuned specifically to *your* brand voice, not a generic template.
+* **Fail-Proof Posting:** Built with custom Python logic to handle platform glitches that stop standard tools in their tracks.
+
+---
+
+I can help you <RandomColor>setup this system</RandomColor> for your business or build a custom version tailored to your specific needs.
+
+<br />
+
