@@ -3,110 +3,100 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import RandomColor from '../components/RandomColor.astro';
 import Button from '../components/Button.astro';
 import ProjectSlider from "../components/ProjectSlider.svelte";
-import { getCollection, type CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
 
-// Fetch all projects
 const projects = await getCollection("projects");
 
-// Compute featured projects
 const featured = projects
   .filter((p) => p.data.featured)
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
-
-// convert to plain objects for Svelte
-const sliderProjects = featured.map(p => ({
-  slug: p.slug,
-  data: {
-    title: p.data.title,
-    description: p.data.description,
-    image: p.data.image,
-    tags: p.data.tags ?? []
-  }
-}));
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 ---
 
 <BaseLayout title="Home">
-  <!-- Hero -->
   <section>
     <h1>
-      I help businesses <RandomColor>automate</RandomColor> processes and build clean data <RandomColor>dashboards.</RandomColor>
+      I help <RandomColor>startups</RandomColor> and small remote teams automate workflows, build internal tools, and turn messy reporting into reliable <RandomColor>systems.</RandomColor>
     </h1>
 
     <p>
-      I have experience in building end-to-end data systems transforming fragmented workflows 
-	  and messy data into automated, brand-aligned visual dashboards and interactive charts.
+      I work best with founders, product teams, and small businesses that need practical help with automation, dashboards, API integrations, and spreadsheet-heavy operations without hiring a full-time engineer.
+    </p>
+
+    <p style="text-align: center; margin-top: 1.25rem;">
+      <Button href="/about">Hire me for automation & internal tools →</Button>
     </p>
   </section>
 
- <section class="projects-section">
-    
+  <section>
+    <h2>Services</h2>
+    <ul>
+      <li>
+        <strong><RandomColor>Fractional automation support</RandomColor></strong> — Ongoing help with workflow automation, API integrations, Python scripts/services, and operational improvements for small teams.
+      </li>
+      <li>
+        <strong>Internal <RandomColor>dashboards</RandomColor> & reporting systems</strong> — Build reporting pipelines, dashboards, and data workflows that reduce manual work and improve visibility.
+      </li>
+      <li>
+        <strong>Spreadsheet-to-system <RandomColor>upgrades</RandomColor></strong> — Improve fragile Excel and Google Sheets workflows with better structure, automation, and lightweight internal tooling.
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Who I work with</h2>
+    <p>
+      I’m a good fit for SaaS startups, agencies, data-heavy small businesses, and remote teams that rely on spreadsheets, manual reporting, or disconnected tools to run key parts of their operations.
+    </p>
+    <p>
+      If your team is spending too much time updating sheets, moving data between tools, or assembling reports by hand, I can help simplify and stabilize that workflow.
+    </p>
+  </section>
+
+  <section class="projects-section">
     <h2 style="margin-bottom: 0.5rem;"><RandomColor>Featured Projects</RandomColor></h2>
-    
+
     <ProjectSlider projects={featured} client:load />
-    
+
     <p style="margin-top: 1rem; text-align: center">
       <Button href="/projects">View all projects →</Button>
     </p>
-  </section> 
-
-<style>
-  .projects-section {
-    /* Prevents any horizontal scroll issues from the 100vw breakout */
-    overflow-x: hidden; 
-    padding: 1rem 0;
-  }
-</style>
-
-  <!-- Skillset -->
-  <section>
-    <h2>Skillset</h2>
-
-  <ul>
-  <li>
-    <strong><RandomColor>Integrating AI</RandomColor> inside workflows and data architecture</strong> — Using OpenAI and Gemini models via Python and in Excel via VBA.
-  </li>
-
-  <li>
-    <strong>Data Engineering & <RandomColor>Automation</RandomColor></strong> — Leveraging Excel (VBA/Power Query), Python, SQL, BigQuery, and ETL Pipelines.
-  </li>
-
-  <li>
-    <strong>Analytics & Data <RandomColor>Modeling</RandomColor></strong> — Utilizing Python (Pandas, Scikit-learn), R Scripting, and Excel Power Query.
-  </li>
-
-  <li>
-    <strong>Interactive <RandomColor>Dashboards</RandomColor> & Reporting Systems</strong> — Built with PowerBI, Looker Studio, and Google Sheets Dashboards.
-  </li>
-
-  <li>
-    <strong>Spreadsheet Apps & Tools</strong> — <RandomColor>Custom UI</RandomColor> via VBA Userforms, Google Apps Script, and Python in Excel.
-  </li>
-
-  <li>
-    <strong>Custom Data Visualization & Storytelling</strong> — Bespoke designs using <RandomColor>D3.js</RandomColor>, Svelte, and Python (Matplotlib/Seaborn).
-  </li>
-
-  <li>
-    <strong>Modern Web Applications</strong> — Developed with Astro, React, <RandomColor>Svelte</RandomColor>, and Javascript, deployed via Vercel.
-  </li>
-</ul>
-
   </section>
 
-  <!-- CTA -->
-   <!-- Credibility -->
+  <style>
+    .projects-section {
+      overflow-x: hidden;
+      padding: 1rem 0;
+    }
+  </style>
+
   <section>
-    <h2>My Ethos</h2>
+    <h2>Core strengths</h2>
+    <ul>
+      <li>
+        <strong><RandomColor>Python automation</RandomColor> & APIs</strong> — Build practical backend logic, automations, integrations, and data-processing workflows.
+      </li>
+      <li>
+        <strong>Reporting systems & <RandomColor>dashboards</RandomColor></strong> — Turn fragmented data into usable dashboards and recurring reporting workflows.
+      </li>
+      <li>
+        <strong>Google Sheets / Excel <RandomColor>systems</RandomColor></strong> — Upgrade spreadsheet-heavy operations with Apps Script, VBA, better modelling, and cleaner workflows.
+      </li>
+      <li>
+        <strong>Lightweight <RandomColor>full-stack</RandomColor> tooling</strong> — Build small internal apps, custom interfaces, and operational tools for remote teams.
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>How I work</h2>
     <p>
-	    <RandomColor>Respect. Integrity. Simplicity.</RandomColor>
+      I’m best suited for async-friendly teams that want a practical technical partner for ongoing improvements, part-time support, or scoped internal tooling work.
     </p>
     <p>
-      I focus on building secure, scalable and intelligent systems, with longevity in mind, fostering trust through consistent reliability.
+      My approach is simple: reduce manual work, improve reporting reliability, and build systems that are useful, maintainable, and easy for a team to keep using.
     </p>
-    <br />
-	
-	<p style="text-align: center;">
-      <Button href="/about">Contact me →</Button>
-  </p>
+    <p style="text-align: center; margin-top: 1.25rem;">
+      <Button href="/about">Let’s talk →</Button>
+    </p>
   </section>
 </BaseLayout>

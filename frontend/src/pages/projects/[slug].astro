@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import RandomColor from '../../components/RandomColor.astro';
+import Button from '../../components/Button.astro';
 import { getCollection, type CollectionEntry } from "astro:content";
 
 type Project = CollectionEntry<"projects">;
@@ -25,5 +26,23 @@ const { data } = project;
     <p class="muted">{data.description}</p>
 
     <Content />
+
+    <hr />
+
+    <section>
+      <h2><RandomColor>Need something similar?</RandomColor></h2>
+      <p>
+        I help startups, agencies, and small remote teams automate workflows, improve reporting, and build internal tools around real operational problems.
+      </p>
+      <p>
+        If this project looks close to what your team needs, feel free to reach out and I can suggest a practical approach.
+      </p>
+      <p style="text-align: center; margin-top: 1rem;">
+        <Button href="/services">View services →</Button>
+      </p>
+      <p style="text-align: center; margin-top: 0.75rem;">
+        <Button href="/about">Contact me →</Button>
+      </p>
+    </section>
   </article>
 </BaseLayout>
