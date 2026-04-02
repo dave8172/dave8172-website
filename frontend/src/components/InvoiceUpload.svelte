@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import DynamicButton from "./DynamicButton.svelte";
 
-  const API_BASE = "http://65.20.79.200/api";
+  const API_BASE = "https://daveoc.tail7ed073.ts.net:8443/api";
   const EMPTY_VALUE = "Not available";
 
   let file = null;
