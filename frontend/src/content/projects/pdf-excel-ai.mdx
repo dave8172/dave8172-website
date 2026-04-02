@@ -7,9 +7,7 @@ image: "/projects/pdf-excel-ai/pdf-excel-ai-preview.png"
 featured: true
 ---
 
-import Button from '../../components/Button.astro';
 import RandomColor from '../../components/RandomColor.astro';
-import InvoiceUpload from "../../components/InvoiceUpload.svelte";
 
 ## Overview
 
@@ -23,14 +21,6 @@ The goal was to evaluate which system better handles real-world "noise" like fad
 complex document layouts for downstream financial analysis.
 
 ---
-
-## <RandomColor>Test It Out:</RandomColor>
-Upload your own invoice or receipt to see the AI in action! 
-The system will extract key financial data and present it in a structured format, with its insights.  
-Model currently running: gpt-5-mini.  
-Tolerate the delay please, backend is on Render free tier :)
-
-<InvoiceUpload client:load />
 
 ## <RandomColor>Demo (Video)</RandomColor>
 
