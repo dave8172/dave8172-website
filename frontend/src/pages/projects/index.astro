@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import RandomColor from '../../components/RandomColor.astro';
+import Button from '../../components/Button.astro';
 import { getCollection } from "astro:content";
 
 const projects = await getCollection("projects");
@@ -10,6 +11,15 @@ const projects = await getCollection("projects");
   <section class="projects">
     <div class="wide-header">
       <h1><RandomColor>Projects</RandomColor></h1>
+      <p>
+        A selection of automation, reporting, spreadsheet-system, and internal tooling projects that show how I solve practical business workflow problems.
+      </p>
+      <p>
+        These examples are most relevant for startups, agencies, and small teams that need better operations, reporting, and automation without overcomplicating their stack.
+      </p>
+      <p style="text-align: center; margin-top: 1rem;">
+        <Button href="/services">See services →</Button>
+      </p>
     </div>
 
     <div class="grid">
@@ -34,5 +44,9 @@ const projects = await getCollection("projects");
         </a>
         ))}
     </div>
+
+    <p style="text-align: center; margin-top: 2rem;">
+      <Button href="/about">Need something similar for your business? →</Button>
+    </p>
   </section>
 </BaseLayout>
