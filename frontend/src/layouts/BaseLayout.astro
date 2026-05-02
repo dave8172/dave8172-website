@@ -1,7 +1,7 @@
 ---
 import RandomColor from "../components/RandomColor.astro";
 
-const { title = "Dave" } = Astro.props;
+const { title = "Dave", description = "" } = Astro.props;
 ---
 
 <!doctype html>
@@ -16,6 +16,7 @@ const { title = "Dave" } = Astro.props;
     <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png">
 
     <title>{title}</title>
+    {description && <meta name="description" content={description} />}
 
     <link rel="stylesheet" href="/styles/global.css" />
   </head>
