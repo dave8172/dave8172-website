@@ -1,7 +1,5 @@
 ## Hi, I’m Dave 👋
 
-I help businesses automate workflows & spreadsheets.
+From firmware to AR/VR to AI automation — I tinker across domains and build systems that are secure, scalable, and built to last.
 
-Most of my work focuses on reducing manual effort, improving reporting accuracy, and helping teams make better decisions with the data they already have.
-
-Lets talk: https://dave8172-website.vercel.app/
+https://dave8172-website.vercel.app/
