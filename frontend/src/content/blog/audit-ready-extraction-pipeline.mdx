@@ -1,0 +1,166 @@
+---
+title: "I rebuilt my extraction pipeline so you could hand it to an auditor"
+description: "What it actually takes to make an AI document extraction pipeline trustworthy — eval sets, confidence scoring, audit logs, and the numbers behind it."
+date: 2026-06-15
+tags: ["AI", "Document Extraction", "Reliability", "Benchmarks"]
+image: "/blogassets/audit-ready-extraction.svg"
+---
+import RandomColor from '../../components/RandomColor.astro';
+
+Most AI extraction pipelines are built to pass a demo. Run it on a clean invoice, get a clean JSON, ship it. The problem shows up later — in the reconciliation diff, the failed audit, the support ticket that says "the totals are wrong."
+
+This post is about the layer nobody builds first: the reliability layer. Labeled eval sets, accuracy reports, confidence scoring, and audit logs. I built this end-to-end on invoice and receipt extraction, and this is what I learned.
+
+---
+
+## Why extraction pipelines quietly fail
+
+Extraction looks easy because it looks right. The model fills in all the fields, the JSON is valid, nothing throws an error. The failure modes are invisible:
+
+- **Silent wrong answers.** The model reads "132,30" (Swedish decimal notation) and returns `13230`. No error. The invoice is just wrong.
+- **Hallucinated fields.** A blurry scanned receipt gets a subtotal that doesn't exist anywhere on the document.
+- **Inconsistent formatting.** Currency as `$` on some invoices, `USD` on others, nothing on scanned ones — your downstream code breaks on whichever one you didn't test.
+
+Without a labeled eval set and systematic accuracy measurement, you find these problems in production. That's too late.
+
+---
+
+## The eval set
+
+The foundation is 105 labeled documents: 100 digital invoices and 5 scanned thermal receipts. Each document has a ground truth JSON with the correct values for every field — vendor, document number, date, currency, line items, totals.
+
+A label looks like this:
+
+```json
+{
+  "document_id": "invoice_Shahid_Shariari_30140",
+  "filename": "invoice_Shahid Shariari_30140.pdf",
+  "processing_mode_expected": "embedded_text",
+  "difficulty": "easy",
+  "ground_truth": {
+    "vendor": "SuperStore",
+    "document_number": "30140",
+    "date": "2012-11-15",
+    "currency": "USD",
+    "total": "748.36",
+    "shipping": "73.00",
+    "line_items": [
+      { "description": "Safco 3-Shelf Cabinet, Traditional", "quantity": "2", "unit_price": "337.68", "amount": "675.36" }
+    ]
+  },
+  "eval_notes": { "line_items_evaluated": true }
+}
+```
+
+The eval runner loads each label, runs the extractor, and compares every field in the ground truth against what the model returned — handling numeric equivalence (`"$132.30"` == `"132.30"`), European decimal formats (`"132,30"` == `"132.30"`), and date normalization (`"Dec 27 2012"` == `"2012-12-27"`).
+
+---
+
+## The accuracy gap — and how it closed
+
+The first run came in at **79.3%**. That sounds bad. It was actually informative.
+
+Systematically categorizing every mismatch revealed four root causes:
+
+| Category | Example failure | Fix |
+|---|---|---|
+| Currency symbols | Model returned `$` instead of `USD` | Prompt: always use ISO 4217 codes |
+| Payment method verbosity | `Visa ending in 0627` instead of `Visa` | Prompt: card network name only |
+| European number format | `"132,30"` ≠ `"132.30"` in comparison | Runner: locale-aware numeric parser |
+| Line item SKU stripping | Stripped at commas, mangled descriptions | Prompt: strip only after dash separator |
+
+Each fix addressed a specific failure class. After both prompt and comparison fixes: **98.3% on Opus, 96.3% on Haiku/Sonnet**.
+
+The lesson: first-run accuracy tells you where the problems are, not that you should give up.
+
+---
+
+## Model benchmarks: cost vs accuracy
+
+<RandomColor>Two configurations</RandomColor>, one eval set:
+
+| Configuration | Accuracy | Cost per run | Best for |
+|---|---|---|---|
+| Opus · 7500px images | **98.3%** | ~$1.00 | Highest-stakes documents |
+| Haiku (text) + Sonnet (vision) · 1500px | **96.3%** | ~$0.08 | Production at scale |
+
+The 2% accuracy difference costs 12× less. For production document processing — thousands of invoices per month — that math usually points to Haiku/Sonnet. For regulated workflows where every field must be right, Opus.
+
+The image size matters more than you'd expect. Scaling from 7500px to 1500px per page reduces API cost ~25× with minimal accuracy impact, because invoice text is readable at 1500px and Claude doesn't benefit from the extra resolution.
+
+---
+
+## Confidence scoring: the model knows what it doesn't know
+
+Every extraction now includes a self-reported confidence level — `high`, `medium`, or `low` — plus a list of uncertain fields and a short explanation note.
+
+The striking thing is how well it predicts actual accuracy:
+
+| Confidence | Field accuracy | Documents |
+|---|---|---|
+| High | **97.7%** | 101 / 105 |
+| Medium | **71.9%** | 3 / 105 |
+| Low | **50.0%** | 1 / 105 |
+
+The single `low`-confidence document — an 80-item Dollarstore thermal receipt, narrow and blurry — also had the worst accuracy. The model correctly flagged it.
+
+The practical use of this: **route by confidence, not by document type.** High-confidence extractions go straight to processing. Medium and low get routed to human review. You're not reviewing 105 documents; you're reviewing 4.
+
+---
+
+## The audit log
+
+Every extraction writes a structured log entry before anything downstream sees the data. It records:
+
+- **What went in:** filename, processing mode (digital vs scanned), input size
+- **What came out:** all extracted fields
+- **How confident:** overall level, uncertain fields, model's explanation note
+- **Operational metadata:** which model, how long the API call took, UTC timestamp
+
+PII redaction runs on all string values before writing — card numbers, email addresses, phone numbers, SSNs. The log is safe to store and share even when the source documents aren't.
+
+A real entry looks like this:
+
+```json
+{
+  "id": "b1d01383-42fd-4eac-acc0-f333d31a9409",
+  "timestamp": "2026-06-15T13:43:51Z",
+  "filename": "invoice_Shahid Shariari_30140.pdf",
+  "mode": "embedded_text",
+  "model": "claude-haiku-4-5",
+  "duration_s": 2.13,
+  "confidence": {
+    "overall": "high",
+    "uncertain_fields": [],
+    "notes": "All key fields are clearly visible and unambiguous."
+  },
+  "input_summary": { "char_count": 386 },
+  "extraction": {
+    "vendor": "SuperStore",
+    "document_number": "30140",
+    "date": "2012-11-15",
+    "currency": "USD",
+    "total": "748.36",
+    "shipping": "73.00"
+  },
+  "pii_redacted": false
+}
+```
+
+This is what "hand it to an auditor" means in practice. Not a demo that shows the happy path — a log that shows exactly what happened, for every document, with the model's own confidence assessment attached.
+
+---
+
+## Known limitations (honest ones)
+
+- **Scanned documents:** 69.8% accuracy vs 97.9% for digital. OCR quality and image resolution drive the gap. Dense thermal receipts in poor light are genuinely hard.
+- **Non-English locales:** The eval set includes Swedish receipts. Decimal separators, currency conventions, and vendor name formats vary — prompt tuning per locale helps.
+- **Template concentration:** 100 of the 105 digital invoices share one template. Real-world variance across invoice designs will affect accuracy — this is a ceiling, not a floor.
+
+---
+
+## What's next
+
+The eval harness is the next piece — an open-source tool for running this kind of labeled accuracy benchmark against any document extraction pipeline, not just this one. That's [P2 in the build ladder](/projects).
+
+If your team has a document extraction pipeline that needs a reliability layer, [reach out](mailto:mdhawal94@gmail.com). This is the work.

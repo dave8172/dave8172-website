@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#0b0b0c"/>
+
+  <!-- Left: terminal block -->
+  <rect x="60" y="70" width="520" height="300" rx="10" fill="#111115" stroke="#1f1f23" stroke-width="1.5"/>
+  <rect x="60" y="70" width="520" height="38" rx="10" fill="#1a1a1f"/>
+  <rect x="60" y="96" width="520" height="12" fill="#1a1a1f"/>
+  <circle cx="91" cy="89" r="7" fill="#ff5f57"/>
+  <circle cx="115" cy="89" r="7" fill="#febc2e"/>
+  <circle cx="139" cy="89" r="7" fill="#28c840"/>
+
+  <text x="88" y="138" font-family="monospace" font-size="14" fill="#a1a1aa">$ python -m runner.run_eval</text>
+  <text x="88" y="164" font-family="monospace" font-size="14" fill="#4a4a55">Documents: 105  ·  Models: haiku/sonnet</text>
+  <text x="88" y="196" font-family="monospace" font-size="13" fill="#a1a1aa">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</text>
+  <text x="88" y="224" font-family="monospace" font-size="14" fill="#4ade80">✓  Overall accuracy    96.3%  (918/953)</text>
+  <text x="88" y="250" font-family="monospace" font-size="14" fill="#4ade80">✓  Digital invoices    97.9%  (881/900)</text>
+  <text x="88" y="276" font-family="monospace" font-size="14" fill="#60a5fa">✓  High confidence     97.7%  — 101 docs</text>
+  <text x="88" y="302" font-family="monospace" font-size="14" fill="#f59e0b">⚑  Low confidence      50.0%  — flagged ✓</text>
+  <text x="88" y="334" font-family="monospace" font-size="13" fill="#4a4a55">Audit log → audit_log/2026-06-15.log</text>
+
+  <!-- Right top: big number -->
+  <rect x="640" y="70" width="500" height="140" rx="10" fill="#111115" stroke="#1f1f23" stroke-width="1.5"/>
+  <text x="668" y="112" font-family="system-ui,sans-serif" font-size="13" font-weight="500" fill="#a1a1aa">Field accuracy · 105 documents</text>
+  <text x="668" y="182" font-family="system-ui,sans-serif" font-size="66" font-weight="700" fill="#e6e6e6">96.3%</text>
+
+  <!-- Right bottom: confidence table -->
+  <rect x="640" y="230" width="500" height="140" rx="10" fill="#111115" stroke="#1f1f23" stroke-width="1.5"/>
+  <text x="668" y="270" font-family="system-ui,sans-serif" font-size="13" font-weight="500" fill="#a1a1aa">Self-reported confidence vs actual accuracy</text>
+
+  <text x="668" y="302" font-family="monospace" font-size="14" fill="#4ade80">High   →  97.7%  accuracy  (101 docs)</text>
+  <text x="668" y="326" font-family="monospace" font-size="14" fill="#f59e0b">Medium →  71.9%  accuracy   (3 docs)</text>
+  <text x="668" y="350" font-family="monospace" font-size="14" fill="#f87171">Low    →  50.0%  accuracy   (1 doc) </text>
+
+  <!-- Bottom bar -->
+  <text x="60" y="430" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#e6e6e6">I rebuilt my extraction pipeline</text>
+  <text x="60" y="462" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#e6e6e6">so you could hand it to an auditor.</text>
+  <text x="60" y="500" font-family="system-ui,sans-serif" font-size="15" fill="#a1a1aa">dave8172.com</text>
+</svg>
