@@ -3,13 +3,18 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import RandomColor from '../components/RandomColor.astro';
 import Button from '../components/Button.astro';
 import ProjectSlider from "../components/ProjectSlider.svelte";
+import BlogSlider from "../components/BlogSlider.svelte";
 import { getCollection } from "astro:content";
 
 const projects = await getCollection("projects");
+const allPosts = await getCollection("blog");
 
 const featured = projects
   .filter((p) => p.data.featured)
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const recentPosts = allPosts
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
 <BaseLayout title="Dave — AI Data Pipelines You Can Trust" description="I build the reliability layer your AI data pipeline is missing — accuracy reports, audit logs, confidence scoring, and PII redaction for document workflows that need to hold up under scrutiny.">
@@ -29,6 +34,16 @@ const featured = projects
 
     <p style="margin-top: 1rem; text-align: center">
       <Button href="/projects">View all projects →</Button>
+    </p>
+  </section>
+
+  <section class="projects-section">
+    <h2 style="margin-bottom: 0.5rem;"><RandomColor>From the Blog</RandomColor></h2>
+
+    <BlogSlider posts={recentPosts} client:load />
+
+    <p style="margin-top: 1rem; text-align: center">
+      <Button href="/blog">View all posts →</Button>
     </p>
   </section>
 
