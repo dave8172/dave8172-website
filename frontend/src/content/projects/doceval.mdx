@@ -1,0 +1,116 @@
+---
+title: "doceval — Document Extraction Eval Harness"
+description: "Open-source eval harness for LLM document extraction pipelines. Point it at your extractor and a labeled dataset to get field-level accuracy, a failure taxonomy, and per-document cost tracking."
+date: 2026-06-17
+tags: [Python, LLM, Evaluation, Document Processing, Open Source]
+featured: true
+---
+
+import RandomColor from '../../components/RandomColor.astro';
+import Button from '../../components/Button.astro';
+
+## Overview
+
+You've built an LLM-based document extractor. It seems to work. But how accurate is it, actually? Which fields fail most — and why? Did accuracy change when you updated the prompt?
+
+Without answers, "seems to work" is all you have. That's not good enough for production.
+
+**doceval** is an open-source eval harness that gives you those answers. Point it at your extraction function and a labeled dataset, and it produces:
+
+- <RandomColor>Field-level accuracy</RandomColor> — precision per field, not just overall
+- <RandomColor>Failure taxonomy</RandomColor> — every mismatch classified as `missed_field`, `hallucination`, `wrong_format`, or `wrong_value`
+- <RandomColor>Cost tracking</RandomColor> — optional per-document cost reporting when your extractor returns it
+- A shareable Markdown report
+
+Works with any extractor (Claude, GPT, regex, rules-based) and any document schema.
+
+<Button href="https://github.com/dave8172/doceval" target="_blank">View on GitHub</Button>
+
+---
+
+## How It Works
+
+Write an extractor — a Python function that takes `(doc_bytes, filepath)` and returns a dict:
+
+```python
+def extract(doc_bytes: bytes, filepath: str) -> dict:
+    # call Claude, GPT, or any extraction logic
+    return {"vendor": "Acme", "total": "1234.56", "date": "2026-01-15"}
+```
+
+Add one JSON label file per document:
+
+```json
+{
+  "vendor": "Acme Corp",
+  "total": "1234.56",
+  "date": "2026-01-15"
+}
+```
+
+Run the eval:
+
+```bash
+pip install doceval
+
+doceval run \
+  --docs    ./dataset/docs \
+  --labels  ./dataset/labels \
+  --extractor my_module:extract
+```
+
+---
+
+## Failure Mode Taxonomy
+
+Every mismatch is classified into one of four modes:
+
+| Mode | Meaning |
+|------|---------|
+| `missed_field` | Label has a value; extractor returned empty |
+| `hallucination` | Extractor returned a value; label is empty |
+| `wrong_format` | Both non-empty; numeric or date values differ |
+| `wrong_value` | Both non-empty; string values differ |
+
+doceval handles numeric normalisation (`$1,234.56` = `1234.56` = `1.234,56`) and date normalisation (`Nov 15 2012` = `2012-11-15`) before comparison, so format differences don't inflate your error count.
+
+---
+
+## Optional Cost Tracking
+
+Return a `(dict, cost_usd)` tuple from your extractor and doceval tracks cost automatically:
+
+```python
+def extract(doc_bytes: bytes, filepath: str) -> tuple[dict, float]:
+    response = client.messages.create(...)
+    cost = response.usage.input_tokens / 1e6 * 0.80
+    return result_dict, cost
+```
+
+---
+
+## Try the Example
+
+The repo includes a working 20-document invoice dataset with labels and a Claude Haiku extractor you can run immediately:
+
+```bash
+git clone https://github.com/dave8172/doceval
+cd doceval
+pip install -e ".[examples]"
+export ANTHROPIC_API_KEY=sk-ant-...
+
+doceval run \
+  --docs    examples/invoices/docs \
+  --labels  examples/invoices/labels \
+  --extractor examples.invoices.extractor:extract
+```
+
+---
+
+## Tech Stack
+
+- **Language:** Python 3.10+
+- **CLI:** Click
+- **Packaging:** Hatchling / pyproject.toml
+- **Example extractor:** Anthropic Claude Haiku
+- **Supported formats:** PDF, PNG, JPG, JPEG, TIFF, WEBP
