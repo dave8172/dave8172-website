@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#0b0b0c"/>
+
+  <!-- Left: comparison table terminal -->
+  <rect x="60" y="70" width="520" height="300" rx="10" fill="#111115" stroke="#1f1f23" stroke-width="1.5"/>
+  <rect x="60" y="70" width="520" height="38" rx="10" fill="#1a1a1f"/>
+  <rect x="60" y="96" width="520" height="12" fill="#1a1a1f"/>
+  <circle cx="91" cy="89" r="7" fill="#ff5f57"/>
+  <circle cx="115" cy="89" r="7" fill="#febc2e"/>
+  <circle cx="139" cy="89" r="7" fill="#28c840"/>
+
+  <text x="88" y="138" font-family="monospace" font-size="13" fill="#a1a1aa">Configuration              Accuracy   Cost/run</text>
+  <text x="88" y="158" font-family="monospace" font-size="12" fill="#4a4a55">─────────────────────────────────────────────</text>
+  <text x="88" y="186" font-family="monospace" font-size="13" fill="#4ade80">Haiku+Sonnet · 1500px      96.3%      $0.08</text>
+  <text x="88" y="212" font-family="monospace" font-size="13" fill="#60a5fa">Opus         · 7500px      98.3%      $1.00</text>
+
+  <text x="88" y="248" font-family="monospace" font-size="12" fill="#4a4a55">─────────────────────────────────────────────</text>
+  <text x="88" y="274" font-family="monospace" font-size="13" fill="#a1a1aa">Digital invoices only:</text>
+  <text x="88" y="298" font-family="monospace" font-size="13" fill="#4ade80">Haiku+Sonnet               97.9%</text>
+  <text x="88" y="322" font-family="monospace" font-size="13" fill="#60a5fa">Opus                       99.2%</text>
+  <text x="88" y="348" font-family="monospace" font-size="12" fill="#4a4a55">Gap on digital: 1.3 pts   Gap on scanned: 13 pts</text>
+
+  <!-- Right top: cost ratio -->
+  <rect x="640" y="70" width="500" height="140" rx="10" fill="#111115" stroke="#1f1f23" stroke-width="1.5"/>
+  <text x="668" y="112" font-family="system-ui,sans-serif" font-size="13" font-weight="500" fill="#a1a1aa">Cost multiplier · Opus vs Haiku+Sonnet</text>
+  <text x="668" y="182" font-family="system-ui,sans-serif" font-size="72" font-weight="700" fill="#e6e6e6">12.5×</text>
+
+  <!-- Right bottom: field breakdown -->
+  <rect x="640" y="230" width="500" height="140" rx="10" fill="#111115" stroke="#1f1f23" stroke-width="1.5"/>
+  <text x="668" y="270" font-family="system-ui,sans-serif" font-size="13" font-weight="500" fill="#a1a1aa">Biggest field accuracy gap</text>
+
+  <text x="668" y="302" font-family="monospace" font-size="14" fill="#f87171">line_items   80.6%  →  92.2%   Δ 11.6 pts</text>
+  <text x="668" y="326" font-family="monospace" font-size="14" fill="#4ade80">subtotal     97.1%  →  100%    Δ 2.9 pts</text>
+  <text x="668" y="350" font-family="monospace" font-size="14" fill="#a1a1aa">doc_number   95.2%  →  95.2%   Δ 0 pts</text>
+
+  <!-- Bottom bar -->
+  <text x="60" y="430" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#e6e6e6">98.3% vs 96.3%: the cost-accuracy tradeoff</text>
+  <text x="60" y="462" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#e6e6e6">on invoice extraction.</text>
+  <text x="60" y="500" font-family="system-ui,sans-serif" font-size="15" fill="#a1a1aa">dave8172.com</text>
+</svg>

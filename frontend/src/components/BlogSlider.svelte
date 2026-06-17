@@ -30,11 +30,9 @@
     {#each posts as post}
       <swiper-slide>
         <a href={`/blog/${post.slug}`} class="custom-card-reset">
-          {#if post.data.image}
           <div class="image-box">
             <img src={post.data.image} alt="" />
           </div>
-          {/if}
           <div class="text-box">
             <div class="title-area">
               <h3>{post.data.title}</h3>

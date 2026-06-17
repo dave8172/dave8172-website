@@ -30,11 +30,9 @@
     {#each projects as project}
       <swiper-slide>
         <a href={`/projects/${project.slug}`} class="custom-card-reset">
-          {#if project.data.image}
           <div class="image-box">
             <img src={project.data.image} alt="" />
           </div>
-          {/if}
           <div class="text-box">
             <div class="title-area">
                <h3>{project.data.title}</h3>
