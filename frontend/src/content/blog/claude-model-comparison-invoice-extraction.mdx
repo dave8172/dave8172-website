@@ -1,0 +1,148 @@
+---
+title: "98.3% vs 96.3%: the cost-accuracy tradeoff on invoice extraction"
+description: "A real benchmark comparing Claude Opus vs Haiku+Sonnet on 105 labeled invoices and receipts. The accuracy gap is 2%. The cost gap is 12×. Here's where it actually matters."
+date: 2026-06-17
+tags: ["AI", "Benchmarks", "Document Extraction", "Claude", "Cost Analysis"]
+---
+import RandomColor from '../../components/RandomColor.astro';
+
+When you're building an LLM extraction pipeline, two questions come up immediately: which model, and at what cost? The marketing answer is "it depends." This post gives you actual numbers.
+
+I ran two configurations against the same 105 labeled documents — 100 digital invoices and 5 scanned thermal receipts — and measured field-level accuracy, failure modes, and cost. Here's what I found.
+
+---
+
+## The configurations
+
+| Config | Model(s) | Image resolution | Cost per run |
+|--------|----------|-----------------|--------------|
+| **Cheap** | Haiku 4.5 (text) + Sonnet 4.6 (vision) | 1500px max | ~$0.08 |
+| **Expensive** | Opus 4.8 | 7500px max | ~$1.00 |
+
+The "cheap" config uses Haiku for documents with embedded text (PDFs with selectable text) and Sonnet for scanned images. The "expensive" config uses Opus for everything at high resolution.
+
+Cost ratio: <RandomColor>12.5×</RandomColor>.
+
+---
+
+## The headline numbers
+
+| Config | Overall accuracy | Perfect documents | Digital | Scanned |
+|--------|-----------------|-------------------|---------|---------|
+| Haiku+Sonnet · 1500px | **96.3%** (918/953 fields) | 77.1% (81/105) | **97.9%** | **69.8%** |
+| Opus · 7500px | **98.3%** (937/953 fields) | 88.6% (93/105) | **99.2%** | **83.0%** |
+
+Overall gap: <RandomColor>2 percentage points</RandomColor>. Cost: 12.5× more for Opus.
+
+---
+
+## Where the gap actually lives
+
+The 2% overall gap looks small. The breakdown shows where it concentrates.
+
+**On digital invoices (embedded text):** 97.9% vs 99.2%. A 1.3 point gap. For a pipeline processing 1,000 invoices, this is the difference between ~21 errors and ~8 errors on clean digital PDFs.
+
+**On scanned documents:** 69.8% vs 83.0%. A <RandomColor>13 point gap</RandomColor>. Scanned receipts are where Opus earns its price. OCR quality, image resolution, and degraded thermal printing all compound — Opus at 7500px handles these significantly better.
+
+The practical implication: <RandomColor>if your document mix is primarily digital PDFs, Haiku+Sonnet is nearly indistinguishable from Opus.</RandomColor> If you're processing scanned documents at volume, the accuracy gap is real and may be worth the cost.
+
+---
+
+## Field-level breakdown
+
+Not all fields are equal. Here's how each configuration performed field by field:
+
+| Field | Haiku+Sonnet | Opus | Gap |
+|-------|-------------|------|-----|
+| `shipping` | 100.0% | 100.0% | 0 |
+| `date` | 99.0% | 100.0% | 1.0% |
+| `total` | 99.0% | 100.0% | 1.0% |
+| `currency` | 99.0% | 100.0% | 1.0% |
+| `subtotal` | 97.1% | 100.0% | 2.9% |
+| `discount` | 99.0% | 99.0% | 0 |
+| `vendor` | 98.1% | 99.0% | 0.9% |
+| `document_number` | 95.2% | 95.2% | 0 |
+| `line_items` | 80.6% | 92.2% | **11.6%** |
+| `tax` | 80.0% | 80.0% | 0 |
+
+The biggest gap is on `line_items` — 11.6 points. This field requires the model to read and count structured rows in a table, which is harder on scanned documents at lower resolution. For digital invoices, the gap closes significantly.
+
+`document_number` is identical at 95.2% across both configs. Scanned receipts have multiple reference numbers on them (order number, transaction ID, loyalty card number) and both models struggle equally to identify the canonical one.
+
+---
+
+## The accuracy floor: starting at 79.3%
+
+Before any tuning, the first run came in at <RandomColor>79.3%</RandomColor>. That's with a reasonable prompt and no schema guidance.
+
+Systematically categorizing every mismatch revealed four root causes:
+
+| Issue | Example | Fix |
+|-------|---------|-----|
+| Currency format | Model returned `$` instead of `USD` | Prompt: use ISO 4217 codes |
+| Verbosity | `Visa ending in 0627` vs `Visa` | Prompt: card network only |
+| European decimal | `"132,30"` compared as not equal to `"132.30"` | Eval: locale-aware numeric parser |
+| Line item parsing | Descriptions mangled at comma splits | Prompt: strip after dash separator only |
+
+After prompt and comparison fixes: 96–98% depending on config.
+
+The lesson: <RandomColor>the first accuracy number tells you where the problems are, not what the ceiling is.</RandomColor>
+
+---
+
+## Image resolution matters more than you'd expect
+
+A finding that surprised me: scaling from 7500px to 1500px per page reduces API cost roughly 25× with minimal accuracy impact on digital documents.
+
+Invoice text is legible at 1500px. The model doesn't benefit from the extra resolution when the document is a clean digital PDF. For scanned documents at low resolution, higher resolution helps — but only up to the point where text becomes readable.
+
+The practical implication: for digital-heavy pipelines, serve images at 1500px. You get most of the accuracy at a fraction of the cost. Reserve 7500px for high-stakes scanned document workflows.
+
+---
+
+## Confidence as a routing signal
+
+The Haiku+Sonnet configuration includes self-reported confidence on each extraction. The correlation with actual accuracy is striking:
+
+| Confidence | Field accuracy | Documents |
+|------------|---------------|-----------|
+| High | **97.7%** | 101 / 105 |
+| Medium | **71.9%** | 3 / 105 |
+| Low | **50.0%** | 1 / 105 |
+
+The single low-confidence document — a dense 80-item Dollarstore thermal receipt — also had the worst accuracy. The model flagged it correctly.
+
+This is the practical insight: <RandomColor>route by confidence, not by document type.</RandomColor> Let high-confidence extractions go straight to processing. Route the 4% that aren't to human review. You're not reviewing 105 documents — you're reviewing 4.
+
+With this routing approach, the effective accuracy on auto-processed documents is 97.7% — close to Opus territory, at Haiku+Sonnet pricing, with a defined human-in-the-loop for the exceptions.
+
+---
+
+## When to use which config
+
+**Use Haiku+Sonnet at 1500px if:**
+- Your documents are primarily digital PDFs
+- You're processing at volume (cost matters)
+- You can implement a confidence-based review queue
+
+**Use Opus at 7500px if:**
+- You're processing scanned documents at meaningful volume
+- Every field must be right (regulated workflows, no review queue)
+- You have high-stakes line item extraction from complex layouts
+
+**The math:** Haiku+Sonnet at $0.08/105 docs ≈ $0.00076/doc. Opus at $1.00/105 docs ≈ $0.0095/doc. At 10,000 documents/month: $7.60/month vs $95/month.
+
+---
+
+## Methodology
+
+- **Dataset:** 105 labeled documents — 100 digital invoices (single vendor template, SuperStore) + 5 scanned thermal receipts (Swedish, mixed vendors)
+- **Fields evaluated:** vendor, document_number, date, currency, total, subtotal, shipping, discount, tax, payment_method, line_items
+- **Comparison:** numeric normalization across currency symbols and locale formats; date normalization across ISO and abbreviated formats
+- **Eval tool:** [doceval](https://github.com/dave8172/doceval) — open-source, schema-agnostic field-level accuracy harness
+
+**Known limitations:** 100/105 digital invoices share a single template. Real-world invoice variance across vendors and formats will affect accuracy — these numbers represent a ceiling on a homogeneous dataset, not a floor on a diverse one.
+
+---
+
+If you're building or auditing a document extraction pipeline and want accuracy numbers you can hand to a client, [reach out](mailto:mdhawal94@gmail.com).
