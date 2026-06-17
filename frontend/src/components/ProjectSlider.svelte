@@ -30,14 +30,23 @@
     {#each projects as project}
       <swiper-slide>
         <a href={`/projects/${project.slug}`} class="custom-card-reset">
+          {#if project.data.image}
           <div class="image-box">
             <img src={project.data.image} alt="" />
           </div>
+          {/if}
           <div class="text-box">
             <div class="title-area">
                <h3>{project.data.title}</h3>
             </div>
             <p>{project.data.description}</p>
+            {#if project.data.tags && project.data.tags.length > 0}
+              <ul class="tags">
+                {#each project.data.tags.slice(0, 3) as tag}
+                  <li>{tag}</li>
+                {/each}
+              </ul>
+            {/if}
           </div>
         </a>
       </swiper-slide>
@@ -165,13 +174,31 @@
   }
 
   p {
-    margin: 0 !important;
+    margin: 0 0 0.75rem !important;
     font-size: 0.9rem;
     color: var(--muted);
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+    margin: 0 !important;
+  }
+
+  .tags li {
+    font-size: 0.72rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    background: #1a1a1d;
+    color: var(--muted);
+    font-weight: 500;
   }
 
   @media (max-width: 768px) {
