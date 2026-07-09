@@ -1,0 +1,92 @@
+---
+title: "Medplus Quote Tool — Cost-Safe Travel Quoting in Google Sheets"
+description: "A Google Sheets sidebar app for pest-control sales agents that generates instant price-range quotes from live travel distance/time, with a layered cost-safety system that makes a runaway API bill structurally impossible."
+date: 2026-07-10
+tags: [Google Sheets, Google Apps Script, Google Routes API, Automation, Cost Safety]
+image: "/projects/gsheets-quoting-system/gsheets-quoting-system-preview.svg"
+featured: true
+---
+
+import RandomColor from '../../components/RandomColor.astro';
+
+## Overview
+
+Sales agents for a pest-control company needed to quote jobs on the spot — but every quote depends on the drive out to the customer's location, and drive time isn't something you can hardcode into a price list.
+
+This tool lives inside the sales team's Google Sheet. An agent opens a sidebar, picks a **product** and an **intervention location**, and clicks **Generate**. The full quote — a price range, with and without VAT — is written into a per-agent **Estimation** tab as a labelled table they can copy straight into an email, while the sidebar echoes back the one-way distance and time it used.
+
+Under the hood, travel cost (distance + time, doubled for the round trip) comes from a Google routing API, with product-specific fixed prices and VAT layered on top.
+
+---
+
+## <RandomColor>Business value</RandomColor>
+
+### 1. Quotes in seconds, not spreadsheet gymnastics
+Agents pick two dropdowns and click a button. No manual mileage lookups, no separate pricing sheet to cross-reference, no arithmetic to get wrong in front of a customer.
+
+### 2. Runaway API costs are structurally prevented
+A previous version of this tool ran the distance API in an uncontrolled loop and caused a billing incident. This rebuild treats that as the core design constraint, not an afterthought — see below.
+
+### 3. Built for a shared sheet, multiple agents at once
+The sheet is shared with the whole sales team as editors. Each agent's quotes, rate-limit counters, and cache writes are isolated and lock-protected so concurrent use never produces a wrong number or a duplicate paid API call.
+
+### 4. Zero per-user setup
+Agent identity is read server-side from their Google account — there's no login screen, API key, or config step for the sales team to manage.
+
+---
+
+## <RandomColor>Cost-Safety Model</RandomColor>
+
+The billing incident that prompted this rebuild came from one thing: nothing stopped the distance API from being called in a loop. This build layers five independent defenses, so no single bug — code, human, or otherwise — can reproduce it:
+
+| Layer | Where | Effect |
+|-------|-------|--------|
+| **Google Cloud quota cap** | Cloud Console | Hard ceiling — the real bill protection, holds regardless of code |
+| **API key restriction** | Cloud Console | Key only works for the routing API; a leaked key is useless elsewhere |
+| **Persistent RouteCache tab** | Sheet | Each route is paid for **once, ever** — reused forever, survives restarts |
+| **Rate limit (5 / 60s)** | Apps Script | Blocks the 6th new-route lookup in a rolling minute |
+| **Daily cap (100 / day) + LockService** | Apps Script | Soft code-side ceiling; lock stops two agents slipping past it at once |
+
+The result: every quote makes **at most one** API call, and only for a route nobody has quoted before. If two agents request the same brand-new route at the same instant, the lock ensures only the first one pays — the second reads the cached result seconds later.
+
+---
+
+## <RandomColor>How a Quote Is Calculated</RandomColor>
+
+Inputs are one-way km/min from the cache or the API; the round-trip doubling happens in exactly one place so it's never applied twice by accident:
+
+```
+pricePerMinute = pricePerHour / 60
+travelKmCost   = 2 × roundToNearest(oneWayKm      × pricePerKm,     10)
+travelTimeCost = 2 × roundToNearest(oneWayMinutes × pricePerMinute, 10)
+
+minExclVat = travelKmCost + travelTimeCost + fixedPrice + durationPriceMin
+maxExclVat = travelKmCost + travelTimeCost + fixedPrice + durationPriceMax
+
+minInclVat = roundToNearest(minExclVat × (1 + vatRate), 5)
+maxInclVat = roundToNearest(maxExclVat × (1 + vatRate), 5)
+```
+
+Pricing, VAT rate, and every limit/TTL are named constants in one config file — tunable without touching the calculation logic, and covered by an in-editor test suite that validates known-good examples before anything ships.
+
+---
+
+## <RandomColor>Tech Stack</RandomColor>
+
+* **Runtime:** Google Apps Script (V8), bound to the Sheet
+* **Frontend:** HTML/CSS/JS sidebar, served via `HtmlService`
+* **Routing:** Google Distance Matrix API or Routes API — switchable behind one config flag, sharing the same cache/limit/lock logic either way
+* **Persistence:** Sheet-native tabs (`Products`, `Config`, `Locations`, `RouteCache`) — no external database
+* **Concurrency control:** `LockService` + `CacheService` for shared rate/day counters
+* **Deployment:** `clasp push` from source control straight into the bound script
+
+---
+
+## What this project demonstrates
+
+- designing a cost-control system around a real billing incident, not a hypothetical one
+- making concurrent, multi-user Google Sheets usage safe by construction (locking, per-agent output isolation)
+- keeping a routing-API integration swappable behind a single config flag without duplicating logic
+- turning a spreadsheet into a lightweight quoting application without requiring a full external app or database
+
+This is the kind of build I reach for when a team needs a real operational tool — safe defaults, tested pricing logic, controlled costs — but wants to keep working inside the spreadsheet they already know.

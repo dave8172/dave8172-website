@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#0b0b0c"/>
+
+  <!-- Top label -->
+  <text x="60" y="80" font-family="system-ui,sans-serif" font-size="32" font-weight="700" fill="#e6e6e6">Medplus Quote Tool</text>
+  <text x="60" y="110" font-family="system-ui,sans-serif" font-size="15" fill="#4a4a55">cost-safe travel quoting inside Google Sheets</text>
+
+  <!-- Pipeline: 3 boxes + arrows -->
+  <!-- Box 1: Sidebar -->
+  <rect x="60" y="150" width="240" height="200" rx="12" fill="#111115" stroke="#2a2a35" stroke-width="1.5"/>
+  <text x="180" y="200" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#a1a1aa" text-anchor="middle" letter-spacing="0.06em">SALES AGENT</text>
+  <text x="180" y="240" font-family="system-ui,sans-serif" font-size="22" font-weight="700" fill="#e6e6e6" text-anchor="middle">Sidebar UI</text>
+  <text x="180" y="268" font-family="system-ui,sans-serif" font-size="12" fill="#4a4a55" text-anchor="middle">pick product +</text>
+  <text x="180" y="286" font-family="system-ui,sans-serif" font-size="12" fill="#4a4a55" text-anchor="middle">location, click Generate</text>
+  <text x="180" y="316" font-family="monospace" font-size="11" fill="#4a6080" text-anchor="middle">Apps Script sidebar</text>
+
+  <!-- Arrow 1 -->
+  <line x1="300" y1="250" x2="390" y2="250" stroke="#2a2a35" stroke-width="2"/>
+  <polygon points="390,244 405,250 390,256" fill="#2a2a35"/>
+
+  <!-- Box 2: Cost-safety layers (center, larger) -->
+  <rect x="405" y="130" width="280" height="240" rx="12" fill="#0f1a1a" stroke="#134e4a" stroke-width="1.5"/>
+  <rect x="405" y="130" width="280" height="5" rx="2" fill="#0d9488"/>
+  <text x="545" y="176" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#2dd4bf" text-anchor="middle" letter-spacing="0.06em">COST-SAFETY LAYERS</text>
+  <text x="545" y="208" font-family="monospace" font-size="12" fill="#0d9488" text-anchor="middle">RouteCache (pay once, ever)</text>
+  <text x="545" y="230" font-family="monospace" font-size="12" fill="#0d9488" text-anchor="middle">5 / 60s rate limit</text>
+  <text x="545" y="252" font-family="monospace" font-size="12" fill="#0d9488" text-anchor="middle">100 / day soft cap</text>
+  <text x="545" y="274" font-family="monospace" font-size="12" fill="#0d9488" text-anchor="middle">LockService concurrency guard</text>
+  <text x="545" y="296" font-family="monospace" font-size="12" fill="#0d9488" text-anchor="middle">Cloud quota hard ceiling</text>
+  <text x="545" y="332" font-family="system-ui,sans-serif" font-size="11" fill="#134e4a" text-anchor="middle">at most 1 paid API call</text>
+  <text x="545" y="350" font-family="system-ui,sans-serif" font-size="11" fill="#134e4a" text-anchor="middle">per never-seen-before route</text>
+
+  <!-- Arrow 2 -->
+  <line x1="685" y1="250" x2="770" y2="250" stroke="#2a2a35" stroke-width="2"/>
+  <polygon points="770,244 785,250 770,256" fill="#2a2a35"/>
+
+  <!-- Box 3: Quote output -->
+  <rect x="785" y="150" width="355" height="200" rx="12" fill="#111115" stroke="#2a2a35" stroke-width="1.5"/>
+  <text x="962" y="200" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#a1a1aa" text-anchor="middle" letter-spacing="0.06em">OUTPUT</text>
+  <text x="962" y="240" font-family="system-ui,sans-serif" font-size="22" font-weight="700" fill="#e6e6e6" text-anchor="middle">Quote Written to Sheet</text>
+  <text x="962" y="268" font-family="monospace" font-size="12" fill="#4ade80" text-anchor="middle">price range, excl / incl VAT</text>
+  <text x="962" y="286" font-family="monospace" font-size="12" fill="#f59e0b" text-anchor="middle">one-way distance + time</text>
+  <text x="962" y="304" font-family="monospace" font-size="12" fill="#60a5fa" text-anchor="middle">one tab per sales agent</text>
+  <text x="962" y="328" font-family="monospace" font-size="11" fill="#4a4a55" text-anchor="middle">→ Estimation - {agent}</text>
+
+  <!-- Bottom stats row -->
+  <line x1="60" y1="410" x2="1140" y2="410" stroke="#1a1a1f" stroke-width="1"/>
+
+  <text x="160" y="455" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4a4a55" text-anchor="middle">WHY IT EXISTS</text>
+  <text x="160" y="484" font-family="monospace" font-size="12" fill="#f87171" text-anchor="middle">prior build: uncontrolled</text>
+  <text x="160" y="502" font-family="monospace" font-size="12" fill="#f87171" text-anchor="middle">API loop → billing incident</text>
+  <text x="160" y="530" font-family="monospace" font-size="12" fill="#a1a1aa" text-anchor="middle">this build: layered defense</text>
+
+  <line x1="290" y1="418" x2="290" y2="548" stroke="#1a1a1f" stroke-width="1"/>
+
+  <text x="530" y="455" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4a4a55" text-anchor="middle">PRICING FORMULA</text>
+  <text x="530" y="490" font-family="monospace" font-size="13" fill="#a1a1aa" text-anchor="middle">travelCost = 2 × (km × pricePerKm + min × pricePerMin)</text>
+  <text x="530" y="520" font-family="monospace" font-size="13" fill="#a1a1aa" text-anchor="middle">quote = travelCost + fixedPrice + durationPrice, ± VAT</text>
+
+  <line x1="770" y1="418" x2="770" y2="548" stroke="#1a1a1f" stroke-width="1"/>
+
+  <text x="955" y="455" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4a4a55" text-anchor="middle">SWAPPABLE API MODE</text>
+  <text x="955" y="490" font-family="monospace" font-size="13" fill="#2dd4bf" text-anchor="middle">Distance Matrix ↔ Routes API</text>
+  <text x="955" y="520" font-family="system-ui,sans-serif" font-size="12" fill="#4a4a55" text-anchor="middle">shared cache + limits either way</text>
+</svg>
