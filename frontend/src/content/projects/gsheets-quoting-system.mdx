@@ -3,7 +3,7 @@ title: "Medplus Quote Tool — Cost-Safe Travel Quoting in Google Sheets"
 description: "A Google Sheets sidebar app for pest-control sales agents that generates instant price-range quotes from live travel distance/time, with a layered cost-safety system that makes a runaway API bill structurally impossible."
 date: 2026-07-10
 tags: [Google Sheets, Google Apps Script, Google Routes API, Automation, Cost Safety]
-image: "/projects/gsheets-quoting-system/gsheets-quoting-system-preview.svg"
+image: "/projects/gsheets-quoting-system/gsheets-quoting-system-preview.png"
 featured: true
 ---
 
@@ -16,6 +16,23 @@ Sales agents for a pest-control company needed to quote jobs on the spot — but
 This tool lives inside the sales team's Google Sheet. An agent opens a sidebar, picks a **product** and an **intervention location**, and clicks **Generate**. The full quote — a price range, with and without VAT — is written into a per-agent **Estimation** tab as a labelled table they can copy straight into an email, while the sidebar echoes back the one-way distance and time it used.
 
 Under the hood, travel cost (distance + time, doubled for the round trip) comes from a Google routing API, with product-specific fixed prices and VAT layered on top.
+
+---
+
+## <RandomColor>Demo (Video)</RandomColor>
+
+<video
+  controls
+  preload="metadata"
+  poster="/projects/gsheets-quoting-system/gsheets-quoting-system-preview.png"
+  style="width:100%; height: auto; aspect-ratio: 16 / 9; border-radius:8px;"
+>
+  <source
+    src="https://pub-21da2bddd9cf4685b4374f3e9115db36.r2.dev/gsheets-quoting.mp4"
+    type="video/mp4"
+  />
+  Your browser does not support the video tag.
+</video>
 
 ---
 
