@@ -2,7 +2,7 @@
 title: "doceval — Document Extraction Eval Harness"
 description: "Open-source eval harness for LLM document extraction pipelines. Point it at your extractor and a labeled dataset to get field-level accuracy, a failure taxonomy, and per-document cost tracking."
 date: 2026-06-17
-tags: [Python, LLM, Evaluation, Document Processing, Open Source]
+tags: [Python, LLM, Evaluation, Document Processing, Open Source, MCP, AI Agents]
 image: "/projects/doceval/doceval-preview.svg"
 featured: true
 ---
@@ -108,10 +108,36 @@ doceval run \
 
 ---
 
+## MCP Server — Use It From an AI Agent
+
+doceval also ships as an [MCP](https://modelcontextprotocol.io) server, so an AI coding agent (Claude Code, Claude Desktop, Cursor) can score extraction accuracy directly, mid-conversation, without shelling out to the CLI.
+
+```bash
+pip install "doceval[mcp]"
+```
+
+Two tools:
+
+- <RandomColor>`score_extraction`</RandomColor> — score one extraction result against expected values inline, no filesystem needed. What an agent reaches for mid-development: "here's what I extracted, here's what it should be, how'd I do?"
+- <RandomColor>`run_eval`</RandomColor> — run a full eval over a docs/labels dataset on disk and get back the structured result plus a rendered Markdown report, same as the CLI.
+
+Point any MCP client at the `doceval-mcp` command over stdio:
+
+```json
+{
+  "mcpServers": {
+    "doceval": { "command": "doceval-mcp" }
+  }
+}
+```
+
+---
+
 ## Tech Stack
 
 - **Language:** Python 3.10+
 - **CLI:** Click
+- **Agent integration:** MCP server (`doceval-mcp`)
 - **Packaging:** Hatchling / pyproject.toml
 - **Example extractor:** Anthropic Claude Haiku
 - **Supported formats:** PDF, PNG, JPG, JPEG, TIFF, WEBP
