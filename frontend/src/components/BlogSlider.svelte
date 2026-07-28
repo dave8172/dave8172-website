@@ -30,9 +30,6 @@
     {#each posts as post}
       <swiper-slide>
         <a href={`/blog/${post.slug}`} class="custom-card-reset">
-          <div class="image-box">
-            <img src={post.data.image} alt="" />
-          </div>
           <div class="text-box">
             <div class="title-area">
               <h3>{post.data.title}</h3>
@@ -140,18 +137,6 @@
     border-radius: 12px;
     text-decoration: none !important;
     overflow: hidden;
-  }
-
-  .image-box {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-  }
-
-  .image-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
   }
 
   .text-box { padding: 1.5rem; }

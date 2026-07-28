@@ -19,8 +19,6 @@ const posts = (await getCollection("blog"))
     <div class="grid">
       {posts.map((post: Blog) => (
         <a class="project-card" href={`/blog/${post.slug}`}>
-          <img src={post.data.image} alt={post.data.title} />
-
           <div class="card-body">
             <h2>{post.data.title}</h2>
             <p>{post.data.description}</p>
