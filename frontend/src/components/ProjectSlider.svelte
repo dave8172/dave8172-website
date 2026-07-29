@@ -1,17 +1,22 @@
 <script>
   import { onMount } from 'svelte';
   import { register } from 'swiper/element/bundle';
+  import { syncSlidesPerView, breakpointsAttr, CARD_BREAKPOINTS } from '../lib/sliderSizing.js';
   export let projects = [];
+
+  let containerEl;
 
   onMount(() => {
     register();
+    return syncSlidesPerView(containerEl, CARD_BREAKPOINTS);
   });
 </script>
 
 <div class="slider-boundary">
   <swiper-container
+    bind:this={containerEl}
     init="true"
-    slides-per-view="1.1"
+    slides-per-view={CARD_BREAKPOINTS.base}
     space-between="20"
     centered-slides="false"
     navigation={JSON.stringify({
@@ -22,10 +27,7 @@
       clickable: true,
       el: '.custom-dots'
     })}
-    breakpoints={JSON.stringify({
-      768: { slidesPerView: 2 },
-      1024: { slidesPerView: 2.2 }
-    })}
+    breakpoints={breakpointsAttr(CARD_BREAKPOINTS)}
   >
     {#each projects as project}
       <swiper-slide>
@@ -159,6 +161,8 @@
   p {
     margin: 0 0 0.75rem !important;
     font-size: 0.9rem;
+    line-height: 1.5;
+    height: 4.05em;
     color: var(--muted);
     display: -webkit-box;
     -webkit-line-clamp: 3;
