@@ -38,7 +38,7 @@ The backend is deployed on Render free tier, so the first request can take a mom
 1. The user uploads a PDF or image from the browser.
 2. The backend checks whether the PDF has enough embedded text to extract directly.
 3. If the text is weak or missing, the PDF pages are rendered as images and processed through a vision-based OCR fallback.
-4. The extracted content is sent to the model with a strict <RandomColor>Pydantic schema</RandomColor>, so the response stays structured.
+4. The extracted content is sent to the model with a strict <RandomColor>Pydantic schema,</RandomColor> so the response stays structured.
 5. The API returns one consistent JSON shape with fields like vendor, date, totals, line items, category, and a concise summary.
 
 This makes the system useful for both clean digital invoices and rough scans without forcing the frontend to handle multiple result formats.
@@ -65,7 +65,7 @@ The backend always aims to return a single schema, including:
 * `line_items`
 * `summary`
 
-That structure is what keeps the tool suitable for financial workflows, Excel pipelines, and <RandomColor>downstream automation</RandomColor>.
+That structure is what keeps the tool suitable for financial workflows, Excel pipelines, and <RandomColor>downstream automation.</RandomColor>
 
 ---
 

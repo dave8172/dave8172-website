@@ -11,16 +11,14 @@ const featured = projects.filter((p) => p.data.featured);
 const other = projects.filter((p) => !p.data.featured);
 ---
 
-<BaseLayout title="Projects — Dave" description="AI evaluation, document-extraction accuracy, and reliability tooling — plus other automation work.">
+<BaseLayout title="Projects — Dave" description="AI evaluation, document-extraction accuracy, and reliability tooling — plus AI integration and automation work.">
   <section class="projects">
     <div class="wide-header">
       <h1><RandomColor>Projects</RandomColor></h1>
-      <p>
-        Work on AI evaluation, extraction accuracy, and reliability tooling. Automation and integration work is listed separately below.
-      </p>
     </div>
 
     <h2 class="section-label">AI Evaluation &amp; Reliability</h2>
+    <p class="section-note">Eval harnesses, accuracy benchmarks, and audit trails — the <RandomColor>evidence</RandomColor> that an AI system does what it claims.</p>
     <div class="grid">
       {featured.map((project) => (
         <a href={`/projects/${project.slug}`} class="project-card">
@@ -40,8 +38,8 @@ const other = projects.filter((p) => !p.data.featured);
 
     {other.length > 0 && (
       <>
-        <h2 class="section-label section-label--other">Other Work</h2>
-        <p class="section-note">Automation, integration, and internal-tooling projects outside the AI-evaluation focus.</p>
+        <h2 class="section-label">AI Integration &amp; Automation</h2>
+        <p class="section-note">Spreadsheet automation, API integrations, and AI-powered workflows that <RandomColor>save real hours.</RandomColor></p>
         <div class="grid">
           {other.map((project) => (
             <a href={`/projects/${project.slug}`} class="project-card">
@@ -64,16 +62,13 @@ const other = projects.filter((p) => !p.data.featured);
 
   <style>
     .section-label {
-      margin: 2.5rem 0 1rem;
+      margin: 2.5rem 0 0.5rem;
       font-size: 1.1rem;
-    }
-
-    .section-label--other {
-      color: var(--muted);
+      color: var(--text);
     }
 
     .section-note {
-      margin: -0.5rem 0 1rem;
+      margin: 0 0 1.5rem;
       color: var(--muted);
       font-size: 0.9rem;
     }

@@ -15,7 +15,7 @@ A self-hosted meeting-transcription pipeline built on faster-whisper, with a ben
 
 ![Self-Hosted Whisper benchmark preview](/projects/whisper-transcription-benchmark/whisper-benchmark-preview.png)
 
-I built a self-hosted pipeline that ingests meeting recordings (and notes/documents), transcribes audio locally with <RandomColor>**faster-whisper**</RandomColor> — a free, open-source reimplementation of OpenAI's Whisper model — and outputs clean Markdown for use as a knowledge base in <RandomColor>**NotebookLM**</RandomColor>. No per-minute API costs, no third-party transcription service, runs entirely on my own hardware.
+I built a self-hosted pipeline that ingests meeting recordings (and notes/documents), transcribes audio locally with <RandomColor>**faster-whisper**</RandomColor> — a free, open-source reimplementation of OpenAI's Whisper model — and outputs clean Markdown for use as a knowledge base in <RandomColor>**NotebookLM**.</RandomColor> No per-minute API costs, no third-party transcription service, runs entirely on my own hardware.
 
 To choose the right model for a low-resource (2GB RAM) deployment target, I benchmarked three Whisper model sizes on a real 32-minute (1913s) recording, measuring transcription time, speed relative to realtime, and accuracy on technical vocabulary.
 

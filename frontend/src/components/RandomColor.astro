@@ -14,13 +14,11 @@ const colors = highlightColors as Color[];
 const initial = colors[Math.floor(Math.random() * colors.length)];
 ---
 
-<span 
-  class="random-word dynamic-color-target" 
+<span
+  class="random-word dynamic-color-target"
   style={`--chosen-color: ${initial.hex};`}
   data-all-colors={JSON.stringify(colors)}
->
-  <slot />
-</span>
+><slot /></span>
 
 <script>
   document.querySelectorAll('.dynamic-color-target').forEach((el) => {
