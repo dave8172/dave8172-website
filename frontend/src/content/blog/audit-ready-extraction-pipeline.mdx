@@ -1,6 +1,6 @@
 ---
 title: "I rebuilt my extraction pipeline so you could hand it to an auditor"
-description: "What it actually takes to make an AI document extraction pipeline trustworthy — eval sets, confidence scoring, audit logs, and the numbers behind it."
+description: "What it takes to make an AI document extraction pipeline trustworthy — eval sets, confidence scoring, audit logs, and the numbers behind it."
 date: 2026-06-15
 tags: ["AI", "Document Extraction", "Reliability", "Benchmarks"]
 image: "/blogassets/audit-ready-extraction.svg"
@@ -58,7 +58,7 @@ The eval runner loads each label, runs the extractor, and compares every field i
 
 ## The accuracy gap — <RandomColor>and how it closed</RandomColor>
 
-The first run came in at <RandomColor>79.3%</RandomColor>. That sounds bad. It was actually informative.
+The first run came in at <RandomColor>79.3%</RandomColor>. That sounds bad. Turns out, it was informative.
 
 Systematically categorizing every mismatch revealed four root causes:
 
