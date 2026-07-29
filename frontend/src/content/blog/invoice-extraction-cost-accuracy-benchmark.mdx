@@ -1,0 +1,212 @@
+---
+title: "98.3% vs 96.3%: what it costs to make an AI extraction pipeline auditable"
+description: "A real benchmark on 105 labeled invoices and receipts — Claude Opus vs Haiku+Sonnet, a 2% accuracy gap, a 12× cost gap — plus the eval set, confidence scoring, and audit log that make these numbers something you can hand to an auditor."
+date: 2026-06-17
+tags: ["AI", "Document Extraction", "Reliability", "Benchmarks", "Claude", "Cost Analysis"]
+image: "/blogassets/claude-model-comparison.svg"
+---
+
+import RandomColor from '../../components/RandomColor.astro';
+
+Most AI extraction pipelines are built to pass a demo: run a clean invoice through, get a clean JSON back, ship it. The problems show up later — in the reconciliation diff, the failed audit, the support ticket that says "the totals are wrong."
+
+I built the layer that catches this before it happens: labeled eval sets, accuracy reports, confidence scoring, audit logs. Along the way I also benchmarked the two obvious model choices against the same data, so you don't have to guess which one your pipeline needs. Here's what 105 labeled documents taught me.
+
+---
+
+## Why extraction pipelines <RandomColor>quietly fail</RandomColor>
+
+Extraction looks easy because it looks right. The model fills in all the fields, the JSON is valid, nothing throws an error. The failure modes are invisible:
+
+- **Silent wrong answers.** The model reads "132,30" (Swedish decimal notation) and returns `13230`. No error. The invoice is just wrong.
+- **Hallucinated fields.** A blurry scanned receipt gets a subtotal that doesn't exist anywhere on the document.
+- **Inconsistent formatting.** Currency as `$` on some invoices, `USD` on others, nothing on scanned ones — your downstream code breaks on whichever one you didn't test.
+
+Without a labeled eval set and systematic accuracy measurement, you find these problems in production. That's too late.
+
+---
+
+## The eval set
+
+The foundation is 105 labeled documents: 100 digital invoices and 5 scanned thermal receipts. Each document has a ground truth JSON with the correct values for every field — vendor, document number, date, currency, line items, totals.
+
+A label looks like this:
+
+```json
+{
+  "document_id": "invoice_Shahid_Shariari_30140",
+  "filename": "invoice_Shahid Shariari_30140.pdf",
+  "processing_mode_expected": "embedded_text",
+  "difficulty": "easy",
+  "ground_truth": {
+    "vendor": "SuperStore",
+    "document_number": "30140",
+    "date": "2012-11-15",
+    "currency": "USD",
+    "total": "748.36",
+    "shipping": "73.00",
+    "line_items": [
+      { "description": "Safco 3-Shelf Cabinet, Traditional", "quantity": "2", "unit_price": "337.68", "amount": "675.36" }
+    ]
+  },
+  "eval_notes": { "line_items_evaluated": true }
+}
+```
+
+The eval runner loads each label, runs the extractor, and compares every field in the ground truth against what the model returned — handling numeric equivalence (`"$132.30"` == `"132.30"`), European decimal formats (`"132,30"` == `"132.30"`), and date normalization (`"Dec 27 2012"` == `"2012-12-27"`).
+
+---
+
+## Two configs, same eval set
+
+Two questions come up the moment you build an LLM extraction pipeline: which model, and at what cost? "It depends" isn't an answer, so I ran both configurations against the same 105 documents and measured accuracy, failure modes, and cost.
+
+| Config | Model(s) | Image resolution | Cost per run |
+|--------|----------|-----------------|--------------|
+| **Cheap** | Haiku 4.5 (text) + Sonnet 4.6 (vision) | 1500px max | ~$0.08 |
+| **Expensive** | Opus 4.8 | 7500px max | ~$1.00 |
+
+Cost ratio: <RandomColor>12.5×</RandomColor>.
+
+| Config | Overall accuracy | Perfect documents | Digital | Scanned |
+|--------|-----------------|-------------------|---------|---------|
+| Haiku+Sonnet · 1500px | **96.3%** (918/953 fields) | 77.1% (81/105) | **97.9%** | **69.8%** |
+| Opus · 7500px | **98.3%** (937/953 fields) | 88.6% (93/105) | **99.2%** | **83.0%** |
+
+A <RandomColor>2-point accuracy gap</RandomColor> for 12.5× the cost. Worth knowing where that 2% actually lives before deciding it's worth paying for.
+
+**On digital invoices:** 97.9% vs 99.2% — a 1.3-point gap. On 1,000 invoices, that's the difference between ~21 errors and ~8.
+
+**On scanned documents:** 69.8% vs 83.0% — a 13-point gap. Scanned receipts are where Opus earns its price: OCR quality, resolution, and degraded thermal printing all compound, and the extra resolution genuinely helps here.
+
+If your document mix is mostly digital PDFs, Haiku+Sonnet is nearly indistinguishable from Opus. If you're processing scanned documents at volume, the gap is real.
+
+### Field by field
+
+Not all fields are equal:
+
+| Field | Haiku+Sonnet | Opus | Gap |
+|-------|-------------|------|-----|
+| `shipping` | 100.0% | 100.0% | 0 |
+| `date` | 99.0% | 100.0% | 1.0% |
+| `total` | 99.0% | 100.0% | 1.0% |
+| `currency` | 99.0% | 100.0% | 1.0% |
+| `subtotal` | 97.1% | 100.0% | 2.9% |
+| `discount` | 99.0% | 99.0% | 0 |
+| `vendor` | 98.1% | 99.0% | 0.9% |
+| `document_number` | 95.2% | 95.2% | 0 |
+| `line_items` | 80.6% | 92.2% | **11.6%** |
+| `tax` | 80.0% | 80.0% | 0 |
+
+`line_items` carries almost the entire gap — reading and counting structured table rows is hard on lower-resolution scans, and it closes considerably on digital invoices. `document_number` is identical across both configs for a simpler reason: scanned receipts carry several reference numbers (order number, transaction ID, loyalty card), and both models struggle equally to pick the right one.
+
+### Resolution matters more than you'd expect
+
+Scaling from 7500px to 1500px per page cuts API cost roughly 25× with barely any accuracy loss on digital documents — invoice text is legible at 1500px, and the model doesn't gain much from pixels it doesn't need. Higher resolution earns its keep only on scans, up to the point where the text becomes readable.
+
+### Which one to use
+
+**Haiku+Sonnet at 1500px, if:** your documents are mostly digital PDFs, you're processing at volume, and you can route low-confidence extractions to a human.
+
+**Opus at 7500px, if:** you're processing scanned documents at meaningful volume, every field has to be right, or you're pulling line items from messy layouts.
+
+The math: Haiku+Sonnet costs ~$0.00076/doc, Opus ~$0.0095/doc. At 10,000 documents a month, that's $7.60 vs $95.
+
+---
+
+## The accuracy floor, and how it closed
+
+Before any tuning, the first run came in at <RandomColor>79.3%</RandomColor>. That sounds bad. Turns out, it was informative.
+
+Categorizing every mismatch turned up four root causes:
+
+| Issue | Example | Fix |
+|-------|---------|-----|
+| Currency format | Model returned `$` instead of `USD` | Prompt: use ISO 4217 codes |
+| Verbosity | `Visa ending in 0627` instead of `Visa` | Prompt: card network name only |
+| European decimals | `"132,30"` compared as not equal to `"132.30"` | Eval: locale-aware numeric parser |
+| Line item parsing | Descriptions mangled at comma splits | Prompt: strip after dash separator only |
+
+Fixing all four got both configs to the headline numbers above. The lesson: the first accuracy number tells you where the problems are, not where the ceiling is.
+
+---
+
+## Confidence scoring: <RandomColor>the model knows what it doesn't know</RandomColor>
+
+Every extraction includes a self-reported confidence level — high, medium, or low — plus a list of uncertain fields and a short note explaining why.
+
+It predicts actual accuracy well:
+
+| Confidence | Field accuracy | Documents |
+|------------|---------------|-----------|
+| High | **97.7%** | 101 / 105 |
+| Medium | **71.9%** | 3 / 105 |
+| Low | **50.0%** | 1 / 105 |
+
+The one low-confidence document — a dense 80-item Dollarstore thermal receipt — also had the worst accuracy. The model flagged it correctly, without being told what "correct" was.
+
+The practical use: <RandomColor>route by confidence, not by document type.</RandomColor> Send high-confidence extractions straight to processing. Route the 4% that aren't to a human. You're not reviewing 105 documents — you're reviewing 4, and the effective accuracy on the auto-processed 96% comes out to 97.7%, at Haiku+Sonnet pricing.
+
+---
+
+## The audit log
+
+Every extraction writes a structured log entry before anything downstream sees the data:
+
+- **What went in:** filename, processing mode (digital vs scanned), input size
+- **What came out:** all extracted fields
+- **How confident:** overall level, uncertain fields, the model's own explanation
+- **Operational metadata:** which model, how long the call took, UTC timestamp
+
+PII redaction runs on every string value before the log is written — card numbers, emails, phone numbers, SSNs. The log is <RandomColor>safe to store and share</RandomColor> even when the source documents aren't.
+
+A real entry looks like this:
+
+```json
+{
+  "id": "b1d01383-42fd-4eac-acc0-f333d31a9409",
+  "timestamp": "2026-06-15T13:43:51Z",
+  "filename": "invoice_Shahid Shariari_30140.pdf",
+  "mode": "embedded_text",
+  "model": "claude-haiku-4-5",
+  "duration_s": 2.13,
+  "confidence": {
+    "overall": "high",
+    "uncertain_fields": [],
+    "notes": "All key fields are clearly visible and unambiguous."
+  },
+  "input_summary": { "char_count": 386 },
+  "extraction": {
+    "vendor": "SuperStore",
+    "document_number": "30140",
+    "date": "2012-11-15",
+    "currency": "USD",
+    "total": "748.36",
+    "shipping": "73.00"
+  },
+  "pii_redacted": false
+}
+```
+
+This is what handing a pipeline to an auditor looks like in practice — not a demo showing the happy path, but a log of exactly what happened, for every document, with the model's own confidence attached.
+
+---
+
+## Known limitations <RandomColor>(the honest ones)</RandomColor>
+
+- **Scanned documents:** 69.8% vs 97.9% for digital. OCR quality and resolution drive the gap — dense thermal receipts in poor light are genuinely hard.
+- **Non-English locales:** the eval set includes Swedish receipts. Decimal separators, currency conventions, and vendor formats vary; prompt tuning per locale helps.
+- **Template concentration:** 100 of the 105 digital invoices share one template. Real invoice variance will affect accuracy — these numbers are a ceiling on a homogeneous dataset, not a floor on a diverse one.
+
+---
+
+## Methodology
+
+- **Dataset:** 105 labeled documents — 100 digital invoices (single vendor template) + 5 scanned thermal receipts (Swedish, mixed vendors)
+- **Fields evaluated:** vendor, document_number, date, currency, total, subtotal, shipping, discount, tax, payment_method, line_items
+- **Comparison:** numeric normalization across currency symbols and locale formats; date normalization across ISO and abbreviated formats
+- **Eval tool:** [doceval](https://github.com/dave8172/doceval) — open-source, schema-agnostic field-level accuracy harness
+
+---
+
+If your extraction pipeline needs the same treatment — eval set, benchmark, audit log, the works — [reach out](mailto:mdhawal94@gmail.com).
