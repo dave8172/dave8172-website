@@ -1,7 +1,21 @@
 ---
 import RandomColor from "../components/RandomColor.astro";
+import Analytics from "@vercel/analytics/astro";
 
-const { title = "Dave", description = "" } = Astro.props;
+const { title = "Dave", description = "", image } = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const ogImageURL = image ? new URL(image, Astro.site) : undefined;
+
+const personSchema = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "Dave",
+  jobTitle: "AI Consultant",
+  description: "I build, validate, and audit AI systems — proving reliability with evidence, not claims.",
+  url: Astro.site,
+  sameAs: ["https://github.com/dave8172"],
+};
 ---
 
 <!doctype html>
@@ -17,8 +31,24 @@ const { title = "Dave", description = "" } = Astro.props;
 
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonicalURL} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Dave" />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:url" content={canonicalURL} />
+    {ogImageURL && <meta property="og:image" content={ogImageURL} />}
+
+    <meta name="twitter:card" content={ogImageURL ? "summary_large_image" : "summary"} />
+    <meta name="twitter:title" content={title} />
+    {description && <meta name="twitter:description" content={description} />}
+    {ogImageURL && <meta name="twitter:image" content={ogImageURL} />}
+
+    <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
 
     <link rel="stylesheet" href="/styles/global.css" />
+    <Analytics />
   </head>
   <body>
     <header>

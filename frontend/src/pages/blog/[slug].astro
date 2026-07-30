@@ -19,7 +19,7 @@ const { Content } = await post.render();
 const { data } = post;
 ---
 
-<BaseLayout title={data.title} description={data.description}>
+<BaseLayout title={data.title} description={data.description} image={data.image}>
   <article class="prose">
     <h1>{data.title}</h1>
     <p class="muted">{data.description}</p>

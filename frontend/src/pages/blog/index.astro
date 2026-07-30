@@ -9,7 +9,7 @@ const posts = (await getCollection("blog"))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
-<BaseLayout title="Blog">
+<BaseLayout title="Blog — Dave" description="Benchmarks, teardowns, and notes on building AI systems you can trust — accuracy, cost, and reliability, backed by numbers.">
   <section class="projects">
     <div class ="wide-header">
       <h1><RandomColor>Blog</RandomColor></h1>
