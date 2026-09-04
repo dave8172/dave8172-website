@@ -1,0 +1,167 @@
+---
+title: "Your AI turns inbound emails into spreadsheet rows. How do you know it got them right?"
+description: "Eight real inbound enquiry emails run through Claude Haiku: 61 of 64 fields correct, every miss on the same field, and none of them where I expected. What a failure taxonomy tells you that an accuracy percentage hides."
+date: 2026-09-04
+tags: ["AI", "Email Automation", "Data Entry", "Reliability", "Evaluation"]
+image: "/blogassets/email-extraction-check.svg"
+---
+
+import RandomColor from '../../components/RandomColor.astro';
+
+Somebody in your office opens the sales inbox every morning and types what they find into a spreadsheet. Company, contact, what they want, how many, by when, budget. It takes a few minutes an email, it happens every day, and it is exactly the kind of job people now hand to an LLM.
+
+The handover usually goes well for about a week. The model returns valid JSON every time. Every field is filled. Nothing throws an error.
+
+Then someone notices the follow-up went to the wrong person.
+
+---
+
+## Wrong output looks exactly like <RandomColor>right output</RandomColor>
+
+An extraction model does not fail the way code fails. There is no stack trace and no empty response — you get a complete, confident, well-formed row, with no signal about which of its eight fields you can trust.
+
+So I wrote down the correct answer for eight real inbound enquiries and measured it properly. Here is what I expected to break.
+
+### The forwarded thread
+
+```
+From: Dan <dan@brightline.io>
+Subject: Fwd: quick question
+
+---------- Forwarded message ----------
+From: Marcus Ellery <m.ellery@brightline.io>
+
+Dan - can you ask them whether they do anodised finish? We'd need
+about 250 brackets, the aluminium ones we discussed. Budget is
+around 4k GBP, maybe a bit more if the finish is good.
+```
+
+The lead is Marcus. The `From:` header says Dan. Read the header first and you get the product right, the quantity right, the budget right — and address your quote to the wrong human.
+
+### The email that is not a lead
+
+```
+A tender matching your registered categories has been published.
+Reference: TN-2026-0884
+Closing: 2026-09-12
+Do not reply to this address.
+```
+
+No company, no contact, no quantity, no budget. The correct extraction is mostly `null` — but models are obliging, and asking for eight fields tends to get you eight fields, invented where the text runs out.
+
+### Dates that only exist relative to the email
+
+> "required before 25th aug" · "by the first week of September" · "before the end of October"
+
+None of those are dates until they are resolved against the email's own `Date:` header. Resolve them against today instead and you are quietly a year out every January.
+
+### The enquiry in Italian
+
+```
+Vorrei un preventivo per 600 maniglie in ottone.
+Consegna a Bologna entro fine settembre. Budget indicativo 3.500 euro.
+```
+
+600 brass handles, Bologna, end of September, €3,500. Easy to get *almost* right: `3.500` is three thousand five hundred, not three and a half.
+
+### The polite no
+
+> "We are only collecting information for a project starting next year. I cannot give quantities yet and there is no budget approved."
+
+Every field sales cares about is genuinely absent. An extractor that fills them in has not saved anyone time; it has created work.
+
+---
+
+## What actually happened
+
+I ran all eight through Claude Haiku with a plain extraction prompt. Eight emails, eight fields each, sixty-four fields total. It cost 0.6 cents.
+
+```
+Overall: 61/64 fields correct (95.3%)
+Successful: 8  Failed: 0
+
+Failure modes:
+  wrong_value : 3
+```
+
+**Every one of the five cases above came back correct.** It took Marcus over Dan on the forwarded thread. It returned nulls for the tender notice instead of inventing a company. It resolved "before 25th aug" against the email's own date. It read `3.500 euro` as 3500 and translated *maniglie in ottone* into brass handles. It left the polite no almost entirely empty, which was the right answer.
+
+All three misses were the same field — `product` — and they looked like this:
+
+| Expected | Extracted |
+|---|---|
+| `316 stainless sheet, 2mm` | `316 stainless steel sheet, 2mm` |
+| `anodised aluminium brackets` | `aluminium brackets with anodised finish` |
+| `M10 x 40 hex bolts; M10 nuts` | `M10 x 40 hex bolts, M10 nuts` |
+
+The model is not wrong in any of those. **I am** — or rather, exact string match is the wrong check for a free-text field, and a semicolon is not a fact about the world.
+
+---
+
+## That is what the taxonomy is for
+
+If all I had was <RandomColor>95.3%</RandomColor>, I would be shopping for a better model right now. I would be wrong, and I would have paid for it.
+
+The number that mattered was not the percentage. It was that all three failures carried the same tag on the same field. Four tags, four different bugs:
+
+| Failure mode | What happened | What it means |
+|---|---|---|
+| `missed_field` | The email stated it; the model left it blank | The prompt is under-specified |
+| `hallucination` | The email stated nothing; the model filled it in | The prompt does not permit nulls |
+| `wrong_format` | Right value, wrong shape — `3.500` read as 3.5 | You need normalisation, not a bigger model |
+| `wrong_value` | Genuinely a different answer | Either the model is wrong, or your check is |
+
+Three `hallucination` tags scattered across six fields is a prompt problem. Three `wrong_value` tags stacked on one free-text field is a *measurement* problem. Averaged into a single percentage, those two situations are indistinguishable — and they have nothing in common.
+
+The fix here is not a better model. It is deciding what "correct" means for `product`: normalise before comparing, or score that field with a judge instead of `==`, or stop scoring it at all and accept that a human reads it anyway.
+
+---
+
+## Doing it yourself
+
+Write down the correct answer for a few dozen real emails, once. That labelled set is the asset; everything else is plumbing.
+
+Then run your extractor against it. I maintain a small open-source harness for exactly this — [doceval](https://github.com/dave8172/doceval) — which takes any extraction function and any schema:
+
+```bash
+pip install doceval
+
+doceval run \
+  --docs    ./emails \
+  --labels  ./labels \
+  --extractor my_module:extract
+```
+
+Your extractor is any Python function that takes bytes and returns a dict:
+
+```python
+def extract(doc_bytes: bytes, filepath: str) -> dict:
+    email_text = doc_bytes.decode("utf-8", errors="replace")
+    # call whatever model you like
+    return {"company": "Brightline Systems Ltd", "contact_name": "Marcus Ellery", ...}
+```
+
+A label is the correct answer, `null` included, because the nulls are half the point:
+
+```json
+{
+  "company": null,
+  "contact_name": null,
+  "product": "galvanised steel conduit",
+  "quantity": null,
+  "target_date": "2026-09-12",
+  "budget": null
+}
+```
+
+The eight emails above ship with it as a runnable example, labels included, if you want something to point it at before labelling your own.
+
+**One honest caveat about the numbers here:** eight emails, one model, and I wrote both the labels and the prompt. That is a demonstration of the method, not a benchmark — and if I had run it on eighty emails from a real inbox, the interesting failures would almost certainly be somewhere else. Which is the argument for running it on yours.
+
+---
+
+## The part worth keeping
+
+The labelled set outlives every other decision. Models change, prompts change, providers change — and each time, the only thing that tells you whether the change helped is a set of emails where you already wrote down the right answer.
+
+An afternoon of labelling buys that permanently. Skipping it means finding out from a customer.

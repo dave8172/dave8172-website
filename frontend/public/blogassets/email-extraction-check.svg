@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#0b0b0c"/>
+
+  <text x="60" y="78" font-family="system-ui,sans-serif" font-size="32" font-weight="700" fill="#e6e6e6">Did it read the email right?</text>
+  <text x="60" y="108" font-family="system-ui,sans-serif" font-size="15" fill="#4a4a55">field-level accuracy on inbound email, not vibes</text>
+
+  <!-- Left: the email -->
+  <rect x="60" y="150" width="440" height="400" rx="12" fill="#111115" stroke="#2a2a35" stroke-width="1.5"/>
+  <text x="88" y="186" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#6a6a78">INBOUND</text>
+
+  <text x="88" y="222" font-family="ui-monospace,monospace" font-size="13" fill="#8a8a98">From: Dan &lt;dan@brightline.io&gt;</text>
+  <text x="88" y="244" font-family="ui-monospace,monospace" font-size="13" fill="#8a8a98">Subject: Fwd: quick question</text>
+  <line x1="88" y1="262" x2="472" y2="262" stroke="#2a2a35" stroke-width="1"/>
+  <text x="88" y="292" font-family="ui-monospace,monospace" font-size="12" fill="#5a5a68">---------- Forwarded message ----------</text>
+  <text x="88" y="314" font-family="ui-monospace,monospace" font-size="12" fill="#5a5a68">From: Marcus Ellery &lt;m.ellery@...&gt;</text>
+
+  <text x="88" y="352" font-family="ui-monospace,monospace" font-size="13" fill="#c8c8d4">Dan - can you ask them whether they</text>
+  <text x="88" y="374" font-family="ui-monospace,monospace" font-size="13" fill="#c8c8d4">do anodised finish? We'd need about</text>
+  <text x="88" y="396" font-family="ui-monospace,monospace" font-size="13" fill="#c8c8d4">250 brackets, the aluminium ones we</text>
+  <text x="88" y="418" font-family="ui-monospace,monospace" font-size="13" fill="#c8c8d4">discussed. Budget is around 4k GBP.</text>
+  <text x="88" y="440" font-family="ui-monospace,monospace" font-size="13" fill="#c8c8d4">No hard deadline yet.</text>
+
+  <text x="88" y="490" font-family="ui-monospace,monospace" font-size="13" fill="#8a8a98">--</text>
+  <text x="88" y="512" font-family="ui-monospace,monospace" font-size="13" fill="#8a8a98">Marcus Ellery, Brightline Systems Ltd</text>
+
+  <!-- Arrow -->
+  <path d="M 520 350 L 600 350" stroke="#3a3a48" stroke-width="2" fill="none"/>
+  <path d="M 592 344 L 602 350 L 592 356 Z" fill="#3a3a48"/>
+
+  <!-- Right: extracted fields -->
+  <rect x="620" y="150" width="520" height="400" rx="12" fill="#111115" stroke="#2a2a35" stroke-width="1.5"/>
+  <text x="648" y="186" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#6a6a78">EXTRACTED — claude-haiku</text>
+
+  <text x="648" y="228" font-family="ui-monospace,monospace" font-size="14" fill="#8a8a98">company</text>
+  <text x="868" y="228" font-family="ui-monospace,monospace" font-size="14" fill="#c8c8d4">Brightline Systems Ltd</text>
+  <circle cx="1112" cy="223" r="5" fill="#3fb950"/>
+
+  <text x="648" y="266" font-family="ui-monospace,monospace" font-size="14" fill="#8a8a98">contact_name</text>
+  <text x="868" y="266" font-family="ui-monospace,monospace" font-size="14" fill="#c8c8d4">Marcus Ellery</text>
+  <circle cx="1112" cy="261" r="5" fill="#3fb950"/>
+  <text x="868" y="288" font-family="ui-monospace,monospace" font-size="12" fill="#6a6a78">the sender of the forwarded mail, not the forwarder</text>
+
+  <text x="648" y="326" font-family="ui-monospace,monospace" font-size="14" fill="#8a8a98">quantity</text>
+  <text x="868" y="326" font-family="ui-monospace,monospace" font-size="14" fill="#c8c8d4">250</text>
+  <circle cx="1112" cy="321" r="5" fill="#3fb950"/>
+
+  <text x="648" y="364" font-family="ui-monospace,monospace" font-size="14" fill="#8a8a98">budget</text>
+  <text x="868" y="364" font-family="ui-monospace,monospace" font-size="14" fill="#c8c8d4">4000 GBP</text>
+  <circle cx="1112" cy="359" r="5" fill="#3fb950"/>
+
+  <text x="648" y="402" font-family="ui-monospace,monospace" font-size="14" fill="#8a8a98">product</text>
+  <text x="868" y="402" font-family="ui-monospace,monospace" font-size="14" fill="#f0883e">aluminium brackets with</text>
+  <text x="868" y="422" font-family="ui-monospace,monospace" font-size="14" fill="#f0883e">anodised finish</text>
+  <circle cx="1112" cy="397" r="5" fill="#f0883e"/>
+  <text x="868" y="446" font-family="ui-monospace,monospace" font-size="12" fill="#6a6a78">wrong_value vs "anodised aluminium brackets"</text>
+  <text x="868" y="464" font-family="ui-monospace,monospace" font-size="12" fill="#6a6a78">— same thing, different words</text>
+
+  <line x1="648" y1="490" x2="1112" y2="490" stroke="#2a2a35" stroke-width="1"/>
+  <text x="648" y="522" font-family="ui-monospace,monospace" font-size="15" fill="#e6e6e6">61/64 fields over 8 emails</text>
+  <text x="900" y="522" font-family="ui-monospace,monospace" font-size="15" fill="#6a6a78">all 3 misses on one field</text>
+</svg>
