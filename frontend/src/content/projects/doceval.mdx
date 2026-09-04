@@ -1,6 +1,6 @@
 ---
-title: "doceval — Document Extraction Eval Harness"
-description: "Open-source eval harness for LLM document extraction pipelines. Point it at your extractor and a labeled dataset to get field-level accuracy, a failure taxonomy, and per-document cost tracking."
+title: "doceval — Extraction Eval Harness"
+description: "Open-source eval harness for LLM extraction pipelines. Point it at your extractor and a labeled dataset to get field-level accuracy, a failure taxonomy, and per-document cost tracking. Works on documents, emails, HTML, transcripts and feeds."
 date: 2026-06-17
 tags: [Python, LLM, Evaluation, Document Processing, Open Source]
 image: "/projects/doceval/doceval-preview.svg"
@@ -12,9 +12,9 @@ import Button from '../../components/Button.astro';
 
 ## Overview
 
-**In plain terms:** if you're using AI to pull data out of invoices, contracts, or forms, doceval measures how accurate it is — a number you can show a client, an auditor, or your own team, instead of "it looks about right."
+**In plain terms:** if you're using AI to pull data out of invoices, contracts, forms — or emails, web pages and call transcripts — doceval measures how accurate it is. A number you can show a client, an auditor, or your own team, instead of "it looks about right."
 
-For the technical side: you've built an LLM-based document extractor. It seems to work. But how accurate is it? Which fields fail most — and why? Did accuracy change when you updated the prompt?
+For the technical side: you've built an LLM-based extractor. It seems to work. But how accurate is it? Which fields fail most — and why? Did accuracy change when you updated the prompt?
 
 Without answers, "seems to work" is all you have. That's not good enough for production.
 
@@ -25,7 +25,7 @@ Without answers, "seems to work" is all you have. That's not good enough for pro
 - <RandomColor>Cost tracking</RandomColor> — optional per-document cost reporting when your extractor returns it
 - A shareable Markdown report
 
-Works with any extractor (Claude, GPT, regex, rules-based) and any document schema.
+Works with any extractor (Claude, GPT, regex, rules-based) and any schema. It also works on any *input* — what it scores is whether the extracted fields are right, which never depended on the source being a document. PDFs and scans, yes; equally emails, HTML pages, transcripts or feed dumps.
 
 <Button href="https://github.com/dave8172/doceval" target="_blank">View on GitHub</Button>
 
@@ -54,13 +54,15 @@ Add one JSON label file per document:
 Run the eval:
 
 ```bash
-pip install doceval
+pip install git+https://github.com/dave8172/doceval
 
 doceval run \
   --docs    ./dataset/docs \
   --labels  ./dataset/labels \
   --extractor my_module:extract
 ```
+
+Not on PyPI yet — install straight from the repo.
 
 ---
 
@@ -108,6 +110,19 @@ doceval run \
   --extractor examples.invoices.extractor:extract
 ```
 
+### The same harness on something that isn't a document
+
+`examples/leads/` runs over eight inbound sales emails — a forwarded thread where the lead is the original sender rather than the forwarder, a terse RFQ, a web-form dump, an automated tender notice with no contact details, and one enquiry in Italian.
+
+```bash
+doceval run \
+  --docs    examples/leads/docs \
+  --labels  examples/leads/labels \
+  --extractor examples.leads.extractor:extract
+```
+
+Three of those emails carry null-heavy labels on purpose. An extractor that invents a quantity or a budget for them scores *worse*, not better — which is the point of measuring fields rather than output shape.
+
 ---
 
 ## MCP Server — Use It From an AI Agent
@@ -115,7 +130,7 @@ doceval run \
 doceval also ships as an [MCP](https://modelcontextprotocol.io) server, so an AI coding agent (Claude Code, Claude Desktop, Cursor) can score extraction accuracy directly, mid-conversation, without shelling out to the CLI.
 
 ```bash
-pip install "doceval[mcp]"
+pip install "doceval[mcp] @ git+https://github.com/dave8172/doceval"
 ```
 
 Two tools:
@@ -142,4 +157,4 @@ Point any MCP client at the `doceval-mcp` command over stdio:
 - **Agent integration:** MCP server (`doceval-mcp`)
 - **Packaging:** Hatchling / pyproject.toml
 - **Example extractor:** Anthropic Claude Haiku
-- **Supported formats:** PDF, PNG, JPG, JPEG, TIFF, WEBP
+- **Supported inputs:** documents — PDF, PNG, JPG, JPEG, TIFF, WEBP · text — TXT, MD, JSON, JSONL, NDJSON, CSV, TSV, HTML, HTM, XML, EML, MSG, VTT, SRT
