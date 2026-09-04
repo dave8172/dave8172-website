@@ -54,15 +54,13 @@ Add one JSON label file per document:
 Run the eval:
 
 ```bash
-pip install git+https://github.com/dave8172/doceval
+pip install doceval
 
 doceval run \
   --docs    ./dataset/docs \
   --labels  ./dataset/labels \
   --extractor my_module:extract
 ```
-
-Not on PyPI yet — install straight from the repo.
 
 ---
 
@@ -130,7 +128,7 @@ Three of those emails carry null-heavy labels on purpose. An extractor that inve
 doceval also ships as an [MCP](https://modelcontextprotocol.io) server, so an AI coding agent (Claude Code, Claude Desktop, Cursor) can score extraction accuracy directly, mid-conversation, without shelling out to the CLI.
 
 ```bash
-pip install "doceval[mcp] @ git+https://github.com/dave8172/doceval"
+pip install "doceval[mcp]"
 ```
 
 Two tools:
