@@ -1,2 +1,4 @@
 User-agent: *
 Disallow: /pvt/
+
+Sitemap: https://dave8172-website.vercel.app/sitemap-index.xml
