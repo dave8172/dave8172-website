@@ -1,0 +1,114 @@
+---
+title: "siscraper — A Scraper That Improves Itself"
+description: "Open-source Python scraping toolkit that learns as it runs. It counts which URL paths actually pay off and reorders its own search, remembers which hosts block it and why, and ships with the rules that counting can't discover. Zero dependencies, copyable into any project."
+date: 2026-09-10
+tags: [Python, Web Scraping, Data Collection, Open Source]
+image: "/projects/siscraper/siscraper-preview.svg"
+cardDescription: "Counts which URL paths pay off and reorders its own search. Remembers which hosts block it. Zero dependencies, drops into any project."
+kind: oss
+cardTitle: "siscraper"
+repo: "https://github.com/dave8172/siscraper"
+license: "MIT"
+language: "Python"
+---
+
+import RandomColor from '../../components/RandomColor.astro';
+import Button from '../../components/Button.astro';
+
+## Overview
+
+**In plain terms:** most scraping scripts are as good on their hundredth run as their first. They re-request pages that were dead last week, guess the same wrong URLs, and forget everything the moment they exit. siscraper keeps what it learns and uses it.
+
+It came out of building a directory that needed terms read off a few hundred vendor pages. Halfway through, the same lessons kept turning up that an older, unrelated script had already recorded in a comment months earlier. The code was never the expensive part. The knowledge was.
+
+<Button href="https://github.com/dave8172/siscraper" target="_blank">View on GitHub</Button>
+
+---
+
+## The question it answers
+
+When a scraper learns something, where does that knowledge go?
+
+Usually into a comment, a hardcoded list, or nowhere. siscraper's answer is that there are three kinds of knowledge, and they need different homes because they have different authors:
+
+- <RandomColor>What the tool observes</RandomColor> — this host serves a Cloudflare page, that one 404s at every path worth trying. Written automatically, keyed by hostname, checked before a request is ever spent.
+- <RandomColor>What the tool can count</RandomColor> — which URL paths actually pay off. Derived from the run log, recomputed rather than typed, so measurement stays separable from guesswork.
+- <RandomColor>What only judgment supplies</RandomColor> — a `200` means nothing when a site serves a catch-all page for unknown paths. A blank FAQ answer might mean the vendor publishes nothing, or might mean the answer renders after page load. Eleven rules like these ship in the repo.
+
+Collapse those into one file and the whole thing rots. The common version of that mistake is writing down knowledge a program could have applied, so a person has to apply it by hand — and then doesn't.
+
+---
+
+## What "self-improving" actually means
+
+Nothing clever. Arithmetic over a log.
+
+The seeding pass swept thirteen guessed URL paths per host. Afterwards the counts said:
+
+```
+31  /affiliates
+27  /partners
+22  /affiliate-program
+15  /affiliate
+ …  the other nine: almost nothing
+```
+
+`/partners` had been guessed fifth. Measured, it is second. Sorting the sweep by wins instead of intuition finds the page in fewer requests, and every run since sharpens the ordering.
+
+The same log fixes the early-exit threshold, which was set by feel at first. Given enough outcomes you can ask what score a page needed before it turned out useful, rather than picking a number.
+
+---
+
+## Two behaviours worth knowing about
+
+**It escalates, and it says which rung failed.** A Cloudflare interstitial, a 404, and a page whose content arrives by JavaScript are three different problems. A scraper that files them all under "failed" pays for that confusion on every run. siscraper tries a plain fetch, escalates to a real browser when the page looks script-rendered, and records the diagnosis either way.
+
+**It deliberately retries hosts it believes are blocked.** A tenth of them, on a schedule fixed per host and day. Without this, memory can only ever lose hosts: every block becomes permanent until it ages out, and a site that starts allowing traffic again is never noticed. Trusting your own memory completely is how a scraper quietly rots.
+
+---
+
+## Install and use
+
+No packaging step and no dependencies. It vendors into a project as a directory:
+
+```bash
+git clone https://github.com/dave8172/siscraper
+cd siscraper
+python3 -m siscraper init /path/to/your/project
+```
+
+That drops a working copy into `.siscraper/`, carrying the seed — the rules, the noise filters, and the hosts already known to be unreachable. Local memory starts empty and grows from there.
+
+```python
+import sys; sys.path.insert(0, ".siscraper")
+from siscraper import Session
+
+s = Session("affiliate-terms", root=".siscraper")
+hits, skipped = s.sweep(hosts, keywords=["affiliate", "commission", "cookie"])
+lines, resp = s.read(hits[0].url, want=[r"\d+ ?%", "cookie", "payout"])
+```
+
+Or from the command line:
+
+```bash
+python3 -m siscraper known namecheap.com     # what's known before spending a request
+python3 -m siscraper probe --task affiliate-terms acme.com foo.io
+python3 -m siscraper recompute --task affiliate-terms
+```
+
+---
+
+## Design notes
+
+Two documents in the repo carry the reasoning:
+
+- **`docs/architecture.md`** — the three kinds of knowledge, why they are split by author and recomputability, how a run flows through the modules, and the six invariants that hold it together.
+- **`docs/shared-learning.md`** — a design for separate installations pooling what they learn, and the reason it isn't built. Sharing "this host blocked me" is safe; sharing "this host works, here's the URL" hands every installation a destination someone else chose. And a pooled memory that nobody re-tests converges on a confidently stale picture of the web.
+
+---
+
+## Scope
+
+Python 3.11 or later, standard library only, MIT. It respects `robots.txt` by default and rate-limits per host — parallel across hosts, never within one.
+
+It is an authoring tool. It produces data and gets out of the way, so nothing it touches ends up depending on it at runtime.
