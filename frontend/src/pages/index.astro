@@ -1,14 +1,13 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import RandomColor from "../components/RandomColor.astro";
-import Button from "../components/Button.astro";
 import ProjectCard from "../components/ProjectCard.astro";
 import SectionHeader from "../components/SectionHeader.astro";
 import { groupProjects, toCardProps } from "../lib/projectGroups";
 import { getCollection } from "astro:content";
 
-const projects = await getCollection("projects");
-const sections = groupProjects(projects, { homeOnly: true });
+// Everything lives on this page now — there is no separate projects index.
+const sections = groupProjects(await getCollection("projects"));
 
 const recentPosts = (await getCollection("blog"))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
@@ -17,16 +16,11 @@ const recentPosts = (await getCollection("blog"))
 
 <BaseLayout
   width="wide"
-  title="Dave — AI Evaluation & Reliability Consultant"
-  description="I build and validate AI systems — turning 'it works in the demo' into evidence you can trust. Proven so far on document and financial AI extraction; the same approach applies wherever AI touches data that matters."
+  title="Dave"
+  description="Open-source tooling, live tools you can run in the browser, accuracy benchmarks, and automation work."
 >
   <section class="hero">
-    <h1>
-      I build and validate <RandomColor>AI systems</RandomColor> you can trust.
-    </h1>
-    <p>
-      Most AI systems look great in the demo and quietly drift once real data hits them — nobody notices until it costs something. I catch that: eval sets, accuracy benchmarks, confidence scoring, audit logs — the <RandomColor>evidence</RandomColor> that a system is doing what it claims. My deepest proof of this so far is in document and financial data extraction, but the same rigor works on any AI system handling data you can't afford to get wrong.
-    </p>
+    <h1><RandomColor>Curious.</RandomColor></h1>
   </section>
 
   {sections.map(({ group, items }) => (
@@ -57,8 +51,4 @@ const recentPosts = (await getCollection("blog"))
       ))}
     </div>
   </section>
-
-  <p class="section-cta">
-    <Button href="/projects">View all projects →</Button>
-  </p>
 </BaseLayout>
