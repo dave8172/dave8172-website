@@ -1,0 +1,21 @@
+---
+import RandomColor from "./RandomColor.astro";
+
+interface Props {
+  title: string;
+  note?: string;
+  /** Optional right-aligned link, e.g. "View all →". */
+  href?: string;
+  linkLabel?: string;
+}
+
+const { title, note, href, linkLabel } = Astro.props as Props;
+---
+
+<div class="section-header">
+  <div class="section-heading-row">
+    <h2 class="section-label"><RandomColor>{title}</RandomColor></h2>
+    {href && linkLabel && <a class="section-link" href={href}>{linkLabel} <span aria-hidden="true">→</span></a>}
+  </div>
+  {note && <p class="section-note">{note}</p>}
+</div>

@@ -1,0 +1,104 @@
+---
+title: "tally-aiagent — A Safety Gate for Agent Writes to Tally Prime"
+description: "Open-source Python library that stops an AI agent silently corrupting a chart of accounts. It refuses any name Tally doesn't already hold, and reads every voucher back after posting to prove what was stored matches what was meant."
+date: 2026-09-09
+tags: [Python, AI Agents, Tally Prime, Reliability, Open Source]
+image: "/projects/tally-aiagent/tally-aiagent-preview.svg"
+kind: oss
+cardTitle: "tally-aiagent"
+cardDescription: "Tally invents any master name it doesn't recognise, then reports success. This refuses names the books don't hold, and verifies every entry after posting."
+repo: "https://github.com/dave8172/tally-aiagent"
+pypi: "tally-aiagent"
+license: "MIT"
+language: "Python"
+---
+
+import RandomColor from '../../components/RandomColor.astro';
+import Button from '../../components/Button.astro';
+
+## Overview
+
+**In plain terms:** Tally Prime doesn't complain when software sends it a name it has never seen. It creates a new one and reports success. A person typing notices the unfamiliar entry appear in the dropdown. Software doesn't, and an AI agent least of all — it will confidently produce a plausible name it never checked.
+
+**tally-aiagent** is the seatbelt. Two rules, in code rather than in a manual: no name is ever written unless Tally already holds it, and every entry is read back out of Tally after posting and compared against what was intended.
+
+<Button href="https://github.com/dave8172/tally-aiagent">View on GitHub</Button>
+
+---
+
+## The failure, in one story
+
+Your system knows a supplier as `ACME SUPPLIES CO. LTD`.
+
+Tally knows the same supplier as `ACME SUPPLIES CO LTD` — no full stop after `CO`.
+
+You post a purchase bill. Nothing errors. Tally quietly opens a *second* supplier account under the slightly different name, books the bill against it, and returns `CREATED=1`. From that moment:
+
+- the supplier's balance is split across two accounts, so <RandomColor>neither one is right</RandomColor>
+- your payables report understates what you owe
+- statements you send that supplier don't reconcile
+- and nobody finds out until someone chases a payment, weeks later
+
+A trailing space does this. So does a comma, or an invisible character pasted out of Excel. The same thing happens to product names, and there it moves your stock valuation too.
+
+This is documented Tally behaviour, not a rare bug. **It is survivable when a human types and structurally unsafe when an agent does.**
+
+---
+
+## <RandomColor>What the library does about it</RandomColor>
+
+**Names come from Tally, not from the caller.** Your system supplies quantities, rates, dates and invoice numbers. Tally supplies names, read from its own master export. A name that can't be found there means the whole entry is refused and nothing is sent.
+
+**Ambiguity stops the line.** If `PSU-500` could mean either `PSU 500H` or `PSU 500S`, there is no safe answer. It shows both and refuses to guess.
+
+**"Success" is not proof.** After writing, the voucher is read back out of Tally and compared field by field. A mismatch is reported loudly instead of swallowed.
+
+---
+
+## Why an agent can't skip the check
+
+Writing is two steps, and the split is structural rather than a rule the agent is asked to follow.
+
+**Step 1 — prepare.** The agent describes the entry it wants. The library resolves every name against Tally, works out the money, and hands back a plain report. Nothing has been written yet.
+
+```
+party    'acme supplies pvt ltd' -> 'Acme Supplies Pvt Ltd'  [matched]
+ledger   'Purchase Accounts' -> 'Purchase Accounts'  [exact]
+item     'Widget A' -> 'Widget A'  [exact]  10 x 125.50 = 1255.00
+charge   'Freight Inward' -> 'Freight Inward'  [exact]  450.00
+totals   goods=1255.00  charges=450.00  party=1705.00
+```
+
+Left column: what the agent asked for. Right column: what Tally actually holds. Bottom: the money. That report is the thing a human reads.
+
+**Step 2 — approve, then post.** The `post` tool takes only a reference to a draft that already passed step 1. It has no parameter for describing a voucher at all, so there is no path to Tally that skips the report — the agent is not being trusted to behave, it simply has no other option.
+
+---
+
+## <RandomColor>No default ledger names. On purpose.</RandomColor>
+
+The library ships with an empty vocabulary. No suggested purchase ledger, no rounding account, no supplier-country default, no voucher numbering scheme.
+
+That's a deliberate cost. It was extracted from a production system that posts purchase bills into Tally every working day, and the tempting move was to carry that system's chart of accounts across as sensible defaults. A plausible default gets posted for months before anyone notices it was wrong, and the person who finds out is an accountant, not a developer.
+
+What leaks out of an internal tool is rarely the data. It's everything shaped around the data — vocabulary, ledger names, numbering conventions.
+
+---
+
+## Install
+
+```bash
+pip install tally-aiagent
+```
+
+Library, CLI, and an MCP server, so an agent can use it directly. MIT licensed.
+
+<Button href="https://github.com/dave8172/tally-aiagent">Read the source</Button>
+
+---
+
+## Where it fits
+
+This is the same idea as [doceval](/projects/doceval), one layer down. doceval measures whether AI output is *correct*. This one stops incorrect output from reaching a system that can't tell the difference.
+
+Both exist because "the model said it worked" is not evidence, and in accounting the gap between those two things is somebody's payables report.

@@ -1,76 +1,32 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import RandomColor from '../../components/RandomColor.astro';
-import Button from '../../components/Button.astro';
+import RandomColor from "../../components/RandomColor.astro";
+import ProjectCard from "../../components/ProjectCard.astro";
+import SectionHeader from "../../components/SectionHeader.astro";
+import { groupProjects, toCardProps } from "../../lib/projectGroups";
 import { getCollection } from "astro:content";
 
-const projects = (await getCollection("projects"))
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
-
-const featured = projects.filter((p) => p.data.featured);
-const other = projects.filter((p) => !p.data.featured);
+const sections = groupProjects(await getCollection("projects"));
 ---
 
-<BaseLayout title="Projects — Dave" description="AI evaluation, document-extraction accuracy, and reliability tooling — plus AI integration and automation work.">
-  <section class="projects">
-    <div class="wide-header">
-      <h1><RandomColor>Projects</RandomColor></h1>
-    </div>
+<BaseLayout
+  width="wide"
+  title="Projects — Dave"
+  description="Open-source eval tooling, live document tools, accuracy benchmarks, and the automation and integration work underneath them."
+>
+  <header class="page-header">
+    <h1><RandomColor>Projects</RandomColor></h1>
+    <p class="page-intro">
+      Open source first, because it is the only work here you can check line by line. Then the tools you can run, the benchmarks behind the claims, and the client builds the rest of it grew out of.
+    </p>
+  </header>
 
-    <h2 class="section-label">AI Evaluation &amp; Reliability</h2>
-    <p class="section-note">Eval harnesses, accuracy benchmarks, and audit trails — the <RandomColor>evidence</RandomColor> that an AI system does what it claims.</p>
-    <div class="grid">
-      {featured.map((project) => (
-        <a href={`/projects/${project.slug}`} class="project-card">
-          <div class="card-body">
-            <h2>{project.data.title}</h2>
-            <p>{project.data.description}</p>
-
-            <ul class="tags">
-              {project.data.tags?.map((tag) => (
-                <li>{tag}</li>
-              ))}
-            </ul>
-          </div>
-        </a>
-      ))}
-    </div>
-
-    {other.length > 0 && (
-      <>
-        <h2 class="section-label">AI Integration &amp; Automation</h2>
-        <p class="section-note">Spreadsheet automation, API integrations, and AI-powered workflows that <RandomColor>save real hours.</RandomColor></p>
-        <div class="grid">
-          {other.map((project) => (
-            <a href={`/projects/${project.slug}`} class="project-card">
-              <div class="card-body">
-                <h2>{project.data.title}</h2>
-                <p>{project.data.description}</p>
-
-                <ul class="tags">
-                  {project.data.tags?.map((tag) => (
-                    <li>{tag}</li>
-                  ))}
-                </ul>
-              </div>
-            </a>
-          ))}
-        </div>
-      </>
-    )}
-  </section>
-
-  <style>
-    .section-label {
-      margin: 2.5rem 0 0.5rem;
-      font-size: 1.1rem;
-      color: var(--text);
-    }
-
-    .section-note {
-      margin: 0 0 1.5rem;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-  </style>
+  {sections.map(({ group, items }) => (
+    <section class="section">
+      <SectionHeader title={group.label} note={group.note} />
+      <div class="grid">
+        {items.map((project) => <ProjectCard {...toCardProps(project)} />)}
+      </div>
+    </section>
+  ))}
 </BaseLayout>

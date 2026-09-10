@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import RandomColor from '../../components/RandomColor.astro';
+import RandomColor from "../../components/RandomColor.astro";
+import ProjectCard from "../../components/ProjectCard.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 
 type Blog = CollectionEntry<"blog">;
@@ -9,27 +10,27 @@ const posts = (await getCollection("blog"))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
-<BaseLayout title="Blog — Dave" description="Benchmarks, teardowns, and notes on building AI systems you can trust — accuracy, cost, and reliability, backed by numbers.">
-  <section class="projects">
-    <div class ="wide-header">
-      <h1><RandomColor>Blog</RandomColor></h1>
-    </div>
+<BaseLayout
+  width="wide"
+  title="Blog — Dave"
+  description="Benchmarks, teardowns, and notes on building AI systems you can trust — accuracy, cost, and reliability, backed by numbers."
+>
+  <header class="page-header">
+    <h1><RandomColor>Blog</RandomColor></h1>
+    <p class="page-intro">
+      Benchmarks and teardowns from real builds — what broke, what it cost, and the number that settled it.
+    </p>
+  </header>
 
-
+  <section class="section">
     <div class="grid">
       {posts.map((post: Blog) => (
-        <a class="project-card" href={`/blog/${post.slug}`}>
-          <div class="card-body">
-            <h2>{post.data.title}</h2>
-            <p>{post.data.description}</p>
-
-            {post.data.tags && (
-              <ul class="tags">
-                {post.data.tags.map(tag => <li>{tag}</li>)}
-              </ul>
-            )}
-          </div>
-        </a>
+        <ProjectCard
+          href={`/blog/${post.slug}`}
+          title={post.data.title}
+          description={post.data.description}
+          tags={post.data.tags}
+        />
       ))}
     </div>
   </section>

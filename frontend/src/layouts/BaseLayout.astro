@@ -2,7 +2,10 @@
 import RandomColor from "../components/RandomColor.astro";
 import Analytics from "@vercel/analytics/astro";
 
-const { title = "Dave", description = "", image } = Astro.props;
+// `width` lets a page opt into the wide grid container. MDX pages that use
+// this file as their `layout` can set it in frontmatter; .astro pages pass it
+// as a prop. Default stays the 720px reading column.
+const { title = "Dave", description = "", image, width = "prose" } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const ogImageURL = image ? new URL(image, Astro.site) : undefined;
@@ -62,8 +65,8 @@ const personSchema = {
       </nav>
     </header>
 
-    <main class="prose">
-        <slot />
+    <main class:list={["site-main", width === "wide" ? "layout-wide" : "prose"]}>
+      <slot />
     </main>
 
     <footer class="footer">

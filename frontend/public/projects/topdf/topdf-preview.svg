@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#0b0b0c"/>
+
+  <!-- Top label -->
+  <text x="60" y="80" font-family="system-ui,sans-serif" font-size="32" font-weight="700" fill="#e6e6e6">topdf</text>
+  <text x="60" y="110" font-family="system-ui,sans-serif" font-size="15" fill="#4a4a55">a store address in, a branded catalog PDF out</text>
+
+  <!-- Box 1: input -->
+  <rect x="60" y="150" width="285" height="200" rx="12" fill="#111115" stroke="#2a2a35" stroke-width="1.5"/>
+  <text x="202" y="196" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#a1a1aa" text-anchor="middle" letter-spacing="0.06em">INPUT</text>
+  <text x="202" y="236" font-family="system-ui,sans-serif" font-size="22" font-weight="700" fill="#e6e6e6" text-anchor="middle">One URL</text>
+  <text x="202" y="272" font-family="monospace" font-size="12" fill="#60a5fa" text-anchor="middle">yourshop.myshopify.com</text>
+  <text x="202" y="304" font-family="system-ui,sans-serif" font-size="12" fill="#4a4a55" text-anchor="middle">or a spreadsheet + template page,</text>
+  <text x="202" y="322" font-family="system-ui,sans-serif" font-size="12" fill="#4a4a55" text-anchor="middle">if you are not on Shopify</text>
+
+  <!-- Arrow 1 -->
+  <line x1="345" y1="250" x2="425" y2="250" stroke="#2a2a35" stroke-width="2"/>
+  <polygon points="425,244 440,250 425,256" fill="#2a2a35"/>
+
+  <!-- Box 2: engine -->
+  <rect x="440" y="130" width="285" height="240" rx="12" fill="#191207" stroke="#5c4409" stroke-width="1.5"/>
+  <rect x="440" y="130" width="285" height="5" rx="2" fill="#f0a211"/>
+  <text x="582" y="186" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#f0a211" text-anchor="middle" letter-spacing="0.06em">DETERMINISTIC</text>
+  <text x="582" y="228" font-family="system-ui,sans-serif" font-size="27" font-weight="700" fill="#e6e6e6" text-anchor="middle">topdf</text>
+  <text x="582" y="262" font-family="system-ui,sans-serif" font-size="12" fill="#8a6a12" text-anchor="middle">products, prices, photos, currency</text>
+  <text x="582" y="280" font-family="system-ui,sans-serif" font-size="12" fill="#8a6a12" text-anchor="middle">read from public JSON</text>
+  <text x="582" y="316" font-family="monospace" font-size="11" fill="#f0a211" text-anchor="middle">grid measured, never assumed</text>
+  <text x="582" y="338" font-family="monospace" font-size="11" fill="#f0a211" text-anchor="middle">one optional model call: the logo</text>
+
+  <!-- Arrow 2 -->
+  <line x1="725" y1="250" x2="805" y2="250" stroke="#2a2a35" stroke-width="2"/>
+  <polygon points="805,244 820,250 805,256" fill="#2a2a35"/>
+
+  <!-- Box 3: output — stacked pages -->
+  <rect x="820" y="150" width="320" height="200" rx="12" fill="#111115" stroke="#2a2a35" stroke-width="1.5"/>
+  <text x="980" y="192" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#a1a1aa" text-anchor="middle" letter-spacing="0.06em">OUTPUT</text>
+  <rect x="878" y="212" width="72" height="98" rx="4" fill="#1a1a20" stroke="#3a3a45" stroke-width="1"/>
+  <rect x="954" y="212" width="72" height="98" rx="4" fill="#1a1a20" stroke="#3a3a45" stroke-width="1"/>
+  <rect x="1030" y="212" width="72" height="98" rx="4" fill="#1a1a20" stroke="#3a3a45" stroke-width="1"/>
+  <rect x="886" y="220" width="26" height="26" rx="3" fill="#2d2d38"/>
+  <rect x="918" y="220" width="26" height="26" rx="3" fill="#2d2d38"/>
+  <rect x="886" y="252" width="26" height="26" rx="3" fill="#2d2d38"/>
+  <rect x="918" y="252" width="26" height="26" rx="3" fill="#2d2d38"/>
+  <rect x="886" y="288" width="58" height="6" rx="3" fill="#2d2d38"/>
+  <text x="980" y="336" font-family="monospace" font-size="12" fill="#4ade80" text-anchor="middle">catalog.pdf — streamed back</text>
+
+  <!-- Bottom row -->
+  <line x1="60" y1="410" x2="1140" y2="410" stroke="#1a1a1f" stroke-width="1"/>
+
+  <text x="215" y="455" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4a4a55" text-anchor="middle">NOTHING IS RETAINED</text>
+  <text x="215" y="492" font-family="monospace" font-size="12" fill="#a1a1aa" text-anchor="middle">upload → build → delete</text>
+  <text x="215" y="518" font-family="system-ui,sans-serif" font-size="12" fill="#4a4a55" text-anchor="middle">same request, in a finally block</text>
+
+  <line x1="420" y1="418" x2="420" y2="548" stroke="#1a1a1f" stroke-width="1"/>
+
+  <text x="615" y="455" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4a4a55" text-anchor="middle">MEASURED, NOT ESTIMATED</text>
+  <text x="615" y="492" font-family="monospace" font-size="13" fill="#a1a1aa" text-anchor="middle">999 products · 135s · 168MB</text>
+  <text x="615" y="518" font-family="system-ui,sans-serif" font-size="12" fill="#4a4a55" text-anchor="middle">on a 2GB box · public cap 250</text>
+
+  <line x1="810" y1="418" x2="810" y2="548" stroke="#1a1a1f" stroke-width="1"/>
+
+  <text x="975" y="455" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4a4a55" text-anchor="middle">FREE, NO SIGN-UP</text>
+  <text x="975" y="492" font-family="monospace" font-size="13" fill="#f0a211" text-anchor="middle">stuffs.bid/topdf</text>
+  <text x="975" y="518" font-family="system-ui,sans-serif" font-size="12" fill="#4a4a55" text-anchor="middle">templates and a guide included</text>
+</svg>

@@ -15,8 +15,7 @@
     "@astrojs/svelte": "^7.2.5",
     "@vercel/analytics": "^2.0.1",
     "astro": "^5.16.16",
-    "preact": "^10.28.3",
-    "swiper": "^12.1.0"
+    "preact": "^10.28.3"
   },
   "devDependencies": {
     "@tsconfig/svelte": "^5.0.6",

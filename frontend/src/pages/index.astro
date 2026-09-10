@@ -1,24 +1,26 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import RandomColor from '../components/RandomColor.astro';
-import Button from '../components/Button.astro';
-import ProjectSlider from "../components/ProjectSlider.svelte";
-import BlogSlider from "../components/BlogSlider.svelte";
+import RandomColor from "../components/RandomColor.astro";
+import Button from "../components/Button.astro";
+import ProjectCard from "../components/ProjectCard.astro";
+import SectionHeader from "../components/SectionHeader.astro";
+import { groupProjects, toCardProps } from "../lib/projectGroups";
 import { getCollection } from "astro:content";
 
 const projects = await getCollection("projects");
-const allPosts = await getCollection("blog");
+const sections = groupProjects(projects, { homeOnly: true });
 
-const featured = projects
-  .filter((p) => p.data.featured)
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
-
-const recentPosts = allPosts
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const recentPosts = (await getCollection("blog"))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
 ---
 
-<BaseLayout title="Dave — AI Evaluation & Reliability Consultant" description="I build and validate AI systems — turning 'it works in the demo' into evidence you can trust. Proven so far on document and financial AI extraction; the same approach applies wherever AI touches data that matters.">
-  <section>
+<BaseLayout
+  width="wide"
+  title="Dave — AI Evaluation & Reliability Consultant"
+  description="I build and validate AI systems — turning 'it works in the demo' into evidence you can trust. Proven so far on document and financial AI extraction; the same approach applies wherever AI touches data that matters."
+>
+  <section class="hero">
     <h1>
       I build and validate <RandomColor>AI systems</RandomColor> you can trust.
     </h1>
@@ -27,30 +29,36 @@ const recentPosts = allPosts
     </p>
   </section>
 
-  <section class="projects-section">
-    <h2 style="margin-bottom: 0.5rem;"><RandomColor>Featured Projects</RandomColor></h2>
+  {sections.map(({ group, items }) => (
+    <section class="section">
+      <SectionHeader title={group.label} note={group.note} />
+      <div class="grid">
+        {items.map((project) => <ProjectCard {...toCardProps(project)} />)}
+      </div>
+    </section>
+  ))}
 
-    <ProjectSlider projects={featured} client:load />
-
-    <p style="margin-top: 1rem; text-align: center">
-      <Button href="/projects">View all projects →</Button>
-    </p>
+  <section class="section">
+    <SectionHeader
+      title="From the Blog"
+      note="Benchmarks and teardowns — what broke, what it cost, and the number that settled it."
+      href="/blog"
+      linkLabel="All posts"
+    />
+    <div class="grid">
+      {recentPosts.map((post) => (
+        <ProjectCard
+          href={`/blog/${post.slug}`}
+          title={post.data.title}
+          description={post.data.description}
+          tags={post.data.tags}
+          badge="Article"
+        />
+      ))}
+    </div>
   </section>
 
-  <section class="projects-section">
-    <h2 style="margin-bottom: 0.5rem;"><RandomColor>From the Blog</RandomColor></h2>
-
-    <BlogSlider posts={recentPosts} client:load />
-
-    <p style="margin-top: 1rem; text-align: center">
-      <Button href="/blog">View all posts →</Button>
-    </p>
-  </section>
-
-  <style>
-    .projects-section {
-      overflow-x: hidden;
-      padding: 1rem 0;
-    }
-  </style>
+  <p class="section-cta">
+    <Button href="/projects">View all projects →</Button>
+  </p>
 </BaseLayout>

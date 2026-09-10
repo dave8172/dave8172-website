@@ -1,78 +1,80 @@
 ---
-const { title, description, href, image, tags = [] } = Astro.props;
-import BaseLayout from "../layouts/BaseLayout.astro";
+/**
+ * The one card on this site. Home, /projects and /blog all render this, so
+ * spacing, type scale and hover behaviour cannot drift between them.
+ *
+ * The whole card is clickable via an overlay on the title link, rather than by
+ * wrapping everything in an <a> — that way the repo / PyPI / live-tool links in
+ * the footer stay real links instead of illegal nested anchors. The footer sits
+ * above the overlay on z-index; everything else sits under it.
+ */
+export interface CardLink {
+  href: string;
+  label: string;
+  external?: boolean;
+}
+
+interface Props {
+  href: string;
+  title: string;
+  description: string;
+  tags?: string[];
+  /** Small pill above the title, e.g. "Open source". */
+  badge?: string;
+  /** Drives the badge dot colour; falls back to a neutral dot. */
+  kind?: "oss" | "tool" | "benchmark" | "automation";
+  /** Appended to the badge line, e.g. "Python · MIT". */
+  meta?: string;
+  /** Monospace line under the description, e.g. an install command. */
+  command?: string;
+  links?: CardLink[];
+}
+
+const {
+  href,
+  title,
+  description,
+  tags = [],
+  badge,
+  kind,
+  meta,
+  command,
+  links = [],
+} = Astro.props as Props;
 ---
 
-<article class="project-card">
-  <a href={href} class="card-link">
-    <img src={image} alt={title} loading="lazy" />
-    <div class="content">
-      <h3>{title}</h3>
-      <p>{description}</p>
+<article class:list={["project-card", kind && `kind-${kind}`]}>
+  <div class="card-body">
+    {badge && (
+      <p class="card-badge">
+        <span class="card-dot" aria-hidden="true"></span>{badge}{meta && <span class="card-meta"> · {meta}</span>}
+      </p>
+    )}
 
-      {tags.length > 0 && (
-        <ul class="tags">
-          {tags.map((tag:string) => <li>{tag}</li>)}
-        </ul>
-      )}
-    </div>
-  </a>
+    <h3 class="card-title"><a href={href} class="card-link">{title}</a></h3>
+    <p class="card-text">{description}</p>
+
+    {command && <p class="card-command"><code>{command}</code></p>}
+
+    {tags.length > 0 && (
+      <ul class="tags">
+        {tags.slice(0, 3).map((tag) => <li>{tag}</li>)}
+      </ul>
+    )}
+
+    {links.length > 0 && (
+      <div class="card-links">
+        {links.map((link) => (
+          <a
+            href={link.href}
+            class="card-action"
+            target={link.external ? "_blank" : undefined}
+            rel={link.external ? "noopener noreferrer" : undefined}
+          >
+            {link.label}<span aria-hidden="true">{link.external ? " ↗" : " →"}</span>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
 </article>
-
-<style>
-.project-card {
-  background: #111113;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
-.project-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--muted);
-}
-
-.card-link {
-  color: inherit;
-  text-decoration: none;
-  display: block;
-}
-
-img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-}
-
-.content {
-  padding: 1rem;
-}
-
-h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1.1rem;
-}
-
-p {
-  margin: 0 0 0.75rem;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.tags {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.tags li {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  background: #1a1a1d;
-}
-</style>
