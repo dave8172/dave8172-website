@@ -33,7 +33,7 @@ const projects = defineCollection({
     pypi: z.string().optional(),
     /** Where a visitor can use the thing right now. */
     liveUrl: z.string().optional(),
-    /** Short label for the live link, e.g. "stuffs.bid/topdf". */
+    /** Short label for the live link, e.g. "affiliateprogramterms.com". */
     liveLabel: z.string().optional(),
     license: z.string().optional(),
     language: z.string().optional(),
