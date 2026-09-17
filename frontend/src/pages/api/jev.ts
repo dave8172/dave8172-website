@@ -7,7 +7,7 @@ import { askJev } from "../../lib/jev";
 export const prerender = false;
 
 /** Bump on any change to this file, so a response identifies its own build. */
-const BUILD = 2;
+const BUILD = 3;
 
 const PER_SUBJECT_PER_DAY = 20;
 const GLOBAL_PER_DAY = 500;
@@ -47,10 +47,14 @@ const json = (body: unknown, status = 200) =>
   });
 
 export const POST: APIRoute = async ({ request, clientAddress }) => {
-  // Trimmed: a key pasted into a dashboard env var routinely carries a trailing
-  // newline, which makes the Authorization header invalid and reads as a 401
-  // that looks nothing like a paste error.
-  const key = process.env.TYPESAFE_API_KEY?.trim();
+  // Strip ALL whitespace, not just the ends. A 108-character key pasted into a
+  // dashboard field can wrap, and an embedded newline makes the Authorization
+  // header value illegal — fetch then throws before sending, so there is no
+  // status to read and it looks like a network fault. trim() does not catch
+  // that because the newline is in the middle. API keys contain no whitespace,
+  // so removing it is always safe.
+  const rawKey = process.env.TYPESAFE_API_KEY ?? "";
+  const key = rawKey.replace(/\s+/g, "");
   if (!key) return json({ error: "The ball is not plugged in." }, 503);
 
   let question: string;
@@ -75,7 +79,14 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   try {
     return json(await askJev(question, key));
   } catch (err) {
-    console.error("[jev]", err instanceof Error ? err.message : err);
+    const message = err instanceof Error ? err.message : String(err);
+
+    // Never log the raw message. Node's invalid-header TypeError quotes the
+    // offending header value back at you, which for this request is the API
+    // key — logging it verbatim would write the secret into the platform log.
+    const leaky = key && message.includes(key.slice(0, 12));
+    console.error("[jev]", leaky ? "<redacted: message contained the key>" : message.slice(0, 200));
+
     const upstream = (err as { upstream?: number })?.upstream;
     // `v` is a build marker: without it there is no way to tell a stale
     // deployment from a new one that failed differently, which cost a debugging
@@ -89,6 +100,16 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       stage: upstream ? "upstream" : "threw",
       upstream: upstream ?? null,
       kind: err instanceof Error ? err.constructor.name : typeof err,
+      // Classified, never echoed: the raw message can contain the key.
+      cause: /invalid header value/i.test(message)
+        ? "key_has_illegal_characters"
+        : /fetch failed/i.test(message)
+          ? "network"
+          : "other",
+      // Shape of the stored key, so a paste problem is visible without ever
+      // exposing the value itself.
+      keyLen: key.length,
+      keyHadWhitespace: rawKey !== key,
     }, 502);
   }
 };
