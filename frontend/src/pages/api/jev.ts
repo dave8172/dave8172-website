@@ -44,7 +44,10 @@ const json = (body: unknown, status = 200) =>
   });
 
 export const POST: APIRoute = async ({ request, clientAddress }) => {
-  const key = process.env.TYPESAFE_API_KEY;
+  // Trimmed: a key pasted into a dashboard env var routinely carries a trailing
+  // newline, which makes the Authorization header invalid and reads as a 401
+  // that looks nothing like a paste error.
+  const key = process.env.TYPESAFE_API_KEY?.trim();
   if (!key) return json({ error: "The ball is not plugged in." }, 503);
 
   let question: string;
@@ -70,6 +73,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     return json(await askJev(question, key));
   } catch (err) {
     console.error("[jev]", err instanceof Error ? err.message : err);
-    return json({ error: "The ball clouded over. Try again." }, 502);
+    const upstream = (err as { upstream?: number })?.upstream;
+    return json({ error: "The ball clouded over. Try again.", upstream }, 502);
   }
 };

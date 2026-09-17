@@ -124,7 +124,15 @@ export async function askJev(question: string, apiKey: string): Promise<BallAnsw
     body: JSON.stringify({ model: "jev-latest", state: { question }, questions: QUESTIONS }),
     signal: AbortSignal.timeout(20000),
   });
-  if (!res.ok) throw new Error(`jev ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+  if (!res.ok) {
+    const err = new Error(`jev ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`) as Error & {
+      upstream?: number;
+    };
+    // The status alone is not a secret and is the whole diagnosis: 401 is a bad
+    // key, 429 a rate limit, 400 a malformed request. The body is not exposed.
+    err.upstream = res.status;
+    throw err;
+  }
   const body = await res.json();
   return interpret(body.answers, question);
 }
