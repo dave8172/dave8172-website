@@ -26,7 +26,7 @@ const posts = (await getCollection("blog"))
     <div class="grid">
       {posts.map((post: Blog) => (
         <ProjectCard
-          href={`/blog/${post.slug}`}
+          href={`/blog/${post.id}`}
           title={post.data.title}
           description={post.data.description}
           tags={post.data.tags}

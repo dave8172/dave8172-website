@@ -72,7 +72,7 @@ export function toCardProps(project: Project) {
   const meta = [data.language, data.license].filter(Boolean).join(" · ");
 
   return {
-    href: `/projects/${project.slug}`,
+    href: `/projects/${project.id}`,
     title: data.cardTitle ?? data.title,
     description: data.cardDescription ?? data.description,
     tags: data.tags,

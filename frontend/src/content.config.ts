@@ -1,4 +1,5 @@
 import { defineCollection, z } from "astro:content";
+import { glob } from "astro/loaders";
 
 /**
  * `kind` decides which section a project appears in, on the home page and on
@@ -14,7 +15,10 @@ import { defineCollection, z } from "astro:content";
 const projectKind = z.enum(["oss", "tool", "benchmark", "automation"]);
 
 const projects = defineCollection({
-  type: "content",
+  // Content Layer API. The glob loader's `id` is the filename without its
+  // extension, which is exactly what the legacy `slug` was — so every
+  // /projects/<slug> URL is unchanged by this migration.
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/projects" }),
   schema: z.object({
     title: z.string(),
     description: z.string(),
@@ -41,6 +45,7 @@ const projects = defineCollection({
 });
 
 const blog = defineCollection({
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/blog" }),
   schema: z.object({
     title: z.string(),
     description: z.string(),
