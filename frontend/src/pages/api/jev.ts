@@ -6,6 +6,9 @@ import { askJev } from "../../lib/jev";
 // the Vercel function, so it is not inlined into any build output.
 export const prerender = false;
 
+/** Bump on any change to this file, so a response identifies its own build. */
+const BUILD = 2;
+
 const PER_SUBJECT_PER_DAY = 20;
 const GLOBAL_PER_DAY = 500;
 const DAY_MS = 86_400_000;
@@ -74,6 +77,18 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   } catch (err) {
     console.error("[jev]", err instanceof Error ? err.message : err);
     const upstream = (err as { upstream?: number })?.upstream;
-    return json({ error: "The ball clouded over. Try again.", upstream }, 502);
+    // `v` is a build marker: without it there is no way to tell a stale
+    // deployment from a new one that failed differently, which cost a debugging
+    // round. `stage` separates "the API answered with an error status" from
+    // "the call threw before any status existed" — the two have different fixes
+    // and previously looked identical, because an undefined field is dropped
+    // from JSON entirely.
+    return json({
+      error: "The ball clouded over. Try again.",
+      v: BUILD,
+      stage: upstream ? "upstream" : "threw",
+      upstream: upstream ?? null,
+      kind: err instanceof Error ? err.constructor.name : typeof err,
+    }, 502);
   }
 };
