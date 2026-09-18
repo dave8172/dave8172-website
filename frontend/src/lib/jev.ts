@@ -70,7 +70,11 @@ export interface Verdict {
 
 export interface BallAnswer {
   answer: string;
+  /** The measurement: the level Jev put the most probability on. Never altered. */
   level: number;
+  /** The level the ball actually spoke from — softened when the stakes are high. */
+  spokenLevel: number;
+  hedged: boolean;
   reason: "verdict" | "unknowable" | "not_a_question";
   verdict: Verdict;
   signals: { isQuestion: number; knowable: number; stakes: number };
@@ -97,7 +101,11 @@ export function interpret(answers: any, question: string): BallAnswer {
   // Gibberish gate. Measured on jev-1.13.0: a random string scores 0.02 here
   // while every real question tested scored 0.97+.
   if (isQuestion < 0.5) {
-    return { answer: "Concentrate and ask again", level: 2, reason: "not_a_question", verdict, signals };
+    return {
+      answer: "Concentrate and ask again",
+      level: 2, spokenLevel: 2, hedged: false,
+      reason: "not_a_question", verdict, signals,
+    };
   }
 
   // The level is the *tallest bar*, not the rounded score.
@@ -121,11 +129,29 @@ export function interpret(answers: any, question: string): BallAnswer {
   // question anyone could answer; "will it rain Tuesday?" (0.85) is predictable
   // in principle and merely uncertain. They deserve different phrasings.
   const unknowable = level === 2 && knowable < 0.4;
-  const pool = unknowable ? UNKNOWABLE : ANSWERS[level];
+
+  // Stakes hedging. When a lot rides on the answer, an absolute verdict from a
+  // toy is the wrong register — so at the extremes the ball steps one bucket
+  // toward the middle and speaks from there ("It is certain" becomes "Outlook
+  // good").
+  //
+  // Deliberately this softens only the *wording*. `level` stays exactly where
+  // Jev put the mass, because that is the measurement and the chart highlights
+  // it; changing it here would put the highlight on a bar that is not the
+  // tallest, which is the bug this app already had once. The split is the whole
+  // premise: Jev picks the bucket, code picks how to say it — and `hedged` is
+  // reported so the page can say when the two differ.
+  const HIGH_STAKES = 1.5; // of 2.0; "should I quit my job" measures 2.00
+  const hedged = !unknowable && stakes >= HIGH_STAKES && (level === 0 || level === 4);
+  const spokenLevel = hedged ? (level === 4 ? 3 : 1) : level;
+
+  const pool = unknowable ? UNKNOWABLE : ANSWERS[spokenLevel];
 
   return {
     answer: pool[seed % pool.length],
     level,
+    spokenLevel,
+    hedged,
     reason: unknowable ? "unknowable" : "verdict",
     verdict,
     signals,

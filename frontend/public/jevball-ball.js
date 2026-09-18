@@ -10,7 +10,18 @@ window.Ball = (function () {
   var ready = false;
   var renderer, scene, camera, sphere, raf;
   var spin = { x: 0, y: 0, z: 0 };
-  var tumbling = false, settling = false, t0 = 0;
+  var phase = "idle";          // idle -> tumble -> turn -> idle
+  var t0 = 0;
+  var from = { x: 0, y: 0, z: 0 };
+  var to = { x: 0, y: 0, z: 0 };
+
+  var TUMBLE_MS = 850;
+  var TURN_MS = 750;
+
+  // Ease-out cubic: fast at first, gliding into rest. A linear turn reads
+  // mechanical; this reads like a weighted object settling.
+  function ease(t) { return 1 - Math.pow(1 - t, 3); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
 
   function init(canvas) {
     if (typeof THREE === "undefined") return false;
@@ -64,20 +75,25 @@ window.Ball = (function () {
     raf = requestAnimationFrame(loop);
     var now = performance.now();
 
-    if (tumbling) {
+    if (phase === "tumble") {
       sphere.rotation.x += spin.x;
       sphere.rotation.y += spin.y;
       sphere.rotation.z += spin.z;
-      if (now - t0 > 1100) { tumbling = false; settling = true; t0 = now; }
-    } else if (settling) {
-      // Ease every axis back to zero so the window faces the camera square-on.
-      sphere.rotation.x += (0 - sphere.rotation.x) * 0.12;
-      sphere.rotation.y += (0 - sphere.rotation.y) * 0.12;
-      sphere.rotation.z += (0 - sphere.rotation.z) * 0.12;
-      if (Math.abs(sphere.rotation.x) + Math.abs(sphere.rotation.y) + Math.abs(sphere.rotation.z) < 0.01) {
-        sphere.rotation.set(0, 0, 0);
-        settling = false;
+      if (now - t0 > TUMBLE_MS) {
+        // Hand off to a deliberate turn. The target is a whole number of turns
+        // past where the tumble happened to stop, so the ball always rotates
+        // forwards into place rather than snapping back the short way.
+        phase = "turn";
+        t0 = now;
+        from = { x: sphere.rotation.x, y: sphere.rotation.y, z: sphere.rotation.z };
+        to = { x: 0, y: Math.ceil(sphere.rotation.y / (Math.PI * 2) + 0.5) * Math.PI * 2, z: 0 };
       }
+    } else if (phase === "turn") {
+      var k = ease(Math.min(1, (now - t0) / TURN_MS));
+      sphere.rotation.x = lerp(from.x, to.x, k);
+      sphere.rotation.y = lerp(from.y, to.y, k);
+      sphere.rotation.z = lerp(from.z, to.z, k);
+      if (k >= 1) { sphere.rotation.set(0, 0, 0); phase = "idle"; }
     } else {
       // Idle: a slow drift so the thing looks alive without demanding attention.
       sphere.rotation.y = Math.sin(now / 3200) * 0.09;
@@ -87,13 +103,16 @@ window.Ball = (function () {
     renderer.render(scene, camera);
   }
 
+  // Returns how long the caller should wait before revealing the answer, so the
+  // reveal never beats the animation however fast the API replied.
   function shake() {
-    if (!ready || reduced) return reduced ? 260 : 0;
-    var s = function () { return (Math.random() - 0.5) * 0.44; };
-    spin = { x: s(), y: s() + 0.3, z: s() };
-    tumbling = true;
+    if (reduced) return 260;
+    if (!ready) return 0;
+    var s = function () { return (Math.random() - 0.5) * 0.5; };
+    spin = { x: s(), y: s() + 0.34, z: s() };
+    phase = "tumble";
     t0 = performance.now();
-    return 1100;
+    return TUMBLE_MS + TURN_MS;
   }
 
   return {

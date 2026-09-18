@@ -91,3 +91,29 @@ test("every level has at least one phrasing", () => {
     assert.ok(typeof r.answer === "string" && r.answer.length > 0);
   }
 });
+
+// Stakes hedging. The measurement must survive it: `level` stays on the mass,
+// only the spoken wording steps toward the middle.
+test("a high-stakes extreme verdict softens its wording but not its level", () => {
+  const highStakes = {
+    verdict: score(3.9, 0.95, dist(0, 0, 0.02, 0.08, 0.9)),
+    is_question: { noul: 0.98 }, knowable: { noul: 0.7 }, stakes: score(1.95, 1, {}),
+  };
+  const r = interpret(highStakes, "Should I remortgage the house for this?");
+  assert.equal(r.level, 4, "the highlight must stay on the tallest bar");
+  assert.equal(r.spokenLevel, 3, "the wording steps one bucket toward the middle");
+  assert.equal(r.hedged, true);
+  assert.ok(!["It is certain", "Without a doubt", "Yes definitely"].includes(r.answer));
+});
+
+test("a low-stakes extreme verdict is not softened", () => {
+  const r = interpret(CASES.sunrise, "Will the sun rise tomorrow?");
+  assert.equal(r.hedged, false);
+  assert.equal(r.spokenLevel, r.level);
+});
+
+test("the unknowable branch is never hedged out of its phrasings", () => {
+  const r = interpret(CASES.rich, "Will I be rich?");
+  assert.equal(r.hedged, false);
+  assert.ok(["Cannot predict now", "Better not tell you now"].includes(r.answer));
+});
