@@ -40,13 +40,46 @@ window.Ball = (function () {
     camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     camera.position.set(0, 0, 4.4);
 
-    var geo = new THREE.SphereGeometry(1.35, 64, 48);
+    var R = 1.35;
+    var geo = new THREE.SphereGeometry(R, 64, 48);
     var mat = new THREE.MeshStandardMaterial({ color: 0x0b0b0b, roughness: 0.34, metalness: 0.08 });
     sphere = new THREE.Mesh(geo, mat);
     scene.add(sphere);
 
+    // The printed disc, as real geometry parented to the sphere so it turns
+    // with it. Without this the tumble is invisible: a featureless black ball
+    // looks identical from every angle and only the specular highlight moves.
+    // This is the job the "8" does on a real ball — the reference that makes
+    // the rotation readable.
+    //
+    // A spherical cap, not a flat circle. A flat disc cannot sit flush on a
+    // sphere: placed inside the radius it is swallowed by the surface, and
+    // placed outside it floats like a plate once the ball turns. The cap hugs
+    // the surface at every angle.
+    //
+    // Half-angle is derived, not eyeballed: asin(r / R) where r is the world
+    // radius that projects to ~37% of the canvas at fov 38 and camera z 4.4 —
+    // the same fraction the HTML answer text is sized against.
+    var CAP = 0.2978;
+    var disc = new THREE.Mesh(
+      new THREE.SphereGeometry(R * 1.004, 48, 24, 0, Math.PI * 2, 0, CAP),
+      new THREE.MeshBasicMaterial({ color: 0xf2efe6 })
+    );
+    // The cap is built around +Y; tip it to face the camera.
+    disc.rotation.x = Math.PI / 2;
+    sphere.add(disc);
+
+    // A dark rim just under it, so the disc reads as printed rather than pasted
+    // on as it turns toward the edge.
+    var ring = new THREE.Mesh(
+      new THREE.SphereGeometry(R * 1.002, 48, 24, 0, Math.PI * 2, 0, CAP * 1.075),
+      new THREE.MeshBasicMaterial({ color: 0x0b0b0b })
+    );
+    ring.rotation.x = Math.PI / 2;
+    sphere.add(ring);
+
     // Key light high-left, a dim fill so the unlit side is not a void, and a
-    // tight rim to separate the ball from a warm paper background.
+    // neutral rim to separate the ball from a warm paper background.
     var key = new THREE.DirectionalLight(0xffffff, 2.5);
     key.position.set(-2.4, 3, 3);
     scene.add(key);

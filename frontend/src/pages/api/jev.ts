@@ -7,7 +7,7 @@ import { askJev } from "../../lib/jev";
 export const prerender = false;
 
 /** Bump on any change to this file, so a response identifies its own build. */
-const BUILD = 5;
+const BUILD = 6;
 
 const PER_SUBJECT_PER_DAY = 20;
 const GLOBAL_PER_DAY = 500;

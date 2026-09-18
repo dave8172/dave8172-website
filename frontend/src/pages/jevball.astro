@@ -141,19 +141,29 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
   .jb-window {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    width: 43%; aspect-ratio: 1; border-radius: 50%;
-    background: #f2efe6; color: #16150f; border: 2px solid #0b0b0b;
-    display: grid; place-items: center; padding: 6%; text-align: center;
-    transition: opacity 0.28s ease;
+    /* Matches the 3D disc, whose radius is derived to project to 37% of the
+       canvas. Text only: the paper circle and its rim are geometry now, so they
+       turn with the ball instead of floating in front of it. */
+    width: 37%; aspect-ratio: 1;
+    color: #16150f;
+    display: grid; place-items: center; padding: 5%; text-align: center;
+    transition: opacity 0.22s ease;
+    pointer-events: none;
+  }
+
+  /* No WebGL: the overlay has to paint its own disc, since there is no
+     geometry to sit on. */
+  .jb-stage.flat .jb-window {
+    background: #f2efe6; border: 2px solid #0b0b0b; border-radius: 50%;
   }
   .jb-window.hidden { opacity: 0; }
 
   .jb-face {
-    font-size: clamp(0.58rem, 2.3vw, 0.72rem); line-height: 1.3;
+    font-size: clamp(0.5rem, 2vw, 0.62rem); line-height: 1.25;
     letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700;
     overflow-wrap: break-word; hyphens: none;
   }
-  .jb-face.jb-idle { font-size: clamp(1.15rem, 5.4vw, 1.5rem); letter-spacing: 0.12em; }
+  .jb-face.jb-idle { font-size: clamp(0.9rem, 4.2vw, 1.15rem); letter-spacing: 0.1em; }
 
   .jb-ask { display: flex; gap: 8px; margin-bottom: 10px; }
 
