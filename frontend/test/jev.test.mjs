@@ -63,6 +63,17 @@ test("high confidence on the middle level still reads as undecided", () => {
   assert.ok(r.verdict.confidence > 0.9);
 });
 
+// Recorded from production: score 3.18 rounds to 3, but 56% of the mass is on
+// level 4. The answer must follow the mass, not the rounded mean.
+test("a long tail must not drag the answer off the tallest bar", () => {
+  const black = {
+    verdict: score(3.18, 0.32, dist(0.02, 0.06, 0.19, 0.16, 0.56)),
+    is_question: { noul: 0.98 }, knowable: { noul: 0.95 }, stakes: score(0.01, 1, {}),
+  };
+  const r = interpret(black, "Is black a color?");
+  assert.equal(r.level, 4, "should pick the 56% bucket, not the 16% one");
+});
+
 test("the same question always gets the same wording", () => {
   const a = interpret(CASES.sunrise, "Will the sun rise tomorrow?");
   const b = interpret(CASES.sunrise, "  WILL THE SUN RISE TOMORROW?  ");
@@ -71,7 +82,11 @@ test("the same question always gets the same wording", () => {
 
 test("every level has at least one phrasing", () => {
   for (let i = 0; i < 5; i++) {
-    const r = interpret({ ...CASES.sunrise, verdict: score(i, 1, dist(0, 0, 0, 0, 0)) }, "q");
+    // Mass actually on the level under test. An all-zero distribution cannot
+    // occur — probabilities sum to 1 — and it made the old fixture degenerate.
+    const probs = [0, 0, 0, 0, 0];
+    probs[i] = 1;
+    const r = interpret({ ...CASES.sunrise, verdict: score(i, 1, dist(...probs)) }, "q");
     assert.equal(r.level, i);
     assert.ok(typeof r.answer === "string" && r.answer.length > 0);
   }

@@ -100,7 +100,22 @@ export function interpret(answers: any, question: string): BallAnswer {
     return { answer: "Concentrate and ask again", level: 2, reason: "not_a_question", verdict, signals };
   }
 
-  const level = Math.max(0, Math.min(4, Math.round(verdict.score)));
+  // The level is the *tallest bar*, not the rounded score.
+  //
+  // `score` is the probability-weighted mean position, so a long tail drags it
+  // across a bucket boundary: "is black a color?" returns 2/6/19/16/56 with a
+  // score of 3.18, which rounds to level 3 — a bucket holding 16% — while 56%
+  // sits on level 4. TypeSafe defines a Choice's answer as the option with the
+  // highest probability; a Score has no equivalent field, and rounding the mean
+  // is not a substitute for one. Taking the argmax also makes the highlighted
+  // bar always the tallest one, which is what the chart already shows.
+  //
+  // Known limit: on a genuinely bimodal distribution (mass piled on 0 and 4
+  // with little between) the argmax commits to one side where the mean would
+  // have said "could go either way". `confidence` is low in exactly that case
+  // and is reported on the page, so the spread is visible rather than hidden.
+  const probs = Array.from({ length: 5 }, (_, i) => verdict.probabilities[String(i)] ?? 0);
+  const level = probs.indexOf(Math.max(...probs));
 
   // The middle level splits in two. "Will I be rich?" (knowable 0.27) is not a
   // question anyone could answer; "will it rain Tuesday?" (0.85) is predictable
