@@ -1,0 +1,175 @@
+---
+title: "Choice, Score and Noul: four mistakes with Jev's primitives"
+description: "I built a Magic 8 Ball on Jev, TypeSafe's calibrated-decision model, and misread its three primitives four times. The measured numbers, and what each mistake cost."
+date: 2026-09-19
+tags: ["AI", "Reliability", "Calibration", "TypeSafe", "Jev"]
+image: "/blogassets/jev-primitives.c88a0aff.png"
+---
+
+import RandomColor from '../../components/RandomColor.astro';
+
+Jev is a System One model from TypeSafe. It reads natural language like any LLM,
+and instead of writing a reply it returns a probability distribution over
+options you supply. No prose, no reasoning trace, no JSON to repair — a number
+per option, summing to 1.
+
+I spent a week building a <RandomColor>Magic 8 Ball</RandomColor> on it, which
+sounds like a toy and turned out to be a decent test rig: every answer is a
+judgment with no ground truth, which is where calibrated probabilities either
+earn their keep or embarrass you. It's live at
+[/jevball](/jevball).
+
+I got the primitives wrong four times. Each mistake produced working code that
+looked right, so they're worth writing down.
+
+## The three primitives in one paragraph each
+
+**Choice** takes a map of named options and returns a probability for each, plus
+the highest-scoring one. Routing a ticket to a department, classifying a
+document, picking a handler.
+
+**Score** takes an ordered array of level descriptions — two to ten — and returns
+a position along them that can land between levels. Severity, frustration, skill
+level. Anything on a spectrum you can describe in words.
+
+**Noul** takes a yes/no statement and returns one number: the probability it's
+true. No confidence field, because the probability *is* the answer.
+
+All three take the same two inputs: `state`, the data being judged, and
+`instructions`, the question asked about it. That's the whole surface.
+
+## Mistake 1: reading the score as a winner
+
+A Score returns `score`, a position on your levels. My ball rounded it to pick a
+bucket. Someone asked it *"is black a color?"* and got this:
+
+```
+bars   : 0=2%  1=6%  2=19%  3=16%  4=56%
+score  : 3.18
+```
+
+`Math.round(3.18)` is 3 — a bucket holding **16%** — while 56% of the mass sat
+on level 4 beside it.
+
+The score is a **probability-weighted average**. That 19% on level 2 dragged the
+average down across a bucket boundary. An average of a skewed distribution
+points at a place the distribution isn't.
+
+TypeSafe defines a Choice's answer as the option with the highest probability.
+Score has no equivalent field, and I quietly substituted rounding for one. The
+fix is to take the argmax of `probabilities` yourself:
+
+```js
+const probs = Array.from({ length: 5 }, (_, i) => v.probabilities[String(i)] ?? 0);
+const level = probs.indexOf(Math.max(...probs));
+```
+
+It agrees with rounding on every peaked distribution, which is why it survived
+my whole test suite. It differs exactly when the distribution is skewed, which
+is when it matters.
+
+## Mistake 2: reading low confidence as doubt about the answer
+
+Every Choice and Score comes back with `confidence`, 0 to 1. I built a "reply
+hazy" branch on the assumption that a vague question would produce a low one.
+
+Then I measured it:
+
+| question | score | confidence |
+|---|---|---|
+| Should I quit my job? | 1.97 | **0.98** |
+| Will it rain next Tuesday? | 1.99 | **0.98** |
+| Is black a color? | 3.18 | **0.33** |
+
+The first two are as uncertain as a question gets, and confidence is 0.98.
+Nearly all the mass sat on the level that *means* "could go either way" — the
+distribution was a sharp spike on a level labelled uncertainty.
+
+Confidence measures how **peaked** the distribution is. It answers "did the
+options separate cleanly", and it will happily report 0.98 for a confident
+coin-flip. My hazy branch would have fired on precisely the wrong questions.
+
+Low confidence has three different causes, and they need different fixes: the
+question is genuinely contested, the options overlap each other, or `state`
+doesn't contain enough to decide. Only the first one is the model being honest.
+
+I tried to work out the formula by fitting twelve real responses. `max(p)` gets
+closest at 0.04 mean error and matches several exactly, but not all —
+*"will humans land on Mars before 2050?"* reported 0.58 against a peak of 0.50,
+higher than the peak. The docs are upfront that it's a convenience statistic and
+hand you the full `probabilities` so you can compute your own. If a decision
+rides on it, do that.
+
+## Mistake 3: offering options that split their own vote
+
+The classic 8 Ball has twenty answers. My first design asked Jev to pick one, as
+a Choice.
+
+Ten of those twenty mean "yes". "It is certain", "Without a doubt", "Yes
+definitely" — the same claim in different words. Here's what happens, on one
+question with four different option sets:
+
+| options offered | answer | winner's share |
+|---|---|---|
+| `yes` / `no` | yes | 69% |
+| `yes` / `definitely` / `certainly` / `no` | yes | **48%** |
+
+The total yes-mass is identical: 70% in the second row, spread across three
+near-synonyms. Nothing changed about the question. The options ate each other,
+and confidence fell from 0.38 to 0.31 reporting a disagreement that existed only
+in my option list.
+
+So the ball asks Jev for one of **five ordered buckets**, and the code picks
+which of that bucket's phrasings to show. One judgment with a right answer goes
+to the model; the theatre stays in software.
+
+## Mistake 4: forgetting that the options are the prompt
+
+Your question IDs never reach the model. The `instructions` and every entry in
+`criteria` do — names and descriptions both. The option list isn't a filter you
+apply to a result. It's part of what you're asking.
+
+Same question, same model, options changed:
+
+| options offered | answer |
+|---|---|
+| `yes` / `no` | **yes** (69%) |
+| `yes_everyday` / `no_physics` / `depends` | **depends** (51%) |
+
+"Depends" won — an answer that simply didn't exist in the first row. Black is a
+colour in everyday use and the absence of light in physics, so "depends" is
+arguably the best answer available. It was unreachable until I offered it.
+
+The docs put it plainly: the model cannot choose an omitted value. Leave an
+option out and you haven't biased the result, you've made it impossible.
+
+## What this is actually for
+
+Every judgment above cost about **$0.000014**. Jev charges $0.042 per million
+input tokens and nothing for output, against $1.00/$5.00 for the cheapest
+frontier model I'd otherwise reach for — roughly 27× on a like-for-like
+classification, before an LLM's format instructions and reasoning tokens widen
+it further.
+
+That price only matters because of what you give up. Jev writes no prose,
+explains nothing, and can't answer anything whose answer space you can't
+enumerate. For summarising, drafting, coding or open-ended reasoning it's the
+wrong tool entirely.
+
+What it's good at is the narrow decision a pipeline makes ten thousand times a
+day, where you need a number you can threshold on. The documented pattern is to
+put it in front of the expensive work: score everything, route the confident
+cases to deterministic code, escalate the rest to a model or a person. You pay
+fourteen dollars a million to decide, and frontier prices only on the slice that
+earned it.
+
+One caveat worth keeping. Calibration is a property of *groups* of predictions —
+across many answers, the ones marked 0.8 should be right about 80% of the time.
+It guarantees nothing about any single answer, and it's measured on TypeSafe's
+data, not yours. Validate it in your own domain before trusting a threshold.
+
+---
+
+The ball is at [/jevball](/jevball). Ask it something you actually want to know
+and open the panel underneath — it shows the full distribution, the confidence,
+and which of the four questions produced the answer.
