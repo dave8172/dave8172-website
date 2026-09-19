@@ -61,9 +61,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </section>
 
     <p class="jb-credit">
-      One call to <a href="https://docs.typesafe.ai" rel="noopener">Jev</a> carries four questions:
-      a Score for the verdict, and Nouls for whether it is a real question and whether anyone
-      could know. Jev picks the bucket; the wording is chosen in code.
+      One call to <a href="https://docs.typesafe.ai" rel="noopener">Jev</a> asks four questions
+      about the same sentence. A <strong>Score</strong> places the answer on a five-level
+      no&ndash;to&ndash;yes axis. A second <strong>Score</strong> rates how much is at stake for
+      whoever is asking. Two <strong>Nouls</strong> return plain probabilities: is this a real
+      question at all, and could anyone actually know the answer? Jev picks the bucket; the
+      wording is chosen in code.
     </p>
   </article>
 </BaseLayout>

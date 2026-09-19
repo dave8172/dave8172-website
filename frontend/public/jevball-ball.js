@@ -8,7 +8,7 @@
 window.Ball = (function () {
   var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var ready = false;
-  var renderer, scene, camera, sphere, raf;
+  var renderer, scene, camera, sphere, key, raf;
   var spin = { x: 0, y: 0, z: 0 };
   var phase = "idle";          // idle -> tumble -> turn -> idle
   var t0 = 0;
@@ -80,7 +80,7 @@ window.Ball = (function () {
 
     // Key light high-left, a dim fill so the unlit side is not a void, and a
     // neutral rim to separate the ball from a warm paper background.
-    var key = new THREE.DirectionalLight(0xffffff, 2.5);
+    key = new THREE.DirectionalLight(0xffffff, 2.5);
     key.position.set(-2.4, 3, 3);
     scene.add(key);
     scene.add(new THREE.AmbientLight(0xffffff, 0.34));
@@ -128,9 +128,26 @@ window.Ball = (function () {
       sphere.rotation.z = lerp(from.z, to.z, k);
       if (k >= 1) { sphere.rotation.set(0, 0, 0); phase = "idle"; }
     } else {
-      // Idle: a slow drift so the thing looks alive without demanding attention.
-      sphere.rotation.y = Math.sin(now / 3200) * 0.09;
-      sphere.rotation.x = Math.sin(now / 4700) * 0.05;
+      // Idle: the ball itself stays perfectly still.
+      //
+      // It used to drift a few degrees to look alive. That was harmless while
+      // the printed disc was an HTML overlay, but the disc is geometry parented
+      // to the sphere now, so the drift swung it up to 14px right and 8px down
+      // on a 280px stage while the answer text stayed pinned to the centre —
+      // the ball leaned right and the text sat off-centre on it.
+      //
+      // The life comes from the key light orbiting instead. The highlight
+      // travels across the surface, the disc does not move at all, and the
+      // text stays registered to it. The disc uses an unlit material, so the
+      // moving light cannot touch it.
+      sphere.rotation.set(0, 0, 0);
+      if (key) {
+        key.position.set(
+          -2.4 + Math.sin(now / 3400) * 0.9,
+          3 + Math.sin(now / 5200) * 0.5,
+          3
+        );
+      }
     }
 
     renderer.render(scene, camera);
