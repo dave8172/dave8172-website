@@ -38,7 +38,7 @@
   <text x="648" y="266" font-family="ui-monospace,monospace" font-size="14" fill="#8a8a98">contact_name</text>
   <text x="868" y="266" font-family="ui-monospace,monospace" font-size="14" fill="#c8c8d4">Marcus Ellery</text>
   <circle cx="1112" cy="261" r="5" fill="#3fb950"/>
-  <text x="868" y="288" font-family="ui-monospace,monospace" font-size="12" fill="#6a6a78">the sender of the forwarded mail, not the forwarder</text>
+  <text x="868" y="288" font-family="ui-monospace,monospace" font-size="12" fill="#6a6a78">the sender, not the forwarder</text>
 
   <text x="648" y="326" font-family="ui-monospace,monospace" font-size="14" fill="#8a8a98">quantity</text>
   <text x="868" y="326" font-family="ui-monospace,monospace" font-size="14" fill="#c8c8d4">250</text>
