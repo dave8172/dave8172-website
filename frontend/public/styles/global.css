@@ -266,11 +266,35 @@ pre.astro-code code {
   max-width: 100%;
 }
 
-/* Tables and wide media get the same treatment. */
+/* Tables and wide media get the same treatment. `display: block` is what stops
+   a wide table pushing the whole page sideways; it also means the table shrinks
+   to its content rather than filling the column, which is why `min-width` puts
+   the full width back as a floor. */
 .prose table {
   display: block;
   overflow-x: auto;
   max-width: 100%;
+  min-width: 100%;
+  border-collapse: collapse;
+  margin: 1.75rem 0;
+  font-size: 0.925rem;
+}
+
+.prose th,
+.prose td {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose th {
+  font-weight: 600;
+  border-bottom-color: var(--muted);
+}
+
+.prose tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .prose code {

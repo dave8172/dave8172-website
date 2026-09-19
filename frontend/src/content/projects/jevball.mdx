@@ -1,0 +1,59 @@
+---
+title: "Magic Jev Ball — a toy built on a calibrated model"
+description: "A Magic 8 Ball whose verdict comes from Jev, a model returning calibrated probabilities instead of text. One call, four judgments, and it shows its working."
+date: 2026-09-17
+tags: [AI, Calibration, TypeSafe, Astro]
+image: "/projects/jevball/jevball-preview.png"
+cardTitle: "Magic Jev Ball"
+cardDescription: "A Magic 8 Ball that reads the question first. The verdict is a calibrated probability from Jev, not a random pick from twenty phrases — and it shows its working."
+kind: tool
+category: ai
+liveUrl: "/jevball"
+liveLabel: "Play it"
+---
+
+import RandomColor from '../../components/RandomColor.astro';
+
+## Overview
+
+Tap the ball, ask it something, and the verdict comes from <RandomColor>Jev</RandomColor> — a *System One* model that returns a calibrated probability distribution over options you define, rather than generating text. The original toy picked one of twenty phrases at random. This one reads the question first.
+
+![Magic Jev Ball](/projects/jevball/jevball-preview.png)
+
+It is a toy, and that is the point. Every answer is a judgment with no ground truth, which is exactly the setting where calibration either earns its keep or embarrasses itself in public. A demo where the right answer is knowable proves nothing.
+
+**[Play it →](/jevball)**
+
+---
+
+## One call, four judgments
+
+| Question | Primitive |
+|---|---|
+| Which way does this go? | Score, five levels from *no* to *yes* |
+| How much is riding on it? | Score |
+| Is this even a question? | Noul |
+| Could anyone know this? | Noul |
+
+All four ride in a single request. The rate limit is **1,200 requests a minute against 250,000 tokens a second**, so on calls this small it is *requests* that are scarce, never tokens — batching the questions is the whole optimisation.
+
+---
+
+## <RandomColor>Three decisions</RandomColor> that measurement made, not taste
+
+**A Score, not a Choice over the twenty answers.** The twenty classic replies are five buckets of near-synonyms; *"It is certain"* and *"Without a doubt"* are the same claim in different words. A Choice across all twenty would split probability between wordings and collapse confidence for a reason that has nothing to do with the question. So the model answers one Score on a no↔yes axis, and code picks the phrasing — seeded on the question text, so asking the same thing twice gives the same answer.
+
+**Confidence is peakedness, not doubt.** This is the trap, and the first design walked into it. Ask *"should I quit my job?"* and confidence comes back at **0.98** — with almost all of that mass sitting on the level that means *could go either way*. The model is confidently undecided. A "reply hazy" branch gated on low confidence would fire on precisely the wrong questions, so it keys off the verdict landing in the middle instead, split by whether anyone could know: *"will I be rich?"* earns *Cannot predict now*, *"will it rain Tuesday?"* earns *Reply hazy*.
+
+**The answer is the argmax, not the rounded score.** A Score's reported value is an average, so on a skewed distribution it points at a bucket the mass is not in. *"Is black a colour?"* returns a score of 3.18 across levels holding 2/6/19/16/**56**% — and rounding that lands on the bucket with 16% while 56% sits beside it. Taking the highest-probability level agrees with rounding on every peaked case, which is why the whole test suite passed while it was wrong, and differs exactly when it matters.
+
+The longer teardown of the primitives themselves — including the one where the options split their own vote — is written up in [Choice, Score and Noul: four mistakes with Jev's primitives](/blog/jev-primitives-four-mistakes).
+
+---
+
+## What is under it
+
+* **Frontend:** Astro, with the ball drawn to a canvas and no framework.
+* **Model:** Jev, called through one server-rendered endpoint so the API key stays server-side and never reaches the build output.
+* **Guards:** gibberish is caught before it reaches a verdict — real questions score 0.97 and up on *is this a question*, keyboard mashing scores 0.02 — and a spend cap sits in front of the endpoint.
+* **Tests:** the mapping from distribution to phrasing is covered by 12 tests against recorded real responses, so the suite needs no key and no network.
