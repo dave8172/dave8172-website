@@ -1,0 +1,70 @@
+---
+/**
+ * One row of the home page: a heading you can open onto a horizontal rail of
+ * cards. Three of these are the whole page.
+ *
+ * It is a native <details>, not a scripted accordion, for three reasons that
+ * all matter more than the animation would have:
+ *
+ *  1. A closed panel's cards are still in the HTML. Google renders JS; the AI
+ *     crawlers mostly do not, so anything a script would have injected on open
+ *     is invisible to them. Everything here ships in the served document.
+ *  2. It works with no JS at all — open, close, keyboard, screen reader.
+ *  3. `name` makes the group exclusive natively: opening one closes the rest,
+ *     which is the entire point of collapsing the page in the first place.
+ *
+ * The rail is CSS scroll-snap over `overflow-x: auto`, so it scrolls by swipe,
+ * trackpad, shift-wheel and keyboard before any script loads. The arrow
+ * buttons are an enhancement and stay hidden until the script on the home page
+ * confirms both that it ran and that the rail actually overflows.
+ */
+import RandomColor from "./RandomColor.astro";
+
+interface Props {
+  id: string;
+  label: string;
+  note: string;
+  count: number;
+  /** One shelf starts open, so the page is never a list of three closed lines. */
+  open?: boolean;
+  href?: string;
+  linkLabel?: string;
+}
+
+const { id, label, note, count, open = false, href, linkLabel } = Astro.props as Props;
+---
+
+<details class="shelf" name="home-shelf" id={`shelf-${id}`} open={open}>
+  <summary class="shelf-summary">
+    <h2 class="shelf-label"><RandomColor>{label}</RandomColor></h2>
+    <span class="shelf-count">{count}</span>
+    <svg class="shelf-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </summary>
+
+  <div class="shelf-panel">
+    <p class="shelf-note">
+      {note}
+      {href && linkLabel && <a class="shelf-link" href={href}>{linkLabel} <span aria-hidden="true">&rarr;</span></a>}
+    </p>
+
+    <div class="rail-wrap">
+      <button class="rail-nav rail-prev" type="button" data-dir="-1" aria-label={`Scroll ${label} left`}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+
+      <div class="rail" role="group" tabindex="0" aria-label={`${label}: ${count} items, scrollable`}>
+        <slot />
+      </div>
+
+      <button class="rail-nav rail-next" type="button" data-dir="1" aria-label={`Scroll ${label} right`}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</details>

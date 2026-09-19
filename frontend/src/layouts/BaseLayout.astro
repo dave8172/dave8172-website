@@ -5,7 +5,13 @@ import Analytics from "@vercel/analytics/astro";
 // `width` lets a page opt into the wide grid container. MDX pages that use
 // this file as their `layout` can set it in frontmatter; .astro pages pass it
 // as a prop. Default stays the 720px reading column.
-const { title = "Dave", description = "", image, width = "prose" } = Astro.props;
+// `schema` lets a page replace the default Person block with its own JSON-LD.
+// One <script type="application/ld+json"> per page, always — two graphs on one
+// page is how you end up with two Person entities that disagree.
+// `image` defaults to the site card, so a page that never thought about
+// sharing still renders as a card rather than a bare URL. Blog and project
+// pages pass their own and are unaffected.
+const { title = "Dave", description = "", image = "/og.png", width = "prose", schema } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const ogImageURL = image ? new URL(image, Astro.site) : undefined;
@@ -15,7 +21,7 @@ const personSchema = {
   "@type": "Person",
   name: "Dave",
   url: Astro.site,
-  sameAs: ["https://github.com/dave8172"],
+  sameAs: ["https://github.com/dave8172", "https://x.com/dave8172"],
 };
 ---
 
@@ -24,6 +30,7 @@ const personSchema = {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
+    <meta name="color-scheme" content="light dark" />
 
     <link rel="icon" href="/favicons/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png">
@@ -46,7 +53,7 @@ const personSchema = {
     {description && <meta name="twitter:description" content={description} />}
     {ogImageURL && <meta name="twitter:image" content={ogImageURL} />}
 
-    <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(schema ?? personSchema)} />
 
     <link rel="stylesheet" href="/styles/global.css" />
     <Analytics />

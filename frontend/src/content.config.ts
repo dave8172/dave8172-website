@@ -2,17 +2,28 @@ import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 
 /**
- * `kind` decides which section a project appears in, on the home page and on
- * /projects alike — both read the same groups from `src/lib/projectGroups.ts`,
- * so a project is filed once and shows up in the right place on both.
+ * Two fields, two jobs, and they are deliberately not the same field.
  *
- *   oss        — a public repo. Listed first everywhere: it is the only
- *                category a reader can go and check for themselves.
+ * `category` decides which shelf a project sits on at home. There are two, and
+ * the split is one question: does the thing contain AI, or not. It is declared
+ * per project rather than inferred from `kind`, because both shelves hold
+ * open-source repos, benchmarks and client builds — no mapping exists.
+ *
+ *   ai         — agents, eval harnesses, extraction, model benchmarks.
+ *   automation — spreadsheets, scripts, integrations. No model in the loop.
+ *
+ * `kind` decides the badge on the card — what sort of artifact this is, and
+ * how far a reader can check it for themselves.
+ *
+ *   oss        — a public repo. The only category a reader can go and verify
+ *                line by line, so it keeps its badge wherever it is shelved.
  *   tool       — something a visitor can actually run, here or on stuffs.bid.
  *   benchmark  — a measurement writeup, where the number is the point.
  *   automation — client and integration work.
  */
 const projectKind = z.enum(["oss", "tool", "benchmark", "automation"]);
+/** No default: a new project is filed onto a shelf by hand, or the build fails. */
+const projectCategory = z.enum(["ai", "automation"]);
 
 const projects = defineCollection({
   // Content Layer API. The glob loader's `id` is the filename without its
@@ -26,6 +37,7 @@ const projects = defineCollection({
     tags: z.array(z.string()).optional(),
     image: z.string(),
 
+    category: projectCategory,
     kind: projectKind.default("automation"),
     /** Card label. Falls back to `title`, which is often too long for a card. */
     cardTitle: z.string().optional(),
