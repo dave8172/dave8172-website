@@ -12,6 +12,10 @@
   --card-hover-border: #b9bec7;
   --card-shadow: rgba(17, 17, 17, 0.09);
   --code-bg: #f3f4f6;
+  /* The tinted block behind an interactive row. It is what separates the
+     home shelves from each other — there are no rules between them. */
+  --surface: #f4f5f7;
+  --surface-hover: #e8eaef;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -25,6 +29,8 @@
     --card-hover-border: #35353f;
     --card-shadow: rgba(0, 0, 0, 0.45);
     --code-bg: rgba(255, 255, 255, 0.07);
+    --surface: rgba(255, 255, 255, 0.04);
+    --surface-hover: rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -626,22 +632,36 @@ pre.astro-code code {
    ========================================================================== */
 
 .shelves {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
   margin: 0 0 3.5rem;
-  border-top: 1px solid var(--border);
 }
 
-.shelf {
-  border-bottom: 1px solid var(--border);
-}
-
+/* Each row is a tile you can press, and the gap between tiles is the only
+   separator. Rules were doing that job and doing it as furniture: a line says
+   "these are different things", where a tile that lifts under the cursor also
+   says "this one opens". */
 .shelf-summary {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  padding: 1.15rem 0.25rem;
+  /* Bleeds 1rem past the text column on both sides so the tile reads as a
+     block, while the label stays aligned with the hero above it. The wide
+     container's own 1.5rem padding is what keeps the bleed on the page. */
+  margin: 0 -1rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background: var(--surface);
   cursor: pointer;
   list-style: none;
+  transition: background 0.18s ease;
   -webkit-tap-highlight-color: transparent;
+}
+
+.shelf-summary:hover,
+.shelf[open] > .shelf-summary {
+  background: var(--surface-hover);
 }
 
 /* Two spellings, because Safari still ships the old one. */
@@ -650,8 +670,7 @@ pre.astro-code code {
 
 .shelf-summary:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 3px;
-  border-radius: 8px;
+  outline-offset: 2px;
 }
 
 .shelf-label {
@@ -680,7 +699,7 @@ pre.astro-code code {
 }
 
 .shelf-panel {
-  padding-bottom: 1.25rem;
+  padding: 1.35rem 0 1.5rem;
 }
 
 .shelf-note {
@@ -805,10 +824,20 @@ pre.astro-code code {
    ========================================================================== */
 
 .connect {
+  margin: 0 0 2rem;
+}
+
+.connect-label {
+  margin: 0 0 1rem;
+  font-size: clamp(1.2rem, 3.4vw, 1.55rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.connect-links {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
-  margin: 0 0 2rem;
 }
 
 .connect-link {
@@ -828,6 +857,7 @@ pre.astro-code code {
 
 .connect-link:hover {
   border-color: var(--card-hover-border);
+  background: var(--surface-hover);
   color: var(--accent);
 }
 
