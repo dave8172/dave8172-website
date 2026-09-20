@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { readFeeling } from "../../lib/waif";
+import { sign, type Judgment } from "../../lib/feedback";
 
 // Server-rendered for the same reason /api/jev is: the TypeSafe key is read
 // from process.env at request time on the Vercel function, so it is never
@@ -76,7 +77,31 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   }
 
   try {
-    return json(await readFeeling(text, key));
+    const reading = await readFeeling(text, key);
+
+    // The feedback loop is optional infrastructure: with no secret set there
+    // is nowhere to send a correction, so the page is told not to offer one
+    // rather than collecting answers it will drop.
+    const feedbackSecret = (process.env.WAIF_FEEDBACK_SECRET ?? "").replace(/\s+/g, "");
+    const canCollect = Boolean(feedbackSecret && process.env.WAIF_FEEDBACK_URL);
+    if (!reading.ok || !canCollect) return json({ ...reading, feedback: false });
+
+    const judgment: Judgment = {
+      chars: text.length,
+      family: reading.family.id,
+      familyConf: reading.family.confidence,
+      shade: reading.word.toLowerCase(),
+      shadeConf: reading.shadeConfidence,
+      intent: reading.intent.id,
+      intentConf: reading.intent.confidence,
+      valence: reading.axes.valence.score,
+      valenceConf: reading.axes.valence.confidence,
+      arousal: reading.axes.arousal.score,
+      arousalConf: reading.axes.arousal.confidence,
+      control: reading.axes.control.score,
+      controlConf: reading.axes.control.confidence,
+    };
+    return json({ ...reading, feedback: true, judgment, token: await sign(judgment, feedbackSecret) });
   } catch (err) {
     // What the visitor typed NEVER reaches a log line. The page promises that
     // nothing is stored, and a log is storage — so the only things recorded

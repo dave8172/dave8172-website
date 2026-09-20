@@ -3,6 +3,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { AXES, AXIS_IDS, INTENTS, SPEC, EVAL, EVAL_N, FAMILIES, SOURCE } from "../lib/waif";
 
 const AXIS_LIST = AXIS_IDS.map((id) => ({ id, ...AXES[id] }));
+/** A correction names a shade; the family it belongs to follows from it. */
+const SHADE_FAMILY = Object.fromEntries(
+  FAMILIES.flatMap((f) => f.shades.map((sh) => [sh.word, f.id])),
+);
+const INTENT_LIST = (Object.keys(INTENTS) as (keyof typeof INTENTS)[]).map((k) => ({ id: k, ...INTENTS[k] }));
 
 
 const EXAMPLES = [
@@ -70,6 +75,38 @@ const EXAMPLES = [
             </div>
           </div>
         ))}
+      </div>
+
+      <div class="wf-fb" id="wf-fb" hidden>
+        <p class="wf-fb-q">Does that fit?</p>
+        <div class="wf-fb-row" id="wf-fb-ask">
+          <button type="button" class="wf-chip" id="wf-fb-yes">Yes, that is it</button>
+          <button type="button" class="wf-chip" id="wf-fb-no">Not quite</button>
+        </div>
+        <div class="wf-fb-form" id="wf-fb-form" hidden>
+          <label class="wf-fb-l" for="wf-fb-shade">What would you call it?</label>
+          <select id="wf-fb-shade">
+            <option value="">— leave blank if you are not sure —</option>
+            {FAMILIES.map((f) => (
+              <optgroup label={f.label}>
+                {f.shades.map((sh) => <option value={sh.word}>{sh.word}</option>)}
+              </optgroup>
+            ))}
+          </select>
+          <label class="wf-fb-l" for="wf-fb-intent">And what were you doing?</label>
+          <select id="wf-fb-intent">
+            <option value="">— leave blank if you are not sure —</option>
+            {INTENT_LIST.map((i) => <option value={i.id}>{i.label}</option>)}
+          </select>
+          <div class="wf-fb-row">
+            <button type="button" id="wf-fb-send">Send</button>
+          </div>
+        </div>
+        <p class="wf-fb-done" id="wf-fb-done" hidden></p>
+        <p class="wf-fb-note">
+          A correction sends the reading's numbers and the word you picked. It does not send
+          what you wrote, which is never stored anywhere.
+        </p>
       </div>
 
       <div class="wf-detail">
@@ -364,6 +401,22 @@ const EXAMPLES = [
 
   .wf-ax-ends { display: flex; justify-content: space-between; gap: 10px; font-size: 0.78rem; color: var(--dim); }
 
+  /* The ask sits between the reading and the panels: after the thing being
+     judged, before the machinery, and quiet enough to ignore. */
+  .wf-fb { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .wf-fb-q { margin: 0 0 10px; font-size: 0.92rem; color: var(--ink); }
+  .wf-fb-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .wf-fb-form { margin-top: 14px; display: grid; gap: 6px; }
+  .wf-fb-l { font-size: 0.8rem; color: var(--dim); margin-top: 6px; }
+  .wf-fb select {
+    width: 100%; padding: 9px 11px; font-family: inherit; font-size: 15px;
+    color: var(--ink); background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; appearance: none;
+  }
+  .wf-fb select:focus { outline: none; border-color: var(--accent); }
+  .wf-fb-done { margin: 10px 0 0; font-size: 0.9rem; color: var(--accent); }
+  .wf-fb-note { margin: 12px 0 0; font-size: 0.78rem; color: var(--dim); }
+
   .wf-detail { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 4px; }
   .wf-toggle {
     width: 100%; text-align: left !important; padding: 8px 0 !important;
@@ -491,7 +544,7 @@ const EXAMPLES = [
   }
 </style>
 
-<script is:inline define:vars={{ AXIS_LIST, SPEC }}>
+<script is:inline define:vars={{ AXIS_LIST, SPEC, SHADE_FAMILY }}>
   (function () {
     var form = document.getElementById("wf-form");
     var text = document.getElementById("wf-text");
@@ -637,6 +690,61 @@ const EXAMPLES = [
       out.hidden = false;
     }
 
+    // --- feedback -----------------------------------------------------------
+    var fb = document.getElementById("wf-fb");
+    var fbAsk = document.getElementById("wf-fb-ask");
+    var fbForm = document.getElementById("wf-fb-form");
+    var fbDone = document.getElementById("wf-fb-done");
+    var fbShade = document.getElementById("wf-fb-shade");
+    var fbIntent = document.getElementById("wf-fb-intent");
+    var current = null;
+
+    function resetFeedback(r) {
+      current = r && r.feedback ? r : null;
+      fb.hidden = !current;
+      fbAsk.hidden = false;
+      fbForm.hidden = true;
+      fbDone.hidden = true;
+      fbShade.value = "";
+      fbIntent.value = "";
+    }
+
+    function sendFeedback(fits, extra) {
+      if (!current) return;
+      fbAsk.hidden = true;
+      fbForm.hidden = true;
+      fbDone.hidden = false;
+      fbDone.textContent = "Sending…";
+      var body = Object.assign({}, current.judgment, { token: current.token, fits: fits }, extra || {});
+      fetch("/api/waif/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+        .then(function (res) { return res.json().then(function (b) { if (!res.ok) throw new Error(b.error); return b; }); })
+        .then(function () {
+          fbDone.textContent = fits
+            ? "Thank you — logged."
+            : "Thank you — logged. Corrections are what the wording gets rewritten from.";
+        })
+        .catch(function (err) { fbDone.textContent = err.message || "That did not save."; });
+    }
+
+    document.getElementById("wf-fb-yes").addEventListener("click", function () { sendFeedback(true); });
+    document.getElementById("wf-fb-no").addEventListener("click", function () {
+      fbAsk.hidden = true;
+      fbForm.hidden = false;
+      fbShade.focus();
+    });
+    document.getElementById("wf-fb-send").addEventListener("click", function () {
+      var shade = fbShade.value;
+      sendFeedback(false, {
+        trueShade: shade || undefined,
+        trueFamily: shade ? SHADE_FAMILY[shade] : undefined,
+        trueIntent: fbIntent.value || undefined,
+      });
+    });
+
     var busy = false;
 
     function ask() {
@@ -666,10 +774,12 @@ const EXAMPLES = [
           status.textContent = "";
           if (!r.ok) {
             out.hidden = true;
+            resetFeedback(null);
             status.textContent = "That did not read as something a person wrote, so it was not scored.";
             return;
           }
           render(r);
+          resetFeedback(r);
         })
         .catch(function (err) { status.textContent = err.message || "Something went wrong."; })
         .finally(function () { busy = false; go.disabled = false; });
