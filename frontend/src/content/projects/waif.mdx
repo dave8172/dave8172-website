@@ -1,11 +1,11 @@
 ---
-title: "waif — reading the feeling in a piece of text, on three axes"
-description: "Paste something you wrote and waif names the feeling behind it. Three Scores and six Nouls from Jev place it on axes that are not synonyms of each other; the name is looked up in code from where they land."
+title: "waif — naming the feeling in a piece of text, and what the writer is doing with it"
+description: "Text in, a reading out. Three axes anchored to published human norms, a feeling named in two stages by a calibrated model, and the four designs that were tried and scored before this one was kept."
 date: 2026-09-20
-tags: [AI, Calibration, TypeSafe, Astro]
+tags: [AI, Calibration, Evaluation, TypeSafe, Astro]
 image: "/projects/waif/waif-preview.png"
 cardTitle: "waif"
-cardDescription: "What am I feeling? Text in, a reading out — measured on three axes by a calibrated model, with the naming done in plain code you can argue with."
+cardDescription: "What am I feeling? Text in, a feeling and an intent out — named in two stages by a calibrated model, with the eval that picked the design printed on the page."
 kind: tool
 category: ai
 liveUrl: "/waif"
@@ -17,85 +17,104 @@ import RandomColor from '../../components/RandomColor.astro';
 ## Overview
 
 Write something — a message you have not sent, a note to yourself — and waif tells
-you what the feeling in it looks like. The name comes out first, then the reading,
-then the three meters it was derived from, and then, if you open it, every number
-the model returned.
+you what the feeling in it is, what you are doing with it, and every number behind
+both.
 
-![waif reading a piece of text](/projects/waif/waif-preview.png)
+![waif reading a message that is asking for help](/projects/waif/waif-preview.png)
 
-It is built on <RandomColor>Jev</RandomColor>, the same *System One* model behind the
+It runs on <RandomColor>Jev</RandomColor>, the same *System One* model behind the
 [Magic Jev Ball](/projects/jevball) — a model that returns calibrated probabilities
-rather than text. The interesting part is not that a model can read tone. It is that
-**"what emotion is this" has no right answer, while the questions underneath it do**,
-and the whole design follows from taking that seriously.
+rather than text. The interesting part was never whether a model can read tone. It is
+that **"what emotion is this" has no right answer while the questions underneath it
+do**, and that finding out which of those questions to ask took four designs and a
+scored probe set.
 
 **[Try it →](/waif)**
 
 ---
 
-## Why axes, and not a list of emotions
+## Four designs, one probe set
 
-The obvious build is a Choice over twenty-odd emotion names. It does not work, and
-it fails for a reason worth knowing.
+The first version named the feeling from a table of thirty coordinates I placed by
+hand. Replacing hand-placed guesses with **published human ratings** was the obvious
+improvement, so it was tried — properly, and scored on the same 24 texts against a
+list of acceptable words for each one.
 
-*Annoyed*, *irritated* and *frustrated* are one feeling in three wordings. A Choice
-splits its probability between them, so the model's confidence collapses — not
-because the text was unclear, but because the options were synonyms. The Magic Jev
-Ball hit exactly this with its twenty classic answers. Here it is worse, because
-emotion vocabulary is almost entirely synonyms.
+| Design | Score |
+|---|---|
+| Nearest word in the whole vocabulary, by published valence/arousal/dominance | 3/24 |
+| Nearest word within a family, by rank on the axis that separates that family | 9/24 |
+| Nearest word within a family, by distance in published valence/arousal/dominance | 12/24 |
+| **Family chosen by the model, then the shade chosen by the model** | **22/24** |
 
-So waif asks the three questions that *do* have answers, which psychology has
-treated as separable since Wundt:
+**The norms turned out to be a poor way to pick a word, and the measurement said so
+before I had a chance to argue.** Three things went wrong at once, and all three are
+worth knowing before reaching for an emotion lexicon:
 
-| Question | Primitive | Runs from |
-|---|---|---|
-| How pleasant or unpleasant is the feeling? | Score, 5 levels | unpleasant ↔ pleasant |
-| How activated is the person? | Score, 5 levels | shut down ↔ at full pitch |
-| How much say do they feel they have? | Score, 5 levels | powerless ↔ in charge |
+* **Dominance is nearly a copy of valence.** Across the emotion words used here it
+  correlates with valence at **+0.87**, so the third dimension carries far less
+  independent information than the theory promises.
+* **Negative emotions occupy almost no space.** Fear, frustration, worry, terror,
+  jealousy and embarrassment sit inside a ball small enough that the nearest
+  neighbour is close to arbitrary, and the ratings are means from about twenty
+  people with a standard deviation near 1.7 on a 1–9 scale.
+* **A word rated alone is not the same measurement as writing read in context.**
+  People rate the *word* "gratitude" as far more activated than a grateful message
+  reads. Forcing the two onto one scale imports that mismatch as error.
 
-Six **Nouls** ride along in the same request: is this writing at all, is the
-feeling about something that has not happened yet, is more than one feeling present,
-is it aimed at the reader, is it asking for something, is it being held back.
-
-**Jev measures. The name is looked up in code** — 30 words, each at a hand-placed
-coordinate, nearest neighbour with weights. That table is opinionated and arguable,
-and it is in a file you can read rather than inside a model where you could not.
-
----
-
-## <RandomColor>Three things</RandomColor> measurement decided
-
-**Three axes were not enough, and the fix was a fourth question.** A plainly
-frustrated text — *"I have asked them four times for the file"* — came back as
-**Anxiety**. It was not a bad reading: negative, keyed up, no control describes both
-feelings equally well. What separates them is whether the thing has already happened.
-Adding one Noul, *is this about something that has not happened yet*, moved that text
-to **Frustration** while a genuinely anxious one stayed at **Dread**. Three axes
-underdetermine the word; the fourth question is the one that disambiguates the pairs.
-
-**The meter shows the argmax; the lookup uses the mean — and that is not an
-inconsistency.** A meter highlights a bucket, so it wants the tallest bar: rounding a
-skewed score lands the highlight on a bar the weight is not in. The word lookup
-places a point in a continuous space, so it wants the weighted position — a reading
-split between *negative* and *level* really does sit between them. Same numbers, two
-different jobs.
-
-**An axis that did not settle has to say so.** One test text measured **0.35
-confidence on valence** — the weight genuinely split between negative and positive —
-and the first version still printed *"Negative"* in the same voice it uses at 0.98.
-That is the easiest way for a page like this to lie, because a reader looks at the
-word, not at the bars. Now an unsettled axis is named, with the two levels it split
-between and their percentages.
+So the norms do the job they are actually good at: **anchoring the rubric**. Every
+level of every axis names words whose ratings were measured — *"as activated as rage
+or panic"* is a claim you can check, where *"very aroused"* is not — and the
+vocabulary table on the page shows where each of the 62 words sits, with its rater
+count and spread.
 
 ---
 
-## What it does not do
+## <RandomColor>Two questions</RandomColor>, in that order
 
-It names 28 feelings and no more, and it says when the nearest one is not close.
-Three axes cannot separate feelings that differ only by what caused them — gratitude
-and contentment sit almost on top of each other, and no coordinate can tell them
-apart. Where the point is far from every word, the page says *closest to X, though
-not close*, rather than picking one and sounding certain.
+Ask a model to pick one of sixty emotion words and it splits its own vote:
+*annoyed*, *irritated* and *frustrated* are one feeling in three wordings, so
+probability divides between them and confidence collapses for a reason that has
+nothing to do with the text. That is the same failure the Magic Jev Ball avoids by
+answering on an axis instead of choosing between its twenty classic replies.
+
+**Families do not have that problem.** Anger, fear, sadness and shame are genuinely
+alternatives to each other. And once the family is fixed, *"which shade of anger"*
+is fair too, because the context has already ruled out the fifty-four words that
+were never in the running.
+
+So the naming is two calls: the first measures the axes and picks the family and the
+intent; the second picks the shade from that family alone. Gibberish is refused
+before the second call is spent.
+
+---
+
+## What you are doing, which is not what you are feeling
+
+Two people testing the first version said the same thing: **the intent is missing.**
+They were right — it had been scattered across two Nouls, *is it aimed at the
+reader* and *is it asking for something*, which were fragments of a judgment rather
+than a judgment. Both were replaced by one Choice over eight speech acts: venting,
+asking for help, seeking reassurance, confronting, thanking, deciding, telling you
+what happened, thinking it through. These *are* alternatives to each other, which is
+exactly why a Choice is right here and wrong for emotion words.
+
+A third Noul was cut outright after being checked rather than assumed. *Is more than
+one feeling present* came back at or above 0.6 on **twenty-one of twenty-four**
+texts. That is not a signal, it is a property of writing. What it was reaching for is
+now read off the shade Choice's own spread — a feeling between two words shows up as
+a split distribution, which answers the same question better and costs nothing.
+
+---
+
+## What it refuses to do
+
+It has 62 words and no more, and no coordinate separates feelings that differ only
+by what caused them. Where the shade does not separate, the page names the two words
+it is between rather than picking one and sounding certain. Where even the family is
+unsettled, it says so. Where an axis clears its confidence threshold but the top two
+levels are a coin toss, that is caught too — confidence is computed over the whole
+distribution, so a 50/49 split can look peaked and still be undecided.
 
 It is an instrument, not help. Nothing you type is stored or logged.
 
@@ -103,12 +122,11 @@ It is an instrument, not help. Nothing you type is stored or logged.
 
 ## What is under it
 
-* **Frontend:** Astro, no framework, no dependencies. One page, light-themed on
-  purpose while the rest of the site follows your system theme.
-* **Model:** Jev, nine questions in a single request, called through one
-  server-rendered endpoint so the API key never reaches the build output.
-* **Guards:** a gibberish gate before anything is scored — real writing measures
-  0.96–0.98 on *is this writing*, keyboard mashing 0.08 — and a spend cap in front
-  of the endpoint.
-* **Tests:** ten, against answer objects recorded from real calls, so the suite
+* **Frontend:** Astro, no framework, no dependencies. Light-themed on purpose while
+  the rest of the site follows your system theme.
+* **Model:** Jev, two calls — eight questions then one — through a server-rendered
+  endpoint so the API key never reaches the build output.
+* **Data:** a 62-word extract of [Warriner, Kuperman & Brysbaert (2013)](https://doi.org/10.3758/s13428-012-0314-x),
+  norms of valence, arousal and dominance for 13,915 English lemmas.
+* **Tests:** eleven, against answer objects recorded from real calls, so the suite
   needs no key and no network.

@@ -20,7 +20,8 @@ Two handling rules, both learned the hard way on 2026-09-18:
   it looks like a network fault.
 - **Never log a raw error message from a failed call.** Node's invalid-header
   `TypeError` quotes the offending header value back at you — which is the key.
-  `/api/waif` logs only the error's class and an upstream status.
+  `/api/waif` logs only the error's class and an upstream status, and never the
+  visitor's text.
 
 ## SDK
 
@@ -41,54 +42,85 @@ State: `{ question }`. Four questions, one request.
 | `is_question` | Noul | Is this a genuine question, not gibberish? |
 | `knowable` | Noul | Could the answer be known or predicted at all? |
 
-### `/waif` — `src/lib/waif.ts`
+### `/waif` — `src/lib/waif.ts`, vocabulary in `src/lib/vad.ts`
 
-State: `{ text }`. Nine questions, one request.
+State: `{ text }`. **Two requests**, and the split between them is the design.
+
+**Stage one — eight questions, one request.**
 
 | id | Primitive | Answers |
 |---|---|---|
 | `valence` | Score, 5 levels | How pleasant or unpleasant is the feeling? |
 | `arousal` | Score, 5 levels | How activated — shut down, or keyed up? |
 | `control` | Score, 5 levels | How much say does the writer feel they have? |
-| `ahead` | Noul | Is the feeling about something that has not happened yet? |
+| `family` | Choice, 11 options | Which family does the feeling belong to? |
+| `intent` | Choice, 8 options | What is the writer *doing* — the act, not the feeling? |
 | `is_writing` | Noul | Is this something a person actually wrote? |
-| `mixed` | Noul | Is more than one feeling present at once? |
-| `directed` | Noul | Is the feeling aimed at the reader? |
-| `asking` | Noul | Is it asking for something, explicitly or not? |
-| `restrained` | Noul | Is the feeling being held back relative to what is described? |
+| `ahead` | Noul | Is the feeling about something that has not happened yet? |
+| `restrained` | Noul | Is the feeling held back relative to what is described? |
 
-**Why axes and not an emotion Choice.** A Choice over emotion words splits its
-own vote between synonyms — `annoyed`, `irritated`, `frustrated` are one feeling
-in three wordings — and confidence then collapses for a reason that has nothing
-to do with the text. The same trap the ball hit with its twenty answers, worse,
-because emotion vocabulary is almost all synonyms.
+**Stage two — one question**, asked only if the gate passes: a Choice over the
+chosen family's shades alone, 2–8 options depending on the family.
 
-**A control rubric must not contain an emotion word.** Level 1 read *"Overwhelmed:
-struggling to keep any grip on it"*, which primed the model with a feeling while
-asking about agency, and labelled the meter with a word that is not a point on a
-control scale. Renamed 2026-09-20 to *"Little control"*, rubric *"Struggling to keep
-any grip on it"*. Every level on an axis has to be a position on that axis.
+**Why two Choices instead of one.** A Choice over sixty emotion words splits its
+own vote between synonyms — *annoyed*, *irritated*, *frustrated* are one feeling
+in three wordings. Families do not have that problem, because anger and fear are
+genuinely alternatives; and once the family is fixed, so are its shades, because
+the context has ruled out the fifty-four words that were never in the running.
+This is the one case where a **second request is warranted**: the first answer
+determines the second question's options.
 
-**Two prototypes were unreachable and one word was missing.** `Excitement` sat at
-arousal 3.8 — which this rubric describes as *frantic, furious or overwhelmed* — so
-a plainly excited text measuring 3.00 could never reach it, and every future-facing
-text was additionally penalised because its `ahead` was parked at 0.75 against
-`Anticipation`'s 0.90. Moved to (3.7, 3.2, 3.0, 0.85) and (3.2, 2.2, 2.7, 0.92);
-*"i am going to dance with my friends"* went from **Anticipation** to **Excitement**,
-with Anticipation the runner-up 0.10 behind. `Longing` was added for wanting
-something you do not control: a wistful probe had no word within 1.89.
+**Why `intent` is a Choice and not Nouls.** It replaced `directed` (*is it aimed
+at the reader*) and `asking` (*is it asking for something*), which were fragments
+of one judgment. Speech acts are alternatives to each other, so "which one" is
+the right question — the mirror of why emotion words are not.
 
-**Why `ahead` exists.** Three axes underdetermine the name. Frustration and
-anxiety sit within a whisker of each other on valence, arousal and control;
-what separates them is whether the thing has happened yet. Measured
-2026-09-20: without it, a plainly frustrated text read as *Anxiety*; with it,
-*Frustration*, and the anxious text still reads as *Dread*.
+**A Noul that was cut for saying nothing.** `mixed` (*is more than one feeling
+present*) returned ≥0.6 on **21 of 24** probe texts. That is a property of
+writing, not a signal. What it reached for is now read off the shade Choice's
+spread: a split distribution *is* "between two feelings", and costs nothing.
+
+**A control rubric must not contain an emotion word.** Level 1 once read
+*"Overwhelmed: struggling to keep any grip on it"*, which primed the model with a
+feeling while asking about agency, and labelled the meter with a word that is not
+a position on a control scale.
+
+## Where the numbers come from
+
+`src/lib/vad.ts` is **generated**, a 62-word extract of:
+
+> Warriner, A.B., Kuperman, V. & Brysbaert, M. (2013). *Norms of valence, arousal,
+> and dominance for 13,915 English lemmas.* Behavior Research Methods 45,
+> 1191–1207. doi:10.3758/s13428-012-0314-x
+
+**It is used to anchor the rubric levels and as reference on the page. It does not
+pick the word** — that was tried, measured, and rejected on the numbers. On a
+24-text probe set scored against acceptable words per text:
+
+| Design | Score |
+|---|---|
+| Nearest word in the whole vocabulary, by published V/A/D | 3/24 |
+| Nearest word within a family, by rank on the separating axis | 9/24 |
+| Nearest word within a family, by V/A/D distance | 12/24 |
+| Family chosen by the model, then shade chosen by the model | **22/24** |
+
+Three reasons it fails, all measured here rather than assumed: **dominance
+correlates with valence at +0.87** across these emotion words, so the third
+dimension is nearly redundant; **negative emotions occupy a very small ball** of
+that space, so nearest-neighbour is close to arbitrary; and **a word rated in
+isolation is not the same measurement as writing read in context** — people rate
+the word *gratitude* far more activated than a grateful message reads.
+
+An earlier attempt to fix the scale mismatch by z-scoring both sides against a
+probe corpus was worse still, and for an instructive reason: **the corpus was
+negative-skewed, so the mapping inherited the skew** and a plainly warm text
+landed below the mean and was named from the sad half of the space.
 
 ## Thresholds
 
-Validated on a probe set of 12 texts run against **jev-1.13.0 on 2026-09-20**,
-recorded as fixtures in `frontend/test/waif.test.mjs`. Small, so treat every
-number here as provisional.
+Validated on 24 probe texts run against **jev-1.13.0 on 2026-09-20**, with five
+pairs recorded as fixtures in `frontend/test/waif-fixtures.json`. Small, so treat
+every number as provisional.
 
 | Constant | Value | Basis |
 |---|---|---|
@@ -96,32 +128,29 @@ number here as provisional.
 | `PRESENT` (Nouls) | 0.60 | Separates the signals that fired correctly from near-misses at 0.43–0.49 |
 | `SETTLED` (axis confidence) | 0.50 | Below it the weight is genuinely split; an ambiguous text measured 0.35 on valence while clean ones measured 0.76–0.98 |
 | `MARGIN` (top two levels) | 0.15 | Confidence is computed over the whole distribution, so a two-way split can clear `SETTLED` and still be a coin toss — one probe landed 52% against 47% on control and was reported flatly |
-| `FAR` (distance) | 1.35 | Clean matches landed 0.40–1.00; a text with no good word landed 2.06 |
-
-`jevball`'s own `HIGH_STAKES = 1.5` was set the same way and is recorded in that
-file.
+| `SHADE_CLEAR` | 0.60 | Clean readings scored 0.79–1.00; a genuinely between-two-words text scored 0.20 |
+| `FAMILY_CLEAR` | 0.50 | Clear families scored 0.88–1.00; the two probe failures scored 0.37 and 0.68 |
 
 ## What stayed in code
 
-- **The emotion vocabulary.** 30 words, each at a hand-placed coordinate on the
-  three axes plus a time orientation. Opinionated, arguable, and in a table you
-  can read — not inside the model, where it could be neither.
-- **The nearest-word lookup**, including its weights (valence 1.3, arousal 1.0,
-  control 0.7, ahead 0.8) and the "no word is close" threshold.
 - **Every sentence.** The model never writes a word of the output.
+- **The families**, which are a basic-emotion grouping and not part of the cited
+  data, and the gloss on each shade, which is what the Choice is given as criteria.
 - **The level shown on a meter is the argmax, not the rounded score** — a skewed
   distribution drags the mean across a boundary and lands the highlight on a bar
   the mass is not in.
+- **Every threshold above**, and the decision to refuse rather than score.
 
 ## Measured cost
 
-Per reading, `jev-1.13.0`, 2026-09-20: **~1,010 input tokens, ~148 output**.
-Input is dominated by the rubrics, which are sent on every call regardless of
-how short the text is — so a one-line input costs almost exactly what a
-paragraph does. The ball's four questions cost roughly half that.
+`jev-1.13.0`, 2026-09-20. Stage one ~1,400 input tokens; stage two ~444. Input is
+dominated by rubrics and criteria, which are sent on every call regardless of how
+short the text is, so a one-line input costs almost exactly what a paragraph does.
+**A refusal costs one request, not two** — the gate is checked before stage two is
+spent.
 
 Rate limit on the account is 1,200 requests/minute against 250,000 tokens/second,
-so on calls this small it is *requests* that are scarce and batching every
-question into one is the whole optimisation. Both endpoints sit behind an
-in-memory spend cap (20 per visitor per day, 500 global), which holds per warm
-function instance rather than globally.
+so on calls this small it is *requests* that are scarce. Both endpoints sit behind
+an in-memory spend cap (20 per visitor per day, 500 global) which holds per warm
+function instance rather than globally — so the real ceiling is higher than 500
+across concurrent instances. The hard version is stuffboard's `/api/quota`.

@@ -1,53 +1,68 @@
 /**
  * waif — What Am I Feeling.
  *
- * Text in, a reading of the feeling behind it out. Jev supplies the
- * measurements; this file turns them into a word.
+ * Text in, a reading of the feeling behind it out.
  *
- * The split is the same one the Magic Jev Ball makes, for the same reason:
- * the model answers questions that have an answer, and code owns every
- * decision that is really a matter of wording. Here that split is load
- * bearing, because "what emotion is this" has no single right answer —
- * but "how negative is it", "how activated is it" and "how much say does
- * this person have" all do.
+ * Two requests, and the split between them is the whole design. The first
+ * measures the text and picks the *family* the feeling belongs to. The second
+ * picks the exact shade, choosing only among that family's words — which it
+ * can do well precisely because the family is already fixed.
+ *
+ * This replaced a hand-placed coordinate table on 2026-09-20, and the reason
+ * it replaced it is measured rather than argued. See `EVAL` below.
  *
  * Server-only. Nothing here may be imported into a client component: it is
  * reached solely through /api/waif, which holds the key.
  */
 
+import { FAMILIES, SOURCE, type Family, type Shade } from "./vad.ts";
+
 const ENDPOINT = "https://api.typesafe.ai/v1/systemone";
 const MODEL = "jev-latest";
 
 /**
- * Three axes, not a list of emotion names.
+ * What was tried, and how well each one named the feeling, on the same 24-text
+ * probe set scored against a list of acceptable words per text.
  *
- * A Choice over twenty-odd emotion words would split its own vote: `annoyed`,
- * `irritated` and `frustrated` are one feeling in three wordings, and the
- * probability mass divides between them for a reason that has nothing to do
- * with the text. Confidence then collapses on exactly the inputs the model
- * read most clearly. The ball hit this with its twenty answers; the same trap
- * is worse here, because emotion vocabulary is almost entirely synonyms.
+ * It is here rather than in a commit message because the page shows it: the
+ * claim "this is built on published norms" is only worth making next to the
+ * number saying how far the norms actually got.
+ */
+export const EVAL = [
+  { design: "Nearest word in the whole vocabulary, by published valence/arousal/dominance", score: 3 },
+  { design: "Nearest word within a family, by rank on the axis that separates that family", score: 9 },
+  { design: "Nearest word within a family, by distance in published valence/arousal/dominance", score: 12 },
+  { design: "Family chosen by the model, then the shade chosen by the model", score: 22 },
+] as const;
+export const EVAL_N = 24;
+
+/**
+ * Three axes, and each level is anchored to words with published means.
  *
- * So the model is asked the three questions that psychology has treated as
- * separable since Wundt — pleasantness, activation and a sense of agency —
- * and the *name* is looked up from the coordinates, in code, below. Each axis
- * is measured independently and none of them is a synonym for another.
+ * The axes themselves are the dimensional tradition — valence and arousal are
+ * Russell's circumplex, and the third is the dominance dimension of Mehrabian
+ * and Russell's PAD. That is the part with a literature behind it.
  *
- * `levels` are the rubric sent to Jev and must stand on their own. `short` is
- * the display legend, which has to fit in a meter cell.
+ * The *anchors* are what make the rubric non-arbitrary. Rather than a level
+ * reading "quite negative", which means whatever the reader wants, each level
+ * names words whose valence, arousal and dominance were rated by people, so
+ * the scale is pinned to something outside this file. The numbers in brackets
+ * are those published means on the 1-9 scale; they are documentation here,
+ * because the model is given the words, not the numbers.
  */
 export const AXES = {
   valence: {
     label: "Valence",
     question: "How pleasant or unpleasant is the feeling behind `text`?",
     ends: ["unpleasant", "pleasant"],
-    short: ["Heavily negative", "Negative", "Level or mixed", "Positive", "Strongly positive"],
+    short: ["Heavily negative", "Negative", "Level", "Positive", "Strongly positive"],
+    anchors: [2.27, 3.14, 5.0, 6.63, 8.21],
     levels: [
-      "Heavily negative: pain, dread, anger or misery runs through the whole of it",
-      "Negative: irritation, unease, disappointment or low spirits",
-      "Level or mixed: flat and factual, or pulling both ways at once",
-      "Positive: warmth, ease, or quiet satisfaction",
-      "Strongly positive: delight, love, relief or elation",
+      "As unpleasant as misery or grief: pain or despair runs through the whole of it",
+      "As unpleasant as sorrow or confusion: low spirits, unease, something gone wrong",
+      "Neither pleasant nor unpleasant: flat and factual, or pulling both ways at once",
+      "As pleasant as contentment or relief: warmth, ease, something come right",
+      "As pleasant as joy or delight: elation, love, the best of news",
     ],
   },
   arousal: {
@@ -55,12 +70,13 @@ export const AXES = {
     question: "How activated is the person writing `text` — shut down and still, or keyed up?",
     ends: ["shut down", "at full pitch"],
     short: ["Shut down", "Subdued", "Steady", "Keyed up", "At full pitch"],
+    anchors: [2.31, 2.7, 4.4, 5.94, 6.51],
     levels: [
-      "Shut down: flat and drained, nothing moving at all",
-      "Subdued: quiet and slow, energy clearly low",
-      "Steady: ordinary and level, neither stirred nor unusually still",
-      "Keyed up: tense or animated, energy clearly raised",
-      "At full pitch: frantic, furious or overwhelmed, and hard to contain",
+      "As still as calm or serenity: nothing moving, settled or drained",
+      "As low-energy as boredom or sadness: quiet and slow",
+      "As activated as relief or nostalgia: ordinary, neither stirred nor unusually still",
+      "As activated as frustration or anger: tense or animated, energy clearly raised",
+      "As activated as rage or panic: frantic or overwhelmed, hard to contain",
     ],
   },
   control: {
@@ -68,12 +84,13 @@ export const AXES = {
     question: "How much say does the person writing `text` feel they have over what is happening?",
     ends: ["powerless", "in charge"],
     short: ["Powerless", "Little control", "Some say in it", "Steady grip", "In charge"],
+    anchors: [2.8, 3.28, 5.24, 6.17, 7.31],
     levels: [
-      "Powerless: carried along by events with no options left",
-      "Struggling to keep any grip on it",
-      "Some say in it, but not much",
-      "A steady grip on the situation",
-      "Fully in charge, deciding what happens next",
+      "As powerless as panic or terror: carried along with no options left",
+      "As powerless as anxiety or worry: struggling to keep any grip on it",
+      "In between, as with disgust or regret: some say in it, but not much",
+      "As in command as confidence or pride: a steady grip on the situation",
+      "As in command as calm or peace: fully settled, deciding what happens next",
     ],
   },
 } as const;
@@ -82,43 +99,48 @@ export type AxisId = keyof typeof AXES;
 export const AXIS_IDS = ["valence", "arousal", "control"] as const;
 
 /**
- * Four qualities that are *present or not*, independently of the axes.
+ * What the writer is *doing*, which is not what they are feeling.
  *
- * These are Nouls rather than another Score because they do not sit on a
- * dimension — text either aims its feeling at a reader or it does not. They
- * are also not mutually exclusive, which is precisely the case the docs say
- * to give one Noul each rather than a Choice.
+ * This is a Choice and not a set of Nouls, and that is the same argument the
+ * emotion vocabulary makes in reverse: speech acts are genuinely alternatives
+ * to each other, so asking "which one" is the right question. It replaced two
+ * Nouls — *is it aimed at the reader* and *is it asking for something* — which
+ * were fragments of this judgment rather than judgments of their own.
+ */
+export const INTENTS = {
+  venting: { label: "venting", gloss: "Getting it out. No answer is wanted and none would help" },
+  asking_for_help: { label: "asking for help", gloss: "Requesting practical help, an answer, or a favour" },
+  seeking_reassurance: { label: "seeking reassurance", gloss: "Asking to be told it is alright, or that they judged it correctly" },
+  confronting: { label: "confronting", gloss: "Calling someone out, accusing, or holding them to something" },
+  thanking: { label: "thanking", gloss: "Thanking, appreciating, or telling someone they mattered" },
+  deciding: { label: "deciding", gloss: "Announcing or working towards a decision they are committing to" },
+  reporting: { label: "telling you what happened", gloss: "Stating what happened or what is planned, informationally" },
+  reflecting: { label: "thinking it through", gloss: "Thinking aloud, turning something over, working it out on the page" },
+} as const;
+export type IntentId = keyof typeof INTENTS;
+
+/**
+ * The two Nouls that survived a check on whether they were saying anything.
  *
- * They never change the word. They change the sentence around it, which is
- * where the things a three-axis coordinate cannot hold actually live.
+ * Measured over the 24-text probe set: `mixed` — *is more than one feeling
+ * present* — came back at or above 0.6 on twenty-one of twenty-four texts,
+ * which is not a signal, it is a property of writing. It was cut, and the
+ * thing it was reaching for is now read off the shade Choice's own spread: a
+ * feeling that sits between two words shows up as a split distribution, which
+ * is a better answer to the same question and costs nothing extra.
+ *
+ * These two both fired on some inputs and not others, and both change what a
+ * reader should take from the reading.
  */
 const SIGNALS = {
-  mixed: {
+  ahead: {
     instructions:
-      "More than one distinct feeling is present in `text` at the same time, rather than a single one.",
+      "The feeling in `text` is about something that has not happened yet, rather than about something that already has or is happening now.",
     criteria: {
-      true: "Two or more feelings are genuinely running together — relief and grief, anger and affection",
-      false: "One feeling, however strong or faint",
+      true: "Directed at what might come — a threat, a hope, an outcome still open",
+      false: "Directed at what has already happened or is happening now",
     },
-    note: "More than one feeling is in here at once.",
-  },
-  directed: {
-    instructions:
-      "The feeling in `text` is aimed at whoever will read it, rather than described about a situation or a third party.",
-    criteria: {
-      true: "Addressed at the reader — accusing, appealing, thanking, confiding",
-      false: "Describing a feeling about something or someone else",
-    },
-    note: "It is aimed at whoever reads it.",
-  },
-  asking: {
-    instructions:
-      "`text` is asking for something — help, an answer, agreement or attention — explicitly or by implication.",
-    criteria: {
-      true: "A request is being made, even if it is never phrased as one",
-      false: "Nothing is being asked for",
-    },
-    note: "It is asking for something, even where it never says so.",
+    note: "It is about something that has not happened yet.",
   },
   restrained: {
     instructions:
@@ -132,52 +154,26 @@ const SIGNALS = {
 } as const;
 
 export type SignalId = keyof typeof SIGNALS;
-const SIGNAL_IDS = ["mixed", "directed", "asking", "restrained"] as const;
+const SIGNAL_IDS = ["ahead", "restrained"] as const;
 
 /** A Noul at or above this reads as *present* for the purpose of the sentence. */
 const PRESENT = 0.6;
-
 /** Below this, nothing was said that could be read at all. */
 const IS_WRITING = 0.5;
-
-/**
- * Below this, an axis did not settle and must not be stated as if it had.
- *
- * Confidence on a Score is how peaked the distribution is, so a low number
- * means the weight is genuinely spread across levels rather than that the
- * model is being modest. Reporting the tallest bar of a flat distribution in
- * the same voice as the tallest bar of a sharp one is the single easiest way
- * for this page to lie, and it is the failure the meters alone do not prevent:
- * a reader looks at the word, not the bars.
- */
+/** Below this, an axis did not settle and must not be stated as if it had. */
 const SETTLED = 0.5;
-
-/**
- * A second, blunter test for the same thing.
- *
- * Confidence is computed from the whole distribution, so a two-way split can
- * still score above `SETTLED` while the top two levels are a coin toss — one
- * probe landed 52% against 47% on control and the page said "In charge" in the
- * same voice it uses at 98%. The margin between first and second is the part a
- * reader would care about, so it gets its own threshold.
- */
+/** …nor may it when the top two levels are this close, however peaked. */
 const MARGIN = 0.15;
+/** Below this, the shade is one of several and the page says which. */
+const SHADE_CLEAR = 0.6;
+/** Below this, even the family is unsettled. */
+const FAMILY_CLEAR = 0.5;
 
-/**
- * Eight questions in one request. They are independent — none needs another's
- * answer — so they ride together and Jev evaluates them in parallel. On calls
- * this small it is requests that are scarce, never tokens.
- */
+const familyCriteria = () =>
+  Object.fromEntries(FAMILIES.map((f) => [f.id, `${f.label}'s family: ${f.gloss}`]));
+
+/** Stage one: measure it, and decide which family the feeling is in. */
 export const QUESTIONS = {
-  ahead: {
-    type: "noul",
-    instructions:
-      "The feeling in `text` is about something that has not happened yet, rather than about something that already has or is happening now.",
-    criteria: {
-      true: "Directed at what might come — a threat, a hope, an outcome still open",
-      false: "Directed at what has already happened or is happening now",
-    },
-  },
   is_writing: {
     type: "noul",
     instructions:
@@ -189,6 +185,20 @@ export const QUESTIONS = {
       { type: "score", instructions: AXES[id].question, criteria: [...AXES[id].levels] },
     ]),
   ),
+  family: {
+    type: "choice",
+    instructions:
+      "Which family does the feeling behind `text` belong to? Pick the family, not the exact shade.",
+    criteria: familyCriteria(),
+  },
+  intent: {
+    type: "choice",
+    instructions:
+      "What is the person writing `text` doing with it — what is the act, regardless of how they feel?",
+    criteria: Object.fromEntries(
+      (Object.keys(INTENTS) as IntentId[]).map((k) => [k, INTENTS[k].gloss]),
+    ),
+  },
   ...Object.fromEntries(
     SIGNAL_IDS.map((id) => [
       id,
@@ -197,128 +207,57 @@ export const QUESTIONS = {
   ),
 } as const;
 
-/**
- * The names, each placed at its prototype on the three axes.
- *
- * This table is the opinionated part and it is deliberately in code, where it
- * can be argued with, rather than inside the model where it cannot. Nothing
- * about it is learned: the coordinates are where a reasonable person would put
- * each word, and changing one changes the output in a way you can predict by
- * reading it.
- *
- * Known limit, stated because it is real: three axes cannot separate feelings
- * that differ only by what caused them. Gratitude and contentment sit almost
- * on top of each other here, and nothing in a coordinate can tell them apart —
- * only the cause can, which is not on any axis. Where the nearest word is far
- * from the point, the page says so instead of pretending.
- */
-export const WORDS: [string, number, number, number, number][] = [
-  ["Despair", 0.2, 0.8, 0.2, 0.5],
-  ["Grief", 0.4, 1.4, 0.6, 0.1],
-  ["Fear", 0.5, 3.6, 0.5, 0.9],
-  ["Anger", 0.6, 3.7, 2.2, 0.15],
-  ["Dread", 0.7, 2.6, 0.6, 0.95],
-  ["Shame", 0.8, 2.1, 0.7, 0.15],
-  ["Anxiety", 1.0, 3.3, 0.8, 0.9],
-  ["Frustration", 1.0, 3.0, 1.1, 0.2],
-  ["Sadness", 1.0, 1.1, 1.1, 0.15],
-  ["Loneliness", 1.0, 1.3, 0.9, 0.2],
-  ["Resentment", 1.1, 2.0, 1.8, 0.15],
-  ["Weariness", 1.3, 0.6, 1.4, 0.2],
-  ["Disappointment", 1.4, 1.6, 1.8, 0.1],
-  ["Numbness", 1.5, 0.2, 1.2, 0.2],
-  ["Confusion", 1.7, 2.2, 1.0, 0.35],
-  ["Longing", 2.1, 1.9, 0.9, 0.85],
-  ["Boredom", 1.8, 0.5, 2.0, 0.3],
-  ["Even", 2.0, 1.8, 2.5, 0.4],
-  ["Surprise", 2.5, 3.4, 1.4, 0.05],
-  ["Determination", 2.7, 3.0, 3.6, 0.8],
-  ["Calm", 2.9, 1.0, 3.0, 0.4],
-  ["Relief", 3.2, 1.7, 1.4, 0.1],
-  ["Hope", 3.0, 2.5, 2.1, 0.95],
-  ["Contentment", 3.2, 1.4, 3.1, 0.3],
-  ["Gratitude", 3.4, 1.9, 2.2, 0.1],
-  ["Anticipation", 3.2, 2.2, 2.7, 0.92],
-  ["Affection", 3.5, 2.4, 2.9, 0.3],
-  ["Pride", 3.5, 2.8, 3.7, 0.2],
-  ["Joy", 3.8, 3.1, 3.2, 0.2],
-  ["Excitement", 3.7, 3.2, 3.0, 0.85],
-];
-
-/**
- * Valence moves the word most and control least, so the distance is weighted
- * rather than plain. Two points equally far apart in raw units are not equally
- * far apart in what you would call them: a point that is one level more
- * negative is a different feeling, while one level less in command is usually
- * the same feeling in a worse position.
- */
-export const W = { valence: 1.3, arousal: 1.0, control: 0.7, ahead: 0.8 };
-
-/** Past this, the point is not really near any of the words in the table. */
-export const FAR = 1.35;
+/** Stage two: which shade, given the family stage one chose. */
+const shadeQuestion = (family: Family) => ({
+  shade: {
+    type: "choice",
+    instructions: `The feeling behind \`text\` belongs to the ${family.id} family. Which shade of it is it exactly?`,
+    criteria: Object.fromEntries(family.shades.map((s) => [s.word, s.gloss])),
+  },
+});
 
 export interface AxisReading {
-  /** The probability-weighted position, 0–4. This is the coordinate. */
   score: number;
-  /** The tallest bar. This is what the meter highlights. */
   level: number;
   confidence: number;
   probabilities: number[];
-  /** The distribution never settled; the level is the tallest of several. */
   unsure: boolean;
+}
+
+export interface Alternative {
+  word: string;
+  p: number;
 }
 
 export interface Reading {
   ok: boolean;
   reason: "read" | "not_writing";
+  /** The shade, as shown. */
   word: string;
-  /** How far the nearest word sat from the measured point, in weighted units. */
-  distance: number;
-  /** True when no word in the table is close; the word is then an approximation. */
-  far: boolean;
-  /** Every word in the table, nearest first, so the runner-up is visible. */
-  ranked: Ranked[];
+  /** What that shade means, so the word is never left to do the work alone. */
+  gloss: string;
+  family: { id: string; label: string; gloss: string; confidence: number };
+  /** How cleanly the shade separated from its neighbours. */
+  shadeConfidence: number;
+  /** The rest of the family, most probable first. */
+  alternatives: Alternative[];
+  /** The published ratings for the chosen word — reference, never used to pick it. */
+  norms: { v: number; a: number; d: number; n: number; sd: number } | null;
+  intent: { id: string; label: string; gloss: string; p: number; confidence: number };
+  intentAlternatives: Alternative[];
   sentence: string;
   notes: string[];
   /** One speakable paragraph: the whole reading in a form that can be read aloud. */
   summary: string;
   axes: Record<AxisId, AxisReading>;
   signals: Record<SignalId, number>;
-  /** How much the feeling is about what has not happened yet. */
-  ahead: number;
   isWriting: number;
 }
 
-/** Probability map -> dense array, so the page never indexes a missing key. */
 function bars(probabilities: Record<string, number> | undefined, n: number): number[] {
   return Array.from({ length: n }, (_, i) => probabilities?.[String(i)] ?? 0);
 }
 
-export interface Ranked {
-  word: string;
-  distance: number;
-}
-
-function nearest(
-  v: number, a: number, c: number, ahead: number,
-): { word: string; distance: number; ranked: Ranked[] } {
-  // `ahead` arrives as a probability and the axes are 0-4, so it is stretched
-  // onto the same ruler before being compared. Mixing the two scales would
-  // silently make time orientation count for a quarter of what it should.
-  const t = ahead * 4;
-  const ranked: Ranked[] = WORDS.map((w) => ({
-    word: w[0],
-    distance: Math.sqrt(
-      W.valence * (v - w[1]) ** 2 +
-        W.arousal * (a - w[2]) ** 2 +
-        W.control * (c - w[3]) ** 2 +
-        W.ahead * (t - w[4] * 4) ** 2,
-    ),
-  })).sort((x, y) => x.distance - y.distance);
-  return { word: ranked[0].word, distance: ranked[0].distance, ranked };
-}
-
-/** The sentence is assembled from the levels, so it always agrees with the meters. */
 const VALENCE_CLAUSE = ["Heavily negative", "Negative", "Level", "Positive", "Strongly positive"];
 const AROUSAL_CLAUSE = ["and shut down", "and subdued", "and steady", "and keyed up", "and at full pitch"];
 const CONTROL_CLAUSE = [
@@ -329,11 +268,10 @@ const CONTROL_CLAUSE = [
   "with it firmly in hand",
 ];
 
-export function interpret(answers: any): Reading {
-  const isWriting: number = answers.is_writing?.noul ?? 0;
-  const ahead: number = answers.ahead?.noul ?? 0;
+const title = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
 
-  const axes = Object.fromEntries(
+function readAxes(answers: any): Record<AxisId, AxisReading> {
+  return Object.fromEntries(
     AXIS_IDS.map((id) => {
       const a = answers[id];
       const probabilities = bars(a?.probabilities, AXES[id].levels.length);
@@ -342,9 +280,9 @@ export function interpret(answers: any): Reading {
         id,
         {
           score: a?.score ?? 2,
-          // The argmax, not the rounded score. A skewed distribution drags the
+          // The argmax, not the rounded score: a skewed distribution drags the
           // mean across a boundary and lands the highlight on a bar the mass
-          // is not in — the exact bug the ball had.
+          // is not in.
           level: probabilities.indexOf(Math.max(...probabilities)),
           confidence: a?.confidence ?? 0,
           probabilities,
@@ -353,80 +291,133 @@ export function interpret(answers: any): Reading {
       ];
     }),
   ) as Record<AxisId, AxisReading>;
+}
 
+const ranked = (probabilities: Record<string, number>): Alternative[] =>
+  Object.entries(probabilities ?? {})
+    .map(([word, p]) => ({ word, p }))
+    .sort((x, y) => y.p - x.p);
+
+export function interpret(stage1: any, shadeAnswer: any | null): Reading {
+  const isWriting: number = stage1.is_writing?.noul ?? 0;
+  const axes = readAxes(stage1);
   const signals = Object.fromEntries(
-    SIGNAL_IDS.map((id) => [id, answers[id]?.noul ?? 0]),
+    SIGNAL_IDS.map((id) => [id, stage1[id]?.noul ?? 0]),
   ) as Record<SignalId, number>;
 
-  // Gibberish gate. Scoring a random string produces three perfectly real
-  // numbers about nothing, which is worse than refusing, because the meters
-  // make them look considered.
-  if (isWriting < IS_WRITING) {
-    return {
-      ok: false,
-      reason: "not_writing",
-      word: "—",
-      distance: 0,
-      far: false,
-      ranked: [],
-      sentence: "There is nothing here to read.",
-      notes: [],
-      summary: "That did not read as something a person wrote, so it was not scored.",
-      axes,
-      signals,
-      ahead,
-      isWriting,
-    };
-  }
+  const familyId: string = stage1.family?.choice ?? "";
+  const family = FAMILIES.find((f) => f.id === familyId);
+  const familyConfidence: number = stage1.family?.confidence ?? 0;
 
-  // The coordinate is the mean, not the argmax — and this is the one place the
-  // two genuinely differ in what they are for. The meter highlights a bucket,
-  // so it wants the tallest bar. The lookup places a point in a continuous
-  // space, so it wants the weighted position: a reading split evenly between
-  // "negative" and "level" really does sit between them, and the nearest word
-  // to the midpoint is the honest answer.
-  //
-  // Its failure case is a split down the middle with nothing between, where
-  // the mean lands where no mass is. `mixed` usually catches exactly that
-  // case, and confidence is reported per axis, so the spread stays visible
-  // rather than being averaged away silently.
-  const { word, distance, ranked } = nearest(axes.valence.score, axes.arousal.score, axes.control.score, ahead);
+  const intentId: string = stage1.intent?.choice ?? "reporting";
+  const intentMeta = INTENTS[intentId as IntentId] ?? INTENTS.reporting;
+  const intentProbs = stage1.intent?.probabilities ?? {};
+
+  const blank: Reading = {
+    ok: false,
+    reason: "not_writing",
+    word: "—",
+    gloss: "",
+    family: { id: "", label: "—", gloss: "", confidence: 0 },
+    shadeConfidence: 0,
+    alternatives: [],
+    norms: null,
+    intent: { id: "", label: "—", gloss: "", p: 0, confidence: 0 },
+    intentAlternatives: [],
+    sentence: "There is nothing here to read.",
+    notes: [],
+    summary: "That did not read as something a person wrote, so it was not scored.",
+    axes,
+    signals,
+    isWriting,
+  };
+
+  // Gibberish gate. Scoring a random string produces perfectly real numbers
+  // about nothing, which is worse than refusing, because the meters make them
+  // look considered. It also saves the second request.
+  if (isWriting < IS_WRITING || !family || !shadeAnswer) return blank;
+
+  const shadeWord: string = shadeAnswer.choice;
+  const shade: Shade | undefined = family.shades.find((s) => s.word === shadeWord);
+  const shadeConfidence: number = shadeAnswer.confidence ?? 0;
+  const alternatives = ranked(shadeAnswer.probabilities).filter((x) => x.word !== shadeWord);
 
   const sentence =
     `${VALENCE_CLAUSE[axes.valence.level]} ${AROUSAL_CLAUSE[axes.arousal.level]}, ` +
     `${CONTROL_CLAUSE[axes.control.level]}.`;
 
-  // An axis that did not settle gets said out loud, naming the two levels the
-  // weight actually sat on. Without this the sentence reads as confident on
-  // exactly the inputs the model found hardest.
-  const unsure = AXIS_IDS.filter((id) => axes[id].unsure).map((id) => {
-    const ranked = axes[id].probabilities
+  const notes: string[] = [];
+
+  // What `mixed` used to ask, answered better: when the shade did not separate,
+  // name the word it is sitting next to instead of asserting one of them.
+  if (shadeConfidence < SHADE_CLEAR && alternatives[0]) {
+    notes.push(
+      `It sits between ${shadeWord} and ${alternatives[0].word} — the two came out ` +
+        `${Math.round((shadeAnswer.probabilities[shadeWord] ?? 0) * 100)}% and ` +
+        `${Math.round(alternatives[0].p * 100)}%.`,
+    );
+  }
+  if (familyConfidence < FAMILY_CLEAR) {
+    notes.push(`Even the family was unsettled, so read the word loosely.`);
+  }
+  for (const id of SIGNAL_IDS) {
+    if (signals[id] >= PRESENT) notes.push(SIGNALS[id].note);
+  }
+  for (const id of AXIS_IDS) {
+    if (!axes[id].unsure) continue;
+    const order = axes[id].probabilities
       .map((p, i) => [p, i] as const)
       .sort((x, y) => y[0] - x[0]);
-    const [first, second] = ranked;
-    return `${AXES[id].label} did not settle — the weight is split between ${AXES[id].short[first[1]].toLowerCase()} (${Math.round(first[0] * 100)}%) and ${AXES[id].short[second[1]].toLowerCase()} (${Math.round(second[0] * 100)}%).`;
-  });
+    const [first, second] = order;
+    notes.push(
+      `${AXES[id].label} did not settle — the weight is split between ` +
+        `${AXES[id].short[first[1]].toLowerCase()} (${Math.round(first[0] * 100)}%) and ` +
+        `${AXES[id].short[second[1]].toLowerCase()} (${Math.round(second[0] * 100)}%).`,
+    );
+  }
 
-  const notes = [
-    ...SIGNAL_IDS.filter((id) => signals[id] >= PRESENT).map((id) => SIGNALS[id].note),
-    ...unsure,
-  ];
-
-  const far = distance > FAR;
+  const intentP: number = intentProbs[intentId] ?? 0;
   const summary = [
-    far ? `Closest to ${word.toLowerCase()}, though not close.` : `${word}.`,
+    `${title(shadeWord)}.`,
     sentence,
+    `What it is doing: ${intentMeta.label}.`,
     ...notes,
   ].join(" ");
 
-  return { ok: true, reason: "read", word, distance, far, ranked, sentence, notes, summary, axes, signals, ahead, isWriting };
+  return {
+    ok: true,
+    reason: "read",
+    word: title(shadeWord),
+    gloss: shade?.gloss ?? "",
+    family: { id: family.id, label: family.label, gloss: family.gloss, confidence: familyConfidence },
+    shadeConfidence,
+    alternatives,
+    norms: shade ? { v: shade.v, a: shade.a, d: shade.d, n: shade.n, sd: shade.sd } : null,
+    intent: {
+      id: intentId,
+      label: intentMeta.label,
+      gloss: intentMeta.gloss,
+      p: intentP,
+      confidence: stage1.intent?.confidence ?? 0,
+    },
+    intentAlternatives: ranked(intentProbs)
+      .filter((x) => x.word !== intentId)
+      .slice(0, 2)
+      .map((x) => ({ word: INTENTS[x.word as IntentId]?.label ?? x.word, p: x.p })),
+    sentence,
+    notes,
+    summary,
+    axes,
+    signals,
+    isWriting,
+  };
 }
 
-export async function readFeeling(text: string, apiKey: string): Promise<Reading> {
+async function ask(text: string, questions: unknown, apiKey: string): Promise<any> {
   const res = await fetch(ENDPOINT, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: MODEL, state: { text }, questions: QUESTIONS }),
+    body: JSON.stringify({ model: MODEL, state: { text }, questions }),
     signal: AbortSignal.timeout(20000),
   });
   if (!res.ok) {
@@ -434,6 +425,19 @@ export async function readFeeling(text: string, apiKey: string): Promise<Reading
     err.upstream = res.status;
     throw err;
   }
-  const body = await res.json();
-  return interpret(body.answers);
+  return (await res.json()).answers;
 }
+
+export async function readFeeling(text: string, apiKey: string): Promise<Reading> {
+  const stage1 = await ask(text, QUESTIONS, apiKey);
+
+  // The gate is checked before spending the second request, not after.
+  const familyId: string = stage1.family?.choice ?? "";
+  const family = FAMILIES.find((f) => f.id === familyId);
+  if ((stage1.is_writing?.noul ?? 0) < IS_WRITING || !family) return interpret(stage1, null);
+
+  const stage2 = await ask(text, shadeQuestion(family), apiKey);
+  return interpret(stage1, stage2.shade);
+}
+
+export { FAMILIES, SOURCE };
