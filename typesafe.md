@@ -43,7 +43,7 @@ State: `{ question }`. Four questions, one request.
 
 ### `/waif` — `src/lib/waif.ts`
 
-State: `{ text }`. Eight questions, one request.
+State: `{ text }`. Nine questions, one request.
 
 | id | Primitive | Answers |
 |---|---|---|
@@ -63,6 +63,21 @@ in three wordings — and confidence then collapses for a reason that has nothin
 to do with the text. The same trap the ball hit with its twenty answers, worse,
 because emotion vocabulary is almost all synonyms.
 
+**A control rubric must not contain an emotion word.** Level 1 read *"Overwhelmed:
+struggling to keep any grip on it"*, which primed the model with a feeling while
+asking about agency, and labelled the meter with a word that is not a point on a
+control scale. Renamed 2026-09-20 to *"Little control"*, rubric *"Struggling to keep
+any grip on it"*. Every level on an axis has to be a position on that axis.
+
+**Two prototypes were unreachable and one word was missing.** `Excitement` sat at
+arousal 3.8 — which this rubric describes as *frantic, furious or overwhelmed* — so
+a plainly excited text measuring 3.00 could never reach it, and every future-facing
+text was additionally penalised because its `ahead` was parked at 0.75 against
+`Anticipation`'s 0.90. Moved to (3.7, 3.2, 3.0, 0.85) and (3.2, 2.2, 2.7, 0.92);
+*"i am going to dance with my friends"* went from **Anticipation** to **Excitement**,
+with Anticipation the runner-up 0.10 behind. `Longing` was added for wanting
+something you do not control: a wistful probe had no word within 1.89.
+
 **Why `ahead` exists.** Three axes underdetermine the name. Frustration and
 anxiety sit within a whisker of each other on valence, arousal and control;
 what separates them is whether the thing has happened yet. Measured
@@ -80,6 +95,7 @@ number here as provisional.
 | `IS_WRITING` | 0.50 | Real writing scored 0.96–0.98; keyboard mashing 0.08 |
 | `PRESENT` (Nouls) | 0.60 | Separates the signals that fired correctly from near-misses at 0.43–0.49 |
 | `SETTLED` (axis confidence) | 0.50 | Below it the weight is genuinely split; an ambiguous text measured 0.35 on valence while clean ones measured 0.76–0.98 |
+| `MARGIN` (top two levels) | 0.15 | Confidence is computed over the whole distribution, so a two-way split can clear `SETTLED` and still be a coin toss — one probe landed 52% against 47% on control and was reported flatly |
 | `FAR` (distance) | 1.35 | Clean matches landed 0.40–1.00; a text with no good word landed 2.06 |
 
 `jevball`'s own `HIGH_STAKES = 1.5` was set the same way and is recorded in that
@@ -87,7 +103,7 @@ file.
 
 ## What stayed in code
 
-- **The emotion vocabulary.** 28 words, each at a hand-placed coordinate on the
+- **The emotion vocabulary.** 30 words, each at a hand-placed coordinate on the
   three axes plus a time orientation. Opinionated, arguable, and in a table you
   can read — not inside the model, where it could be neither.
 - **The nearest-word lookup**, including its weights (valence 1.3, arousal 1.0,

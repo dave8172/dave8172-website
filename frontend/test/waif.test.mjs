@@ -68,6 +68,15 @@ test("an axis that did not settle is named, with the levels it split between", (
   assert.ok(/45%/.test(r.notes.join(" ")));
 });
 
+// Confidence alone misses this: the distribution is peaked enough to score
+// above the threshold while the top two levels are a coin toss.
+test("a two-way split is unsettled even when confidence clears the bar", () => {
+  const split = { ...CASES.venting, control: score(3.49, 0.72, [0, 0, 0.03, 0.47, 0.5]) };
+  const r = interpret(split);
+  assert.ok(r.axes.control.unsure);
+  assert.ok(r.notes.some((n) => /Control did not settle/.test(n)), r.notes.join(" | "));
+});
+
 test("a settled axis is never hedged", () => {
   const r = interpret(CASES.venting);
   assert.equal(r.axes.arousal.unsure, false);

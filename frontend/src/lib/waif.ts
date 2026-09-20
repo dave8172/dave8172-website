@@ -67,10 +67,10 @@ export const AXES = {
     label: "Control",
     question: "How much say does the person writing `text` feel they have over what is happening?",
     ends: ["powerless", "in charge"],
-    short: ["Powerless", "Overwhelmed", "Some say", "Steady grip", "In charge"],
+    short: ["Powerless", "Little control", "Some say in it", "Steady grip", "In charge"],
     levels: [
       "Powerless: carried along by events with no options left",
-      "Overwhelmed: struggling to keep any grip on it",
+      "Struggling to keep any grip on it",
       "Some say in it, but not much",
       "A steady grip on the situation",
       "Fully in charge, deciding what happens next",
@@ -153,6 +153,17 @@ const IS_WRITING = 0.5;
 const SETTLED = 0.5;
 
 /**
+ * A second, blunter test for the same thing.
+ *
+ * Confidence is computed from the whole distribution, so a two-way split can
+ * still score above `SETTLED` while the top two levels are a coin toss — one
+ * probe landed 52% against 47% on control and the page said "In charge" in the
+ * same voice it uses at 98%. The margin between first and second is the part a
+ * reader would care about, so it gets its own threshold.
+ */
+const MARGIN = 0.15;
+
+/**
  * Eight questions in one request. They are independent — none needs another's
  * answer — so they ride together and Jev evaluates them in parallel. On calls
  * this small it is requests that are scarce, never tokens.
@@ -201,7 +212,7 @@ export const QUESTIONS = {
  * only the cause can, which is not on any axis. Where the nearest word is far
  * from the point, the page says so instead of pretending.
  */
-const WORDS: [string, number, number, number, number][] = [
+export const WORDS: [string, number, number, number, number][] = [
   ["Despair", 0.2, 0.8, 0.2, 0.5],
   ["Grief", 0.4, 1.4, 0.6, 0.1],
   ["Fear", 0.5, 3.6, 0.5, 0.9],
@@ -217,6 +228,7 @@ const WORDS: [string, number, number, number, number][] = [
   ["Disappointment", 1.4, 1.6, 1.8, 0.1],
   ["Numbness", 1.5, 0.2, 1.2, 0.2],
   ["Confusion", 1.7, 2.2, 1.0, 0.35],
+  ["Longing", 2.1, 1.9, 0.9, 0.85],
   ["Boredom", 1.8, 0.5, 2.0, 0.3],
   ["Even", 2.0, 1.8, 2.5, 0.4],
   ["Surprise", 2.5, 3.4, 1.4, 0.05],
@@ -226,11 +238,11 @@ const WORDS: [string, number, number, number, number][] = [
   ["Hope", 3.0, 2.5, 2.1, 0.95],
   ["Contentment", 3.2, 1.4, 3.1, 0.3],
   ["Gratitude", 3.4, 1.9, 2.2, 0.1],
-  ["Anticipation", 3.3, 2.4, 2.8, 0.9],
+  ["Anticipation", 3.2, 2.2, 2.7, 0.92],
   ["Affection", 3.5, 2.4, 2.9, 0.3],
   ["Pride", 3.5, 2.8, 3.7, 0.2],
   ["Joy", 3.8, 3.1, 3.2, 0.2],
-  ["Excitement", 3.8, 3.8, 3.1, 0.8],
+  ["Excitement", 3.7, 3.2, 3.0, 0.85],
 ];
 
 /**
@@ -240,10 +252,10 @@ const WORDS: [string, number, number, number, number][] = [
  * negative is a different feeling, while one level less in command is usually
  * the same feeling in a worse position.
  */
-const W = { valence: 1.3, arousal: 1.0, control: 0.7, ahead: 0.8 };
+export const W = { valence: 1.3, arousal: 1.0, control: 0.7, ahead: 0.8 };
 
 /** Past this, the point is not really near any of the words in the table. */
-const FAR = 1.35;
+export const FAR = 1.35;
 
 export interface AxisReading {
   /** The probability-weighted position, 0–4. This is the coordinate. */
@@ -264,6 +276,8 @@ export interface Reading {
   distance: number;
   /** True when no word in the table is close; the word is then an approximation. */
   far: boolean;
+  /** Every word in the table, nearest first, so the runner-up is visible. */
+  ranked: Ranked[];
   sentence: string;
   notes: string[];
   /** One speakable paragraph: the whole reading in a form that can be read aloud. */
@@ -280,26 +294,28 @@ function bars(probabilities: Record<string, number> | undefined, n: number): num
   return Array.from({ length: n }, (_, i) => probabilities?.[String(i)] ?? 0);
 }
 
-function nearest(v: number, a: number, c: number, ahead: number): { word: string; distance: number } {
+export interface Ranked {
+  word: string;
+  distance: number;
+}
+
+function nearest(
+  v: number, a: number, c: number, ahead: number,
+): { word: string; distance: number; ranked: Ranked[] } {
   // `ahead` arrives as a probability and the axes are 0-4, so it is stretched
   // onto the same ruler before being compared. Mixing the two scales would
   // silently make time orientation count for a quarter of what it should.
   const t = ahead * 4;
-  let best = WORDS[0];
-  let bestD = Infinity;
-  for (const w of WORDS) {
-    const d = Math.sqrt(
+  const ranked: Ranked[] = WORDS.map((w) => ({
+    word: w[0],
+    distance: Math.sqrt(
       W.valence * (v - w[1]) ** 2 +
         W.arousal * (a - w[2]) ** 2 +
         W.control * (c - w[3]) ** 2 +
         W.ahead * (t - w[4] * 4) ** 2,
-    );
-    if (d < bestD) {
-      bestD = d;
-      best = w;
-    }
-  }
-  return { word: best[0], distance: bestD };
+    ),
+  })).sort((x, y) => x.distance - y.distance);
+  return { word: ranked[0].word, distance: ranked[0].distance, ranked };
 }
 
 /** The sentence is assembled from the levels, so it always agrees with the meters. */
@@ -321,6 +337,7 @@ export function interpret(answers: any): Reading {
     AXIS_IDS.map((id) => {
       const a = answers[id];
       const probabilities = bars(a?.probabilities, AXES[id].levels.length);
+      const [top, second] = [...probabilities].sort((x, y) => y - x);
       return [
         id,
         {
@@ -331,7 +348,7 @@ export function interpret(answers: any): Reading {
           level: probabilities.indexOf(Math.max(...probabilities)),
           confidence: a?.confidence ?? 0,
           probabilities,
-          unsure: (a?.confidence ?? 0) < SETTLED,
+          unsure: (a?.confidence ?? 0) < SETTLED || top - second < MARGIN,
         },
       ];
     }),
@@ -351,6 +368,7 @@ export function interpret(answers: any): Reading {
       word: "—",
       distance: 0,
       far: false,
+      ranked: [],
       sentence: "There is nothing here to read.",
       notes: [],
       summary: "That did not read as something a person wrote, so it was not scored.",
@@ -372,7 +390,7 @@ export function interpret(answers: any): Reading {
   // the mean lands where no mass is. `mixed` usually catches exactly that
   // case, and confidence is reported per axis, so the spread stays visible
   // rather than being averaged away silently.
-  const { word, distance } = nearest(axes.valence.score, axes.arousal.score, axes.control.score, ahead);
+  const { word, distance, ranked } = nearest(axes.valence.score, axes.arousal.score, axes.control.score, ahead);
 
   const sentence =
     `${VALENCE_CLAUSE[axes.valence.level]} ${AROUSAL_CLAUSE[axes.arousal.level]}, ` +
@@ -401,7 +419,7 @@ export function interpret(answers: any): Reading {
     ...notes,
   ].join(" ");
 
-  return { ok: true, reason: "read", word, distance, far, sentence, notes, summary, axes, signals, ahead, isWriting };
+  return { ok: true, reason: "read", word, distance, far, ranked, sentence, notes, summary, axes, signals, ahead, isWriting };
 }
 
 export async function readFeeling(text: string, apiKey: string): Promise<Reading> {

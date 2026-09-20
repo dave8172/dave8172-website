@@ -1,6 +1,6 @@
 ---
 title: "waif — reading the feeling in a piece of text, on three axes"
-description: "Paste something you wrote and waif names the feeling behind it. Three Scores and five Nouls from Jev place it on axes that are not synonyms of each other; the name is looked up in code from where they land."
+description: "Paste something you wrote and waif names the feeling behind it. Three Scores and six Nouls from Jev place it on axes that are not synonyms of each other; the name is looked up in code from where they land."
 date: 2026-09-20
 tags: [AI, Calibration, TypeSafe, Astro]
 image: "/projects/waif/waif-preview.png"
@@ -53,11 +53,11 @@ treated as separable since Wundt:
 | How activated is the person? | Score, 5 levels | shut down ↔ at full pitch |
 | How much say do they feel they have? | Score, 5 levels | powerless ↔ in charge |
 
-Five **Nouls** ride along in the same request: is this writing at all, is the
+Six **Nouls** ride along in the same request: is this writing at all, is the
 feeling about something that has not happened yet, is more than one feeling present,
 is it aimed at the reader, is it asking for something, is it being held back.
 
-**Jev measures. The name is looked up in code** — 28 words, each at a hand-placed
+**Jev measures. The name is looked up in code** — 30 words, each at a hand-placed
 coordinate, nearest neighbour with weights. That table is opinionated and arguable,
 and it is in a file you can read rather than inside a model where you could not.
 
@@ -105,10 +105,10 @@ It is an instrument, not help. Nothing you type is stored or logged.
 
 * **Frontend:** Astro, no framework, no dependencies. One page, light-themed on
   purpose while the rest of the site follows your system theme.
-* **Model:** Jev, eight questions in a single request, called through one
+* **Model:** Jev, nine questions in a single request, called through one
   server-rendered endpoint so the API key never reaches the build output.
 * **Guards:** a gibberish gate before anything is scored — real writing measures
   0.96–0.98 on *is this writing*, keyboard mashing 0.08 — and a spend cap in front
   of the endpoint.
-* **Tests:** nine, against answer objects recorded from real calls, so the suite
+* **Tests:** ten, against answer objects recorded from real calls, so the suite
   needs no key and no network.

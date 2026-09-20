@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { AXES, AXIS_IDS } from "../lib/waif";
+import { AXES, AXIS_IDS, WORDS, W, FAR } from "../lib/waif";
 
 // Labels are rendered here rather than shipped to the client: the browser only
 // ever moves bars and toggles classes, so there is one place the wording lives.
@@ -81,17 +81,61 @@ const EXAMPLES = [
           <p class="wf-note" id="wf-dist"></p>
         </div>
       </div>
+
+      <div class="wf-detail">
+        <button id="wf-toggle2" class="wf-toggle" aria-expanded="false" aria-controls="wf-panel2">
+          <span class="wf-chev" aria-hidden="true">▸</span> How the name is chosen
+        </button>
+        <div id="wf-panel2" class="wf-panel" hidden>
+          <p class="wf-note">
+            The three Scores put your text at a point, and the name is simply the&nbsp;<strong>nearest word in the table below</strong>. Distance is weighted, because the
+            axes do not move the word equally — valence ×{W.valence}, arousal ×{W.arousal},
+            control ×{W.control}, and the not-yet-happened Noul ×{W.ahead}. Past&nbsp;<strong>{FAR}</strong> units the page says no word is close instead of picking one.
+          </p>
+          <p class="wf-note wf-point" id="wf-point"></p>
+          <div class="wf-scroll">
+            <table class="wf-words">
+              <thead>
+                <tr>
+                  <th>Word</th><th>Valence</th><th>Arousal</th><th>Control</th>
+                  <th>Ahead</th><th>Distance</th>
+                </tr>
+              </thead>
+              <tbody id="wf-wordrows">
+                {WORDS.map((w) => (
+                  <tr data-word={w[0]}>
+                    <td>{w[0]}</td>
+                    <td>{w[1].toFixed(1)}</td>
+                    <td>{w[2].toFixed(1)}</td>
+                    <td>{w[3].toFixed(1)}</td>
+                    <td>{w[4].toFixed(2)}</td>
+                    <td data-role="d" class="wf-d">—</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p class="wf-note">
+            <strong>These coordinates are judgement, not measurement.</strong> Each one is where a
+            reasonable person would put that word, placed by hand and adjusted when a test case
+            came out wrong — so they are arguable, which is exactly why they are here and not
+            hidden inside a model. Published human norms for valence, arousal and dominance do
+            exist for thousands of English words, and swapping these guesses for them is the
+            obvious next move.
+          </p>
+        </div>
+      </div>
     </section>
 
     <footer class="wf-foot">
       <p>
-        Eight questions in one call to <a href="https://docs.typesafe.ai" rel="noopener">Jev</a>.
+        Nine questions in one call to <a href="https://docs.typesafe.ai" rel="noopener">Jev</a>.
         Three <strong>Scores</strong> place the feeling on axes that are not synonyms of each other;
-        five <strong>Nouls</strong> return plain probabilities — is this even writing, is it about
+        six <strong>Nouls</strong> return plain probabilities — is this even writing, is it about
         something that has not happened yet, is more than one feeling present, is it aimed at you,
         is it asking for something, is it being held back. <strong>Jev measures. The name is looked
-        up in code</strong> from where the three axes land, and you can read that table
-        in <a href="https://github.com/dave8172" rel="noopener">the source</a>.
+        up in code</strong> from where the three axes land — and that whole table is on this
+        page, under <em>How the name is chosen</em>, with every word's distance from your text.
       </p>
       <p>Nothing you type is stored or logged — it goes to the model to be scored, and that is all.</p>
       <p class="wf-care">
@@ -279,6 +323,26 @@ const EXAMPLES = [
   .wf-tbl :global(.wf-num) { color: var(--accent); font-weight: 600; }
   .wf-tbl :global(.wf-spread) { color: var(--soft); font-size: 0.8rem; }
   .wf-note { margin: 14px 0 0; font-size: 0.84rem; color: var(--dim); }
+  .wf-note strong { color: var(--soft); }
+  .wf-point { color: var(--soft); }
+
+  /* The word table is numeric and six columns wide, so it scrolls rather than
+     restacking — a coordinate split across two lines stops being a coordinate. */
+  .wf-scroll { margin-top: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .wf-words { border-collapse: collapse; font-size: 0.82rem; min-width: 100%; }
+  .wf-words th {
+    text-align: right; font-weight: 500; color: var(--dim); white-space: nowrap;
+    padding: 5px 0 5px 14px; border-bottom: 1px solid var(--line);
+  }
+  .wf-words th:first-child { text-align: left; padding-left: 0; }
+  .wf-words :global(td) {
+    text-align: right; padding: 6px 0 6px 14px; border-bottom: 1px solid var(--line);
+    color: var(--soft); white-space: nowrap;
+  }
+  .wf-words :global(td:first-child) { text-align: left; padding-left: 0; color: var(--ink); }
+  .wf-words :global(tr.at td) { color: var(--accent); font-weight: 600; }
+  .wf-words :global(td.wf-d) { color: var(--dim); }
+  .wf-words :global(tr.at td.wf-d) { color: var(--accent); }
 
   .wf-foot { margin: 28px auto 0; font-size: 0.85rem; line-height: 1.75; color: var(--dim); }
   .wf-foot p { margin: 0 0 10px; }
@@ -349,11 +413,15 @@ const EXAMPLES = [
     }
     text.addEventListener("input", updateCount);
 
-    toggle.addEventListener("click", function () {
-      var open = toggle.getAttribute("aria-expanded") === "true";
-      toggle.setAttribute("aria-expanded", String(!open));
-      panel.hidden = open;
-    });
+    function wireToggle(btn, body) {
+      btn.addEventListener("click", function () {
+        var open = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", String(!open));
+        body.hidden = open;
+      });
+    }
+    wireToggle(toggle, panel);
+    wireToggle(document.getElementById("wf-toggle2"), document.getElementById("wf-panel2"));
 
     document.querySelectorAll(".wf-chip").forEach(function (chip) {
       chip.addEventListener("click", function () {
@@ -425,6 +493,28 @@ const EXAMPLES = [
         if (v === undefined) return;
         rows.appendChild(row(SIGNAL_LABELS[id], "", "Noul", pct(v), '<span class="wf-noconf">—</span>'));
       });
+
+      // The table reorders nearest-first, so the runner-up — usually the more
+      // interesting number than the winner — is the row underneath.
+      var wordRows = document.getElementById("wf-wordrows");
+      var byWord = {};
+      [].forEach.call(wordRows.querySelectorAll("tr"), function (tr) {
+        byWord[tr.getAttribute("data-word")] = tr;
+        tr.classList.remove("at");
+      });
+      r.ranked.forEach(function (entry, i) {
+        var tr = byWord[entry.word];
+        if (!tr) return;
+        tr.querySelector('[data-role="d"]').textContent = entry.distance.toFixed(2);
+        if (i === 0) tr.classList.add("at");
+        wordRows.appendChild(tr);
+      });
+
+      document.getElementById("wf-point").textContent =
+        "Your text landed at valence " + r.axes.valence.score.toFixed(2) +
+        ", arousal " + r.axes.arousal.score.toFixed(2) +
+        ", control " + r.axes.control.score.toFixed(2) +
+        ", ahead " + r.ahead.toFixed(2) + ". Nearest first:";
 
       document.getElementById("wf-dist").textContent =
         "Nearest word in the table: " + r.word + ", " + r.distance.toFixed(2) +
