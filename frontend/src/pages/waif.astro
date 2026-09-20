@@ -1,0 +1,486 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { AXES, AXIS_IDS } from "../lib/waif";
+
+// Labels are rendered here rather than shipped to the client: the browser only
+// ever moves bars and toggles classes, so there is one place the wording lives.
+const AXIS_LIST = AXIS_IDS.map((id) => ({ id, ...AXES[id] }));
+
+const EXAMPLES = [
+  "I have asked them four times for the file and they keep saying tomorrow. Now it is my deadline that slips.",
+  "woke up. worked. ate something. went back to bed. nothing happened today and nothing will tomorrow either.",
+  "She drove three hours in the rain just to sit with me for an afternoon. I did not even ask her to.",
+];
+---
+
+<BaseLayout
+  title="waif — what am I feeling?"
+  description="Paste something you wrote and waif reads the feeling behind it — measured on three axes by Jev, a model that returns calibrated probabilities, with the naming done in plain code you can read."
+>
+  <article class="wf">
+    <header class="wf-head">
+      <h1>waif</h1>
+      <p class="wf-say">What am I feeling?</p>
+      <p class="wf-sub">
+        Write something — a message you have not sent, a note to yourself, anything.
+        It gets measured on three axes, and the name comes from where those land.
+      </p>
+    </header>
+
+    <form id="wf-form" class="wf-ask" autocomplete="off">
+      <label class="wf-sr" for="wf-text">Something you wrote</label>
+      <textarea id="wf-text" rows="5" maxlength="1200"
+                placeholder="However it actually came out…"></textarea>
+      <div class="wf-bar">
+        <span class="wf-count" id="wf-count" aria-hidden="true"></span>
+        <button id="wf-go" type="submit">Read it</button>
+      </div>
+    </form>
+
+    <div class="wf-eg">
+      <span class="wf-eg-k">or try</span>
+      {EXAMPLES.map((t, i) => (
+        <button type="button" class="wf-chip" data-eg={t}>{["blocked", "flat", "a kindness"][i]}</button>
+      ))}
+    </div>
+
+    <p id="wf-status" class="wf-status" role="status" aria-live="polite"></p>
+
+    <section id="wf-out" class="wf-out" hidden aria-live="polite">
+      <p class="wf-word" id="wf-word">—</p>
+      <p class="wf-sentence" id="wf-sentence"></p>
+      <ul class="wf-notes" id="wf-notes"></ul>
+
+      <div class="wf-axes">
+        {AXIS_LIST.map((ax) => (
+          <div class="wf-ax" data-ax={ax.id}>
+            <div class="wf-ax-top">
+              <span class="wf-ax-name">{ax.label}</span>
+              <span class="wf-ax-read"><b data-role="read">—</b><span class="wf-ax-num" data-role="num"></span></span>
+            </div>
+            <div class="wf-ax-bars" aria-hidden="true">
+              {[0, 1, 2, 3, 4].map((i) => <span class="wf-cell" data-cell={i}><i></i></span>)}
+            </div>
+            <div class="wf-ax-ends">
+              <span>{ax.ends[0]}</span>
+              <span>{ax.ends[1]}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="wf-detail">
+        <button id="wf-toggle" class="wf-toggle" aria-expanded="false" aria-controls="wf-panel">
+          <span class="wf-chev" aria-hidden="true">▸</span> What Jev actually said
+        </button>
+        <div id="wf-panel" class="wf-panel" hidden>
+          <table class="wf-tbl">
+            <thead><tr><th>Question</th><th>Type</th><th>Answer</th><th>Confidence</th></tr></thead>
+            <tbody id="wf-rows"></tbody>
+          </table>
+          <p class="wf-note" id="wf-dist"></p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="wf-foot">
+      <p>
+        Eight questions in one call to <a href="https://docs.typesafe.ai" rel="noopener">Jev</a>.
+        Three <strong>Scores</strong> place the feeling on axes that are not synonyms of each other;
+        five <strong>Nouls</strong> return plain probabilities — is this even writing, is it about
+        something that has not happened yet, is more than one feeling present, is it aimed at you,
+        is it asking for something, is it being held back. <strong>Jev measures. The name is looked
+        up in code</strong> from where the three axes land, and you can read that table
+        in <a href="https://github.com/dave8172" rel="noopener">the source</a>.
+      </p>
+      <p>Nothing you type is stored or logged — it goes to the model to be scored, and that is all.</p>
+      <p class="wf-care">
+        If you are having a hard time, <a href="https://findahelpline.com" rel="noopener">findahelpline.com</a>
+        &nbsp;lists free, confidential support in most countries. This page is an instrument, not help.
+      </p>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style is:global>
+  /*
+    waif is light, always.
+
+    The site follows the reader's system theme everywhere else, and this one
+    page opts out on purpose: the whole point is a surface that is quiet to sit
+    with while you look at something you wrote, and a near-black page is not
+    that. `html[lang]` rather than `:root` so these win over the dark-mode
+    tokens in global.css by specificity, whatever order the two arrive in.
+  */
+  html[lang] {
+    color-scheme: light;
+    --bg: #f5f3f9;
+    --text: #2f2b3a;
+    --muted: #7d7790;
+    --border: #e7e2f0;
+    --accent: #6f63ab;
+    --card-bg: #ffffff;
+  }
+  html[lang] body {
+    background: linear-gradient(170deg, #f6f3fa 0%, #f3f6f7 100%) fixed;
+    color: var(--text);
+  }
+</style>
+
+<style>
+  /*
+    Calm is mostly geometry: long line-height, soft corners, nothing hard-edged,
+    and one accent used sparingly enough that it still means something when it
+    shows up. The palette is pastel on the surfaces and deliberately NOT pastel
+    on the data — a bar the same lightness as its background cannot be read,
+    and three pastel hues for three axes failed colourblind separation outright
+    (teal against terracotta, ΔE 3.9 for protanopia). So hue carries nothing
+    here: every axis uses the same accent, and which level is selected is said
+    in words next to the bars as well as in colour.
+  */
+  .wf {
+    --ink: #2f2b3a;
+    --soft: #56506b;
+    --dim: #8b85a0;
+    --line: #e9e5f2;
+    --accent: #6f63ab;
+    --track: #efecf6;
+    --rest: rgba(47, 43, 58, 0.24);
+    --card: #ffffff;
+
+    max-width: 36rem;
+    margin: 0 auto;
+    color: var(--ink);
+    font-size: 17px;
+    line-height: 1.7;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wf-sr {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  .wf-head { text-align: center; margin-bottom: 30px; }
+  .wf h1 {
+    margin: 0; font-size: 1.5rem; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: lowercase; color: var(--accent);
+  }
+  .wf-say {
+    margin: 10px 0 0; font-family: Georgia, "Iowan Old Style", serif;
+    font-size: clamp(1.5rem, 6vw, 2.1rem); line-height: 1.25; color: var(--ink);
+  }
+  .wf-sub { margin: 14px auto 0; max-width: 30rem; color: var(--soft); font-size: 0.98rem; }
+
+  .wf-ask { margin: 0; }
+  #wf-text {
+    width: 100%; box-sizing: border-box; padding: 16px 18px;
+    font-family: inherit; font-size: 16px; line-height: 1.7; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    resize: vertical; appearance: none;
+    box-shadow: 0 1px 2px rgba(47, 43, 58, 0.04);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  #wf-text::placeholder { color: var(--dim); }
+  #wf-text:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(111, 99, 171, 0.12);
+  }
+
+  .wf-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+  .wf-count { font-size: 0.8rem; color: var(--dim); }
+
+  .wf button {
+    font-family: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    padding: 11px 22px; color: #fff; background: var(--accent);
+    border: 1px solid var(--accent); border-radius: 999px;
+    transition: opacity 0.2s ease, transform 0.12s ease;
+  }
+  .wf button:hover:not(:disabled) { opacity: 0.9; }
+  .wf button:active:not(:disabled) { transform: translateY(1px); }
+  .wf button:disabled { opacity: 0.45; cursor: default; }
+  .wf button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .wf-eg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; }
+  .wf-eg-k { font-size: 0.82rem; color: var(--dim); }
+  .wf-chip {
+    padding: 5px 13px !important; font-size: 0.82rem !important; font-weight: 500 !important;
+    color: var(--soft) !important; background: var(--card) !important;
+    border: 1px solid var(--line) !important;
+  }
+  .wf-chip:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
+
+  .wf-status { min-height: 1.3em; margin: 16px 0 0; font-size: 0.9rem; color: #9a5a4e; }
+
+  .wf-out {
+    margin-top: 26px; padding: 26px 24px 22px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: 0 2px 10px rgba(47, 43, 58, 0.05);
+  }
+  .wf-word {
+    margin: 0; font-family: Georgia, "Iowan Old Style", serif;
+    font-size: clamp(2rem, 9vw, 2.9rem); line-height: 1.1; color: var(--accent);
+  }
+  .wf-word.wf-far { color: var(--soft); }
+  .wf-sentence { margin: 12px 0 0; font-size: 1.05rem; color: var(--ink); }
+
+  .wf-notes { list-style: none; margin: 16px 0 0; padding: 0; }
+  .wf-notes :global(li) {
+    padding: 7px 0 7px 16px; font-size: 0.92rem; color: var(--soft);
+    border-left: 2px solid var(--line);
+  }
+
+  .wf-axes { margin-top: 26px; display: grid; gap: 22px; }
+  .wf-ax-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .wf-ax-name {
+    font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim);
+  }
+  /* The direct label. Identity is never carried by the accent alone. */
+  .wf-ax-read { font-size: 0.95rem; color: var(--ink); font-weight: 600; }
+
+  /* Five cells, one per level, each as tall as its probability. A 2px gap so
+     adjacent fills never merge into one block. */
+  .wf-ax-bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; margin: 9px 0 7px; }
+  .wf-cell {
+    position: relative; height: 46px; background: var(--track);
+    border-radius: 5px; overflow: hidden;
+  }
+  .wf-cell i {
+    position: absolute; left: 0; right: 0; bottom: 0; display: block;
+    background: var(--rest); border-radius: 4px 4px 0 0;
+    transition: height 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .wf-cell.at i { background: var(--accent); }
+
+  .wf-ax-ends {
+    display: flex; justify-content: space-between; gap: 10px;
+    font-size: 0.78rem; color: var(--dim);
+  }
+  .wf-ax-num { color: var(--dim); font-weight: 400; font-size: 0.88rem; }
+
+  .wf-detail { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 8px; }
+  .wf-toggle {
+    width: 100%; text-align: left !important; padding: 8px 0 !important;
+    background: none !important; color: var(--soft) !important; border: 0 !important;
+    font-size: 0.88rem !important; font-weight: 500 !important;
+  }
+  .wf-chev { display: inline-block; transition: transform 0.2s ease; color: var(--accent); }
+  .wf-toggle[aria-expanded="true"] .wf-chev { transform: rotate(90deg); }
+
+  .wf-panel { padding-top: 6px; overflow-x: auto; }
+  .wf-tbl { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+  .wf-tbl th {
+    text-align: left; font-weight: 500; color: var(--dim); padding: 6px 10px 6px 0;
+    border-bottom: 1px solid var(--line); white-space: nowrap;
+  }
+  .wf-tbl :global(td) { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .wf-tbl :global(td:first-child) { color: var(--ink); }
+  .wf-tbl :global(.wf-q) { color: var(--dim); font-size: 0.8rem; display: block; max-width: 24rem; }
+  .wf-tbl :global(.wf-num) { color: var(--accent); font-weight: 600; }
+  .wf-tbl :global(.wf-spread) { color: var(--soft); font-size: 0.8rem; }
+  .wf-note { margin: 14px 0 0; font-size: 0.84rem; color: var(--dim); }
+
+  .wf-foot { margin: 28px auto 0; font-size: 0.85rem; line-height: 1.75; color: var(--dim); }
+  .wf-foot p { margin: 0 0 10px; }
+  .wf-foot a { color: var(--accent); }
+  .wf-care { padding-top: 10px; border-top: 1px solid var(--line); }
+
+  @media (max-width: 480px) {
+    .wf-out { padding: 22px 18px 18px; border-radius: 16px; }
+    .wf-ax-ends { font-size: 0.72rem; }
+    .wf-ax-top { flex-wrap: wrap; }
+  }
+
+  /* Four columns inside a phone gives one word per line and a column of
+     fragments. Below this width the table stops being a table: each question
+     becomes a block, with its type and confidence as a caption under it. */
+  @media (max-width: 560px) {
+    .wf-panel { overflow-x: visible; }
+    .wf-tbl, .wf-tbl :global(tbody) { display: block; }
+    .wf-tbl thead { display: none; }
+    .wf-tbl :global(tr) {
+      display: grid; grid-template-columns: 1fr auto; gap: 3px 12px;
+      padding: 13px 0; border-bottom: 1px solid var(--line);
+    }
+    .wf-tbl :global(td) { padding: 0; border: 0; }
+    .wf-tbl :global(td:nth-child(1)) { grid-column: 1 / -1; }
+    .wf-tbl :global(td:nth-child(2)) { color: var(--dim); font-size: 0.78rem; }
+    .wf-tbl :global(td:nth-child(3)) { text-align: right; }
+    .wf-tbl :global(td:nth-child(4)) {
+      grid-column: 1 / -1; color: var(--dim); font-size: 0.78rem;
+    }
+    .wf-tbl :global(td:nth-child(4))::before { content: "confidence "; }
+    /* A Noul carries no confidence, so on a phone that row says nothing. */
+    .wf-tbl :global(td:nth-child(4):has(.wf-noconf)) { display: none; }
+    .wf-tbl :global(.wf-q) { max-width: none; }
+  }
+</style>
+
+<script is:inline define:vars={{ AXIS_LIST }}>
+  (function () {
+    var form = document.getElementById("wf-form");
+    var text = document.getElementById("wf-text");
+    var go = document.getElementById("wf-go");
+    var count = document.getElementById("wf-count");
+    var status = document.getElementById("wf-status");
+    var out = document.getElementById("wf-out");
+    var toggle = document.getElementById("wf-toggle");
+    var panel = document.getElementById("wf-panel");
+
+    var MAX = 1200;
+    var SHORT = {};
+    AXIS_LIST.forEach(function (a) { SHORT[a.id] = a.short; });
+
+    // Only the four that change the sentence; the axes have their own rows.
+    var SIGNAL_LABELS = {
+      is_writing: "Is this writing at all",
+      ahead: "About something not yet happened",
+      mixed: "More than one feeling",
+      directed: "Aimed at the reader",
+      asking: "Asking for something",
+      restrained: "Being held back",
+    };
+
+    function pct(x) { return Math.round(x * 100) + "%"; }
+
+    function updateCount() {
+      var n = text.value.length;
+      count.textContent = n > MAX - 200 ? n + " / " + MAX : "";
+    }
+    text.addEventListener("input", updateCount);
+
+    toggle.addEventListener("click", function () {
+      var open = toggle.getAttribute("aria-expanded") === "true";
+      toggle.setAttribute("aria-expanded", String(!open));
+      panel.hidden = open;
+    });
+
+    document.querySelectorAll(".wf-chip").forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        text.value = chip.getAttribute("data-eg");
+        updateCount();
+        text.focus();
+        ask();
+      });
+    });
+
+    function paintAxis(id, a) {
+      var root = document.querySelector('[data-ax="' + id + '"]');
+      root.querySelector('[data-role="read"]').textContent = SHORT[id][a.level];
+      root.querySelector('[data-role="num"]').textContent =
+        " · " + a.score.toFixed(2) + (a.unsure ? " · unsettled" : "");
+      for (var i = 0; i < 5; i++) {
+        var cell = root.querySelector('[data-cell="' + i + '"]');
+        cell.classList.toggle("at", i === a.level);
+        var p = a.probabilities[i] || 0;
+        // A level with weight but no height reads as zero, so anything
+        // non-zero keeps a visible sliver.
+        cell.querySelector("i").style.height = (p > 0 ? Math.max(p * 100, 3) : 0) + "%";
+      }
+    }
+
+    function row(name, question, type, answer, confidence) {
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td>" + name + '<span class="wf-q">' + question + "</span></td>" +
+        "<td>" + type + "</td>" +
+        '<td class="wf-num">' + answer + "</td>" +
+        "<td>" + confidence + "</td>";
+      return tr;
+    }
+
+    function render(r) {
+      var word = document.getElementById("wf-word");
+      word.textContent = r.ok ? r.word : "—";
+      word.classList.toggle("wf-far", !!r.far);
+      document.getElementById("wf-sentence").textContent = r.far
+        ? r.sentence + " No word in the table sits close to that, so the one above is the nearest, not a match."
+        : r.sentence;
+
+      var notes = document.getElementById("wf-notes");
+      notes.innerHTML = "";
+      r.notes.forEach(function (n) {
+        var li = document.createElement("li");
+        li.textContent = n;
+        notes.appendChild(li);
+      });
+
+      AXIS_LIST.forEach(function (a) { paintAxis(a.id, r.axes[a.id]); });
+
+      var rows = document.getElementById("wf-rows");
+      rows.innerHTML = "";
+      AXIS_LIST.forEach(function (a) {
+        var ax = r.axes[a.id];
+        var spread = ax.probabilities
+          .map(function (p, i) { return p > 0.01 ? i + ": " + pct(p) : null; })
+          .filter(Boolean).join("  ");
+        rows.appendChild(row(
+          a.label, a.question, "Score",
+          ax.score.toFixed(2) + ' <span class="wf-spread">of 4 &middot; ' + spread + "</span>",
+          ax.confidence.toFixed(2) + (ax.unsure ? " ⚠" : ""),
+        ));
+      });
+      Object.keys(SIGNAL_LABELS).forEach(function (id) {
+        var v = id === "is_writing" ? r.isWriting : id === "ahead" ? r.ahead : r.signals[id];
+        if (v === undefined) return;
+        rows.appendChild(row(SIGNAL_LABELS[id], "", "Noul", pct(v), '<span class="wf-noconf">—</span>'));
+      });
+
+      document.getElementById("wf-dist").textContent =
+        "Nearest word in the table: " + r.word + ", " + r.distance.toFixed(2) +
+        " weighted units away. Confidence on a Score is how peaked the distribution is — how cleanly the levels separated — not how sure the model is that it is right.";
+
+      out.hidden = false;
+    }
+
+    var busy = false;
+
+    function ask() {
+      if (busy) return;
+      var value = text.value.trim();
+      if (!value) {
+        text.focus();
+        status.textContent = "Write something first.";
+        return;
+      }
+      busy = true;
+      go.disabled = true;
+      status.textContent = "Reading…";
+
+      fetch("/api/waif", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: value }),
+      })
+        .then(function (res) {
+          return res.json().then(function (body) {
+            if (!res.ok) throw new Error(body.error || "That did not come back.");
+            return body;
+          });
+        })
+        .then(function (r) {
+          status.textContent = "";
+          if (!r.ok) {
+            out.hidden = true;
+            status.textContent = "That did not read as something a person wrote, so it was not scored.";
+            return;
+          }
+          render(r);
+        })
+        .catch(function (err) {
+          status.textContent = err.message || "Something went wrong.";
+        })
+        .finally(function () {
+          busy = false;
+          go.disabled = false;
+        });
+    }
+
+    form.addEventListener("submit", function (e) { e.preventDefault(); ask(); });
+    // Enter sends; a newline needs a modifier, since most of what people paste
+    // here is one or two lines and the button is a long way down on a phone.
+    text.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); ask(); }
+    });
+  })();
+</script>

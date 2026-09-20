@@ -1,0 +1,114 @@
+---
+title: "waif — reading the feeling in a piece of text, on three axes"
+description: "Paste something you wrote and waif names the feeling behind it. Three Scores and five Nouls from Jev place it on axes that are not synonyms of each other; the name is looked up in code from where they land."
+date: 2026-09-20
+tags: [AI, Calibration, TypeSafe, Astro]
+image: "/projects/waif/waif-preview.png"
+cardTitle: "waif"
+cardDescription: "What am I feeling? Text in, a reading out — measured on three axes by a calibrated model, with the naming done in plain code you can argue with."
+kind: tool
+category: ai
+liveUrl: "/waif"
+liveLabel: "Try it"
+---
+
+import RandomColor from '../../components/RandomColor.astro';
+
+## Overview
+
+Write something — a message you have not sent, a note to yourself — and waif tells
+you what the feeling in it looks like. The name comes out first, then the reading,
+then the three meters it was derived from, and then, if you open it, every number
+the model returned.
+
+![waif reading a piece of text](/projects/waif/waif-preview.png)
+
+It is built on <RandomColor>Jev</RandomColor>, the same *System One* model behind the
+[Magic Jev Ball](/projects/jevball) — a model that returns calibrated probabilities
+rather than text. The interesting part is not that a model can read tone. It is that
+**"what emotion is this" has no right answer, while the questions underneath it do**,
+and the whole design follows from taking that seriously.
+
+**[Try it →](/waif)**
+
+---
+
+## Why axes, and not a list of emotions
+
+The obvious build is a Choice over twenty-odd emotion names. It does not work, and
+it fails for a reason worth knowing.
+
+*Annoyed*, *irritated* and *frustrated* are one feeling in three wordings. A Choice
+splits its probability between them, so the model's confidence collapses — not
+because the text was unclear, but because the options were synonyms. The Magic Jev
+Ball hit exactly this with its twenty classic answers. Here it is worse, because
+emotion vocabulary is almost entirely synonyms.
+
+So waif asks the three questions that *do* have answers, which psychology has
+treated as separable since Wundt:
+
+| Question | Primitive | Runs from |
+|---|---|---|
+| How pleasant or unpleasant is the feeling? | Score, 5 levels | unpleasant ↔ pleasant |
+| How activated is the person? | Score, 5 levels | shut down ↔ at full pitch |
+| How much say do they feel they have? | Score, 5 levels | powerless ↔ in charge |
+
+Five **Nouls** ride along in the same request: is this writing at all, is the
+feeling about something that has not happened yet, is more than one feeling present,
+is it aimed at the reader, is it asking for something, is it being held back.
+
+**Jev measures. The name is looked up in code** — 28 words, each at a hand-placed
+coordinate, nearest neighbour with weights. That table is opinionated and arguable,
+and it is in a file you can read rather than inside a model where you could not.
+
+---
+
+## <RandomColor>Three things</RandomColor> measurement decided
+
+**Three axes were not enough, and the fix was a fourth question.** A plainly
+frustrated text — *"I have asked them four times for the file"* — came back as
+**Anxiety**. It was not a bad reading: negative, keyed up, no control describes both
+feelings equally well. What separates them is whether the thing has already happened.
+Adding one Noul, *is this about something that has not happened yet*, moved that text
+to **Frustration** while a genuinely anxious one stayed at **Dread**. Three axes
+underdetermine the word; the fourth question is the one that disambiguates the pairs.
+
+**The meter shows the argmax; the lookup uses the mean — and that is not an
+inconsistency.** A meter highlights a bucket, so it wants the tallest bar: rounding a
+skewed score lands the highlight on a bar the weight is not in. The word lookup
+places a point in a continuous space, so it wants the weighted position — a reading
+split between *negative* and *level* really does sit between them. Same numbers, two
+different jobs.
+
+**An axis that did not settle has to say so.** One test text measured **0.35
+confidence on valence** — the weight genuinely split between negative and positive —
+and the first version still printed *"Negative"* in the same voice it uses at 0.98.
+That is the easiest way for a page like this to lie, because a reader looks at the
+word, not at the bars. Now an unsettled axis is named, with the two levels it split
+between and their percentages.
+
+---
+
+## What it does not do
+
+It names 28 feelings and no more, and it says when the nearest one is not close.
+Three axes cannot separate feelings that differ only by what caused them — gratitude
+and contentment sit almost on top of each other, and no coordinate can tell them
+apart. Where the point is far from every word, the page says *closest to X, though
+not close*, rather than picking one and sounding certain.
+
+It is an instrument, not help. Nothing you type is stored or logged.
+
+---
+
+## What is under it
+
+* **Frontend:** Astro, no framework, no dependencies. One page, light-themed on
+  purpose while the rest of the site follows your system theme.
+* **Model:** Jev, eight questions in a single request, called through one
+  server-rendered endpoint so the API key never reaches the build output.
+* **Guards:** a gibberish gate before anything is scored — real writing measures
+  0.96–0.98 on *is this writing*, keyboard mashing 0.08 — and a spend cap in front
+  of the endpoint.
+* **Tests:** nine, against answer objects recorded from real calls, so the suite
+  needs no key and no network.
