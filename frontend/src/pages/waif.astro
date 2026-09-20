@@ -1,9 +1,9 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { AXES, AXIS_IDS, INTENTS, EVAL, EVAL_N, FAMILIES, SOURCE } from "../lib/waif";
+import { AXES, AXIS_IDS, INTENTS, SPEC, EVAL, EVAL_N, FAMILIES, SOURCE } from "../lib/waif";
 
 const AXIS_LIST = AXIS_IDS.map((id) => ({ id, ...AXES[id] }));
-const INTENT_LIST = (Object.keys(INTENTS) as (keyof typeof INTENTS)[]).map((k) => ({ id: k, ...INTENTS[k] }));
+
 
 const EXAMPLES = [
   ["blocked", "I have asked them four times for the file and they keep saying tomorrow. Now it is my deadline that slips."],
@@ -83,104 +83,46 @@ const EXAMPLES = [
           <span class="wf-chev" aria-hidden="true">▸</span> What Jev actually said
         </button>
         <div id="wf-panel" class="wf-panel" hidden>
-          <table class="wf-tbl">
-            <thead><tr><th>Question</th><th>Type</th><th>Answer</th><th>Confidence</th></tr></thead>
-            <tbody id="wf-rows"></tbody>
-          </table>
-          <p class="wf-note" id="wf-dist"></p>
+          <p class="wf-note">
+            Every question it was asked, every option it could have picked, and where it put
+            the probability.
+          </p>
+          <div id="wf-qbs"></div>
         </div>
       </div>
 
       <div class="wf-detail">
         <button id="wf-toggle2" class="wf-toggle" aria-expanded="false" aria-controls="wf-panel2">
-          <span class="wf-chev" aria-hidden="true">▸</span> The vocabulary, and where each word sits
+          <span class="wf-chev" aria-hidden="true">▸</span> How it works
         </button>
-        <div id="wf-panel2" class="wf-panel" hidden>
-          <p class="wf-note">
-            Sixty-two words in eleven families. The three numbers beside each one are
-            {" "}<strong>published human ratings</strong> — mean valence, arousal and dominance on a 1&ndash;9
-            scale — from {SOURCE.cite.split(",")[0]} et al.'s norms for {SOURCE.words.toLocaleString()} English
-            words. <strong>They are reference, not the mechanism:</strong> the numbers anchor the rubric
-            levels, and choosing among these words was measured and given to the model instead. <em>n</em>
-            {" "}is how many people rated the word and <em>sd</em> the spread of their valence scores — worth
-            looking at, because it is rarely small.
-          </p>
-          <div class="wf-scroll">
-            <table class="wf-words">
-              <thead>
-                <tr><th>Word</th><th>Valence</th><th>Arousal</th><th>Dominance</th><th>n</th><th>sd</th></tr>
-              </thead>
-              <tbody>
-                {FAMILIES.map((f) => (
-                  <>
-                    <tr class="wf-famrow" data-famrow={f.id}>
-                      <td colspan="6">{f.label} — {f.gloss}</td>
-                    </tr>
-                    {f.shades.map((s) => (
-                      <tr data-word={s.word}>
-                        <td>{s.word}<span class="wf-q">{s.gloss}</span></td>
-                        <td>{s.v.toFixed(2)}</td>
-                        <td>{s.a.toFixed(2)}</td>
-                        <td>{s.d.toFixed(2)}</td>
-                        <td>{s.n}</td>
-                        <td>{s.sd.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p class="wf-note">
-            <a href={SOURCE.doi} rel="noopener">{SOURCE.cite}</a>. Sixty-two rows of it are quoted here,
-            with thanks.
-          </p>
-        </div>
-      </div>
-
-      <div class="wf-detail">
-        <button id="wf-toggle3" class="wf-toggle" aria-expanded="false" aria-controls="wf-panel3">
-          <span class="wf-chev" aria-hidden="true">▸</span> Why it is built this way
-        </button>
-        <div id="wf-panel3" class="wf-panel wf-prose" hidden>
-          <h3>The three axes</h3>
+        <div id="wf-panel2" class="wf-panel wf-prose" hidden>
+          <h3>Three axes</h3>
           <p>
-            Emotion is not one variable. The reading rests on three that are measured separately
-            because they vary separately: <strong>valence</strong> (pleasant ↔ unpleasant),
-            {" "}<strong>arousal</strong> (shut down ↔ keyed up) and <strong>control</strong> (powerless ↔
-            in charge). The first two are Russell's circumplex; the third is the dominance dimension
-            of Mehrabian and Russell's PAD, and is the weakest of the three — in the published norms
-            it correlates with valence at <strong>+0.87</strong> across emotion words, which is most
-            of the reason it does not get to pick the word.
-          </p>
-          <p>
-            Each level of each axis is <strong>anchored to words whose ratings were measured</strong>,
-            so the scale is pinned to something outside this page. “As activated as rage or panic” is
-            a claim you can check; “very aroused” is not.
+            Valence (pleasant ↔ unpleasant), arousal (shut down ↔ keyed up) and control
+            (powerless ↔ in charge), measured separately because they vary separately. Each
+            level is anchored to words whose ratings were measured, so <em>as activated as rage
+            or panic</em>{" "}is a claim you can check where <em>very aroused</em>{" "}is not.
           </p>
 
-          <h3>Why the name is not a Choice over every emotion word</h3>
+          <h3>The name comes in two steps</h3>
           <p>
-            Ask a model to pick one of sixty emotion words and it splits its own vote:
-            {" "}<em>annoyed</em>, <em>irritated</em> and <em>frustrated</em> are one feeling in three
-            wordings, so the probability divides between them and confidence collapses for a reason
-            that has nothing to do with the text. That is a real failure, not a hypothetical — it is
-            why the Magic Jev Ball answers on a five-level axis rather than choosing between its
-            twenty classic replies.
+            Ask for one of sixty emotion words and the model splits its own vote:{" "}
+            <em>annoyed</em>, <em>irritated</em>{" "}and <em>frustrated</em>{" "}are one feeling
+            in three wordings, so the probability divides between them and confidence collapses
+            for a reason that has nothing to do with the text. Families do not have that problem
+            — anger, fear and sadness are genuinely alternatives to each other. So the first call
+            picks the family, and the second picks the shade from that family alone.
           </p>
           <p>
-            <strong>Families do not have that problem.</strong> Anger, fear, sadness and shame are
-            genuinely alternatives to each other, so “which family” is a fair question. Once the
-            family is fixed, “which shade of anger” is fair too, because the context has already
-            ruled out the fifty-four words that were never in the running. So the naming is two
-            questions, asked in that order.
+            What you are <em>doing</em>{" "}is a separate question again: a choice over eight
+            speech acts, which are alternatives to one another in the way emotion words are not.
           </p>
 
-          <h3>What the published norms are actually for</h3>
+          <h3>The ratings are reference, not the mechanism</h3>
           <p>
-            This page used to name the feeling from a table of coordinates placed by hand. Replacing
-            those guesses with measured ratings was the obvious improvement, and it was tried four
-            ways on a 24-text probe set, scored against a list of acceptable words for each text:
+            Every word below carries published human ratings of valence, arousal and dominance.
+            Using those numbers to <strong>pick</strong>{" "}the word was tried, and scored on
+            24 texts against a list of acceptable answers for each:
           </p>
           <table class="wf-eval">
             <tbody>
@@ -193,41 +135,53 @@ const EXAMPLES = [
             </tbody>
           </table>
           <p>
-            <strong>The norms are a poor way to pick the word, and the measurement says so plainly.</strong>
-            {" "}Negative emotions sit in a very small ball of valence–arousal–dominance space; the
-            ratings are means from about twenty people with a standard deviation near 1.7 on a 1–9
-            scale; and a word rated in isolation is not the same measurement as a piece of writing
-            read in context — people rate the <em>word</em> “gratitude” as far more activated than a
-            grateful message reads. So the norms do the job they are good at: anchoring the rubric
-            and showing you where each word sits. The model does the naming.
-          </p>
-
-          <h3>The other two questions</h3>
-          <p>
-            <strong>What you are doing</strong> is separate from what you are feeling, and it was
-            missing until two people testing this page said so. It is a Choice over eight speech acts
-            — venting, asking for help, seeking reassurance, confronting, thanking, deciding, telling
-            you what happened, thinking it through — which are alternatives to each other in the way
-            emotion words are not. It replaced two Nouls, <em>is it aimed at the reader</em> and
-            {" "}<em>is it asking for something</em>, that were fragments of this judgment rather than
-            judgments of their own.
-          </p>
-          <p>
-            Two Nouls survived a check on whether they said anything: <strong>is it about something
-            that has not happened yet</strong>, and <strong>is it being held back</strong>. A third —
-            {" "}<em>is more than one feeling present</em> — was cut, because it came back at or above 0.6
-            on twenty-one of twenty-four texts. That is not a signal, it is a property of writing.
-            What it was reaching for is now read off the shade Choice's own spread: a feeling between
-            two words shows up as a split distribution, which answers the same question better and
-            costs nothing.
+            They fail for three reasons. Dominance correlates with valence at <strong>+0.87</strong>{" "}
+            across these words, so the third number is nearly a copy of the first. Negative
+            emotions occupy a very small part of the space, so the nearest one is close to
+            arbitrary. And a word rated on its own is not the same measurement as writing read in
+            context — people rate the word <em>gratitude</em>{" "}far more activated than a
+            grateful message reads. So the ratings anchor the rubric and show where each word
+            sits. The model does the naming.
           </p>
 
           <h3>What it cannot do</h3>
           <p>
-            It has sixty-two words and no more, and no coordinate can separate feelings that differ
-            only by what caused them. Where the shade does not separate, the page says which two it
-            is between rather than picking one and sounding certain. Where even the family is
-            unsettled it says that too. It is an instrument, not help.
+            Sixty-two words and no more, and no coordinate separates feelings that differ only by
+            what caused them. Where the shade does not separate it names the two words it is
+            between; where even the family is unsettled, it says so.
+          </p>
+
+          <div class="wf-scroll">
+            <table class="wf-words">
+              <thead>
+                <tr><th>Word</th><th>Valence</th><th>Arousal</th><th>Dominance</th><th>n</th><th>sd</th></tr>
+              </thead>
+              <tbody>
+                {FAMILIES.map((f) => (
+                  <>
+                    <tr class="wf-famrow" data-famrow={f.id}>
+                      <td colspan="6">{f.label} — {f.gloss}</td>
+                    </tr>
+                    {f.shades.map((sh) => (
+                      <tr data-word={sh.word}>
+                        <td>{sh.word}<span class="wf-q">{sh.gloss}</span></td>
+                        <td>{sh.v.toFixed(2)}</td>
+                        <td>{sh.a.toFixed(2)}</td>
+                        <td>{sh.d.toFixed(2)}</td>
+                        <td>{sh.n}</td>
+                        <td>{sh.sd.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p class="wf-note">
+            Ratings on a 1–9 scale, from{" "}
+            <a href={SOURCE.doi} rel="noopener">{SOURCE.cite}</a>. <em>n</em>{" "}is how many
+            people rated the word and <em>sd</em>{" "}the spread of their valence scores, which
+            is rarely small.
           </p>
         </div>
       </div>
@@ -430,6 +384,32 @@ const EXAMPLES = [
   .wf-tbl :global(.wf-num) { color: var(--accent); font-weight: 600; }
   .wf-tbl :global(.wf-spread) { color: var(--soft); font-size: 0.8rem; }
 
+  #wf-qbs :global(.wf-qb) { padding: 16px 0; border-bottom: 1px solid var(--line); }
+  #wf-qbs :global(.wf-qb:last-child) { border-bottom: 0; padding-bottom: 0; }
+  #wf-qbs :global(.wf-qb-head) {
+    display: flex; justify-content: space-between; gap: 12px; align-items: baseline;
+    flex-wrap: wrap;
+  }
+  #wf-qbs :global(.wf-qb-name) {
+    font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink);
+  }
+  #wf-qbs :global(.wf-qb-type) { font-size: 0.78rem; color: var(--dim); }
+  #wf-qbs :global(.wf-qb-q) { margin: 6px 0 10px; font-size: 0.86rem; color: var(--soft); }
+  #wf-qbs :global(.wf-opts) { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+  /* The bar is the row's own background, so a long option still reads as text
+     and the probability is legible on top of it rather than beside a sliver. */
+  #wf-qbs :global(.wf-opt) {
+    display: flex; justify-content: space-between; gap: 14px; padding: 7px 10px;
+    font-size: 0.82rem; line-height: 1.5; color: var(--soft); border-radius: 6px;
+    background: linear-gradient(to right, var(--track) var(--p), transparent var(--p));
+  }
+  #wf-qbs :global(.wf-opt.at) {
+    color: var(--ink); font-weight: 600;
+    background: linear-gradient(to right, rgba(111, 99, 171, 0.22) var(--p), transparent var(--p));
+  }
+  #wf-qbs :global(.wf-opt-p) { color: var(--dim); font-weight: 400; white-space: nowrap; }
+  #wf-qbs :global(.wf-opt.at .wf-opt-p) { color: var(--accent); font-weight: 600; }
+
   .wf-note { margin: 14px 0 0; font-size: 0.84rem; color: var(--dim); }
   .wf-note strong { color: var(--soft); }
   .wf-note a { color: var(--accent); }
@@ -448,7 +428,10 @@ const EXAMPLES = [
     color: var(--soft); white-space: nowrap;
   }
   .wf-words td:first-child { text-align: left; padding-left: 0; color: var(--ink); white-space: normal; }
-  .wf-words .wf-q { white-space: normal; max-width: 18rem; }
+  .wf-words .wf-q {
+    display: block; white-space: normal; max-width: 18rem;
+    font-size: 0.78rem; color: var(--dim); font-weight: 400;
+  }
   .wf-words tr.at td { color: var(--accent); font-weight: 600; }
   .wf-words tr.at .wf-q { color: var(--accent); font-weight: 400; }
   .wf-famrow td {
@@ -501,7 +484,7 @@ const EXAMPLES = [
   }
 </style>
 
-<script is:inline define:vars={{ AXIS_LIST, INTENT_LIST }}>
+<script is:inline define:vars={{ AXIS_LIST, SPEC }}>
   (function () {
     var form = document.getElementById("wf-form");
     var text = document.getElementById("wf-text");
@@ -532,7 +515,6 @@ const EXAMPLES = [
     }
     wireToggle("wf-toggle", "wf-panel");
     wireToggle("wf-toggle2", "wf-panel2");
-    wireToggle("wf-toggle3", "wf-panel3");
 
     document.querySelectorAll(".wf-chip").forEach(function (chip) {
       chip.addEventListener("click", function () {
@@ -558,14 +540,28 @@ const EXAMPLES = [
       }
     }
 
-    function row(name, question, type, answer, confidence) {
-      var tr = document.createElement("tr");
-      tr.innerHTML =
-        "<td>" + name + '<span class="wf-q">' + question + "</span></td>" +
-        "<td>" + type + "</td>" +
-        '<td class="wf-num">' + answer + "</td>" +
-        "<td>" + confidence + "</td>";
-      return tr;
+    // Backticks are how the question points at the state field; they are
+    // noise to anyone reading the question itself.
+    function plain(q) { return q.replace(/`/g, ""); }
+
+    function opts(options, probs, chosen) {
+      return options.map(function (o) {
+        var p = probs[o.key] || 0;
+        return '<li class="wf-opt' + (o.key === chosen ? " at" : "") +
+          '" style="--p:' + (p * 100).toFixed(1) + '%"><span>' + o.text +
+          '</span><span class="wf-opt-p">' + Math.round(p * 100) + "%</span></li>";
+      }).join("");
+    }
+
+    function block(label, type, question, body) {
+      var d = document.createElement("div");
+      d.className = "wf-qb";
+      d.innerHTML =
+        '<div class="wf-qb-head"><span class="wf-qb-name">' + label +
+        '</span><span class="wf-qb-type">' + type + "</span></div>" +
+        '<p class="wf-qb-q">' + plain(question) + "</p>" +
+        '<ul class="wf-opts">' + body + "</ul>";
+      return d;
     }
 
     function render(r) {
@@ -592,40 +588,35 @@ const EXAMPLES = [
 
       AXIS_LIST.forEach(function (a) { paintAxis(a.id, r.axes[a.id]); });
 
-      var rows = document.getElementById("wf-rows");
-      rows.innerHTML = "";
-      AXIS_LIST.forEach(function (a) {
-        var ax = r.axes[a.id];
-        var spread = ax.probabilities
-          .map(function (p, i) { return p > 0.01 ? i + ": " + pct(p) : null; })
-          .filter(Boolean).join("  ");
-        rows.appendChild(row(a.label, a.question, "Score",
-          ax.score.toFixed(2) + ' <span class="wf-spread">of 4 &middot; ' + spread + "</span>",
-          ax.confidence.toFixed(2) + (ax.unsure ? " ⚠" : "")));
-      });
-      rows.appendChild(row("Family", "Which family does the feeling belong to?", "Choice",
-        r.family.label, r.family.confidence.toFixed(2)));
-      rows.appendChild(row("Shade", "Which shade of that family is it exactly?", "Choice",
-        r.word + (r.alternatives.length
-          ? ' <span class="wf-spread">then ' + r.alternatives.filter(function (a) { return a.p >= 0.01; })
-              .slice(0, 3).map(function (a) { return a.word + " " + pct(a.p); }).join(", ") + "</span>"
-          : ""),
-        r.shadeConfidence.toFixed(2)));
-      rows.appendChild(row("Intent", "What is the person doing with this text?", "Choice",
-        r.intent.label, r.intent.confidence.toFixed(2)));
-      rows.appendChild(row("Is this writing at all", "", "Noul", pct(r.isWriting),
-        '<span class="wf-noconf">—</span>'));
-      rows.appendChild(row("About something not yet happened", "", "Noul", pct(r.signals.ahead),
-        '<span class="wf-noconf">—</span>'));
-      rows.appendChild(row("Being held back", "", "Noul", pct(r.signals.restrained),
-        '<span class="wf-noconf">—</span>'));
+      var qbs = document.getElementById("wf-qbs");
+      qbs.innerHTML = "";
 
-      document.getElementById("wf-dist").textContent = r.norms
-        ? "Published ratings for “" + r.word.toLowerCase() + "”: valence " + r.norms.v +
-          ", arousal " + r.norms.a + ", dominance " + r.norms.d + " on a 1–9 scale, from " +
-          r.norms.n + " raters, valence sd " + r.norms.sd +
-          ". Those are reference — they anchor the rubric, and they did not pick this word."
-        : "";
+      SPEC.scores.forEach(function (q) {
+        var ax = r.axes[q.id];
+        var probs = {};
+        ax.probabilities.forEach(function (p, i) { probs[String(i)] = p; });
+        qbs.appendChild(block(q.label, "Score · confidence " + ax.confidence.toFixed(2),
+          q.question, opts(q.options, probs, String(ax.level))));
+      });
+
+      qbs.appendChild(block("Family", "Choice · confidence " + r.family.confidence.toFixed(2),
+        SPEC.family.question, opts(SPEC.family.options, r.distributions.family, r.family.id)));
+
+      var sh = SPEC.shades[r.family.id];
+      if (sh) {
+        qbs.appendChild(block("Shade", "Choice, second call · confidence " + r.shadeConfidence.toFixed(2),
+          sh.question, opts(sh.options, r.distributions.shade, r.word.toLowerCase())));
+      }
+
+      qbs.appendChild(block("Intent", "Choice · confidence " + r.intent.confidence.toFixed(2),
+        SPEC.intent.question, opts(SPEC.intent.options, r.distributions.intent, r.intent.id)));
+
+      SPEC.nouls.forEach(function (q) {
+        var v = q.id === "is_writing" ? r.isWriting : r.signals[q.id];
+        qbs.appendChild(block(q.label, "Noul", q.question,
+          opts([{ key: "yes", text: "yes" }, { key: "no", text: "no" }],
+               { yes: v, no: 1 - v }, null)));
+      });
 
       // Mark the chosen word and its family in the vocabulary table.
       document.querySelectorAll(".wf-words tr.at").forEach(function (tr) { tr.classList.remove("at"); });

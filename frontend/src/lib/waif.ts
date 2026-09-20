@@ -216,6 +216,51 @@ const shadeQuestion = (family: Family) => ({
   },
 });
 
+/**
+ * Everything the panel needs to show what the model was actually asked.
+ *
+ * A probability means nothing without the option it was assigned to, and an
+ * answer means nothing without the alternatives it beat. This is that, in the
+ * order the questions are asked.
+ */
+export const SPEC = {
+  scores: AXIS_IDS.map((id) => ({
+    id,
+    label: AXES[id].label,
+    question: AXES[id].question,
+    options: AXES[id].levels.map((text, i) => ({ key: String(i), text })),
+  })),
+  family: {
+    id: "family",
+    label: "Family",
+    question: QUESTIONS.family.instructions,
+    options: FAMILIES.map((f) => ({ key: f.id, text: `${f.label} — ${f.gloss}` })),
+  },
+  intent: {
+    id: "intent",
+    label: "Intent",
+    question: QUESTIONS.intent.instructions,
+    options: (Object.keys(INTENTS) as IntentId[]).map((k) => ({
+      key: k,
+      text: `${INTENTS[k].label} — ${INTENTS[k].gloss}`,
+    })),
+  },
+  shades: Object.fromEntries(
+    FAMILIES.map((f) => [
+      f.id,
+      {
+        question: `Which shade of ${f.id} is it exactly?`,
+        options: f.shades.map((sh) => ({ key: sh.word, text: `${sh.word} — ${sh.gloss}` })),
+      },
+    ]),
+  ),
+  nouls: [
+    { id: "is_writing", label: "Is this writing at all", question: QUESTIONS.is_writing.instructions },
+    { id: "ahead", label: "About something not yet happened", question: SIGNALS.ahead.instructions },
+    { id: "restrained", label: "Being held back", question: SIGNALS.restrained.instructions },
+  ],
+} as const;
+
 export interface AxisReading {
   score: number;
   level: number;
@@ -252,6 +297,12 @@ export interface Reading {
   axes: Record<AxisId, AxisReading>;
   signals: Record<SignalId, number>;
   isWriting: number;
+  /** Full distributions for the three Choices, so every option can be shown. */
+  distributions: {
+    family: Record<string, number>;
+    shade: Record<string, number>;
+    intent: Record<string, number>;
+  };
 }
 
 function bars(probabilities: Record<string, number> | undefined, n: number): number[] {
@@ -330,6 +381,7 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
     axes,
     signals,
     isWriting,
+    distributions: { family: {}, shade: {}, intent: {} },
   };
 
   // Gibberish gate. Scoring a random string produces perfectly real numbers
@@ -410,6 +462,11 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
     axes,
     signals,
     isWriting,
+    distributions: {
+      family: stage1.family?.probabilities ?? {},
+      shade: shadeAnswer.probabilities ?? {},
+      intent: intentProbs,
+    },
   };
 }
 
