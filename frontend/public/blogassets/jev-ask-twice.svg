@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#0b0b0c"/>
+
+  <text x="60" y="84" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#6f9bff" letter-spacing="0.14em">JEV · CHOICE · MEASURED ON 24 TEXTS</text>
+  <text x="60" y="150" font-family="system-ui,sans-serif" font-size="46" font-weight="700" fill="#e6e6e6">One Choice splits its own vote.</text>
+  <text x="60" y="206" font-family="system-ui,sans-serif" font-size="46" font-weight="700" fill="#6f9bff">Two Choices do not.</text>
+
+  <line x1="60" y1="252" x2="1140" y2="252" stroke="#1f1f23" stroke-width="1"/>
+
+  <!-- rows: design -> score, bar width scaled to 22 -->
+  <g font-family="system-ui,sans-serif">
+    <text x="60" y="308" font-size="18" fill="#7d8590">Nearest word by published valence / arousal / dominance</text>
+    <rect x="60" y="322" width="98" height="10" rx="5" fill="#2a2a30"/>
+    <text x="1140" y="312" font-size="22" font-weight="700" fill="#7d8590" text-anchor="end">3 / 24</text>
+
+    <text x="60" y="380" font-size="18" fill="#7d8590">Nearest within a family, by rank on the separating axis</text>
+    <rect x="60" y="394" width="295" height="10" rx="5" fill="#2a2a30"/>
+    <text x="1140" y="384" font-size="22" font-weight="700" fill="#7d8590" text-anchor="end">9 / 24</text>
+
+    <text x="60" y="452" font-size="18" fill="#7d8590">Nearest within a family, by distance in those ratings</text>
+    <rect x="60" y="466" width="393" height="10" rx="5" fill="#2a2a30"/>
+    <text x="1140" y="456" font-size="22" font-weight="700" fill="#7d8590" text-anchor="end">12 / 24</text>
+
+    <text x="60" y="524" font-size="18" font-weight="600" fill="#e6e6e6">Family chosen by the model, then the shade chosen by the model</text>
+    <rect x="60" y="538" width="721" height="10" rx="5" fill="#6f9bff"/>
+    <text x="1140" y="528" font-size="22" font-weight="700" fill="#6f9bff" text-anchor="end">22 / 24</text>
+  </g>
+
+  <text x="60" y="596" font-family="system-ui,sans-serif" font-size="15" fill="#4a5060">Naming the feeling in a piece of text · dave8172</text>
+</svg>
