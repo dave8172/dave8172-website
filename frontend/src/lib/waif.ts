@@ -228,18 +228,21 @@ export const SPEC = {
     id,
     label: AXES[id].label,
     question: AXES[id].question,
+    role: "Describes the feeling and draws the meter. It does not pick the word.",
     options: AXES[id].levels.map((text, i) => ({ key: String(i), text })),
   })),
   family: {
     id: "family",
     label: "Family",
     question: QUESTIONS.family.instructions,
+    role: "Picks the word, together with the shade below. Nothing else does.",
     options: FAMILIES.map((f) => ({ key: f.id, text: `${f.label} — ${f.gloss}` })),
   },
   intent: {
     id: "intent",
     label: "Intent",
     question: QUESTIONS.intent.instructions,
+    role: "Reported on its own line. It never touches the feeling.",
     options: (Object.keys(INTENTS) as IntentId[]).map((k) => ({
       key: k,
       text: `${INTENTS[k].label} — ${INTENTS[k].gloss}`,
@@ -250,14 +253,30 @@ export const SPEC = {
       f.id,
       {
         question: `Which shade of ${f.id} is it exactly?`,
+        role: "Picks the word. Where it does not separate, the page names both.",
         options: f.shades.map((sh) => ({ key: sh.word, text: `${sh.word} — ${sh.gloss}` })),
       },
     ]),
   ),
   nouls: [
-    { id: "is_writing", label: "Is this writing at all", question: QUESTIONS.is_writing.instructions },
-    { id: "ahead", label: "About something not yet happened", question: SIGNALS.ahead.instructions },
-    { id: "restrained", label: "Being held back", question: SIGNALS.restrained.instructions },
+    {
+      id: "is_writing",
+      label: "Is this writing at all",
+      question: QUESTIONS.is_writing.instructions,
+      role: "A gate. Below 0.50 nothing is scored and the second call is never spent.",
+    },
+    {
+      id: "ahead",
+      label: "About something not yet happened",
+      question: SIGNALS.ahead.instructions,
+      role: "Adds one line to the reading when it passes 0.60. Nothing else.",
+    },
+    {
+      id: "restrained",
+      label: "Being held back",
+      question: SIGNALS.restrained.instructions,
+      role: "Adds one line to the reading when it passes 0.60. Nothing else.",
+    },
   ],
 } as const;
 
