@@ -122,6 +122,9 @@ const EXAMPLES = [
         </div>
       </div>
 
+    </section>
+
+    <div class="wf-how">
       <div class="wf-detail">
         <button id="wf-toggle2" class="wf-toggle" aria-expanded="false" aria-controls="wf-panel2">
           <span class="wf-chev" aria-hidden="true">▸</span> How it works
@@ -252,7 +255,7 @@ const EXAMPLES = [
           </p>
         </div>
       </div>
-    </section>
+    </div>
 
     <footer class="wf-foot">
       <p>
@@ -440,6 +443,15 @@ const EXAMPLES = [
   .wf-fb-done { margin: 10px 0 0; font-size: 0.9rem; color: var(--accent); }
   .wf-fb-note { margin: 12px 0 0; font-size: 0.78rem; color: var(--dim); }
 
+  /* Always on the page, reading or no reading. It carries the card's surface so
+     it does not read as an orphan below the form. */
+  .wf-how {
+    margin-top: 24px; padding: 8px 24px 14px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: 0 2px 10px rgba(47, 43, 58, 0.05);
+  }
+  .wf-how .wf-detail { margin-top: 0; border-top: 0; }
+
   .wf-detail { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 4px; }
   .wf-toggle {
     width: 100%; text-align: left !important; padding: 8px 0 !important;
@@ -542,6 +554,7 @@ const EXAMPLES = [
 
   @media (max-width: 480px) {
     .wf-out { padding: 22px 18px 18px; border-radius: 16px; }
+    .wf-how { padding: 6px 18px 12px; border-radius: 16px; }
     .wf-ax-ends { font-size: 0.72rem; }
     .wf-ax-top { flex-wrap: wrap; }
   }
