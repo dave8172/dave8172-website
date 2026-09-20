@@ -119,45 +119,6 @@ export const INTENTS = {
 } as const;
 export type IntentId = keyof typeof INTENTS;
 
-/**
- * The two Nouls that survived a check on whether they were saying anything.
- *
- * Measured over the 24-text probe set: `mixed` — *is more than one feeling
- * present* — came back at or above 0.6 on twenty-one of twenty-four texts,
- * which is not a signal, it is a property of writing. It was cut, and the
- * thing it was reaching for is now read off the shade Choice's own spread: a
- * feeling that sits between two words shows up as a split distribution, which
- * is a better answer to the same question and costs nothing extra.
- *
- * These two both fired on some inputs and not others, and both change what a
- * reader should take from the reading.
- */
-const SIGNALS = {
-  ahead: {
-    instructions:
-      "The feeling in `text` is about something that has not happened yet, rather than about something that already has or is happening now.",
-    criteria: {
-      true: "Directed at what might come — a threat, a hope, an outcome still open",
-      false: "Directed at what has already happened or is happening now",
-    },
-    note: "It is about something that has not happened yet.",
-  },
-  restrained: {
-    instructions:
-      "The feeling in `text` is being held back or understated relative to what is actually being described.",
-    criteria: {
-      true: "The events described are far heavier than the way they are told",
-      false: "The telling matches the weight of what happened",
-    },
-    note: "And it is being held back — what is described is heavier than how it is said.",
-  },
-} as const;
-
-export type SignalId = keyof typeof SIGNALS;
-const SIGNAL_IDS = ["ahead", "restrained"] as const;
-
-/** A Noul at or above this reads as *present* for the purpose of the sentence. */
-const PRESENT = 0.6;
 /** Below this, nothing was said that could be read at all. */
 const IS_WRITING = 0.5;
 /** Below this, an axis did not settle and must not be stated as if it had. */
@@ -199,12 +160,6 @@ export const QUESTIONS = {
       (Object.keys(INTENTS) as IntentId[]).map((k) => [k, INTENTS[k].gloss]),
     ),
   },
-  ...Object.fromEntries(
-    SIGNAL_IDS.map((id) => [
-      id,
-      { type: "noul", instructions: SIGNALS[id].instructions, criteria: SIGNALS[id].criteria },
-    ]),
-  ),
 } as const;
 
 /** Stage two: which shade, given the family stage one chose. */
@@ -228,7 +183,7 @@ export const SPEC = {
     id,
     label: AXES[id].label,
     question: AXES[id].question,
-    role: "Describes the feeling and draws the meter. It does not pick the word.",
+    role: "Starts the sentence and draws the meter. It does not pick the word.",
     options: AXES[id].levels.map((text, i) => ({ key: String(i), text })),
   })),
   family: {
@@ -242,7 +197,7 @@ export const SPEC = {
     id: "intent",
     label: "Intent",
     question: QUESTIONS.intent.instructions,
-    role: "Reported on its own line. It never touches the feeling.",
+    role: "Finishes the sentence. It does not affect the word.",
     options: (Object.keys(INTENTS) as IntentId[]).map((k) => ({
       key: k,
       text: `${INTENTS[k].label} — ${INTENTS[k].gloss}`,
@@ -264,18 +219,6 @@ export const SPEC = {
       label: "Is this writing at all",
       question: QUESTIONS.is_writing.instructions,
       role: "A gate. Below 0.50 nothing is scored and the second call is never spent.",
-    },
-    {
-      id: "ahead",
-      label: "About something not yet happened",
-      question: SIGNALS.ahead.instructions,
-      role: "Adds one line to the reading when it passes 0.60. Nothing else.",
-    },
-    {
-      id: "restrained",
-      label: "Being held back",
-      question: SIGNALS.restrained.instructions,
-      role: "Adds one line to the reading when it passes 0.60. Nothing else.",
     },
   ],
 } as const;
@@ -314,7 +257,6 @@ export interface Reading {
   /** One speakable paragraph: the whole reading in a form that can be read aloud. */
   summary: string;
   axes: Record<AxisId, AxisReading>;
-  signals: Record<SignalId, number>;
   isWriting: number;
   /** Full distributions for the three Choices, so every option can be shown. */
   distributions: {
@@ -371,10 +313,6 @@ const ranked = (probabilities: Record<string, number>): Alternative[] =>
 export function interpret(stage1: any, shadeAnswer: any | null): Reading {
   const isWriting: number = stage1.is_writing?.noul ?? 0;
   const axes = readAxes(stage1);
-  const signals = Object.fromEntries(
-    SIGNAL_IDS.map((id) => [id, stage1[id]?.noul ?? 0]),
-  ) as Record<SignalId, number>;
-
   const familyId: string = stage1.family?.choice ?? "";
   const family = FAMILIES.find((f) => f.id === familyId);
   const familyConfidence: number = stage1.family?.confidence ?? 0;
@@ -398,7 +336,6 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
     notes: [],
     summary: "That did not read as something a person wrote, so it was not scored.",
     axes,
-    signals,
     isWriting,
     distributions: { family: {}, shade: {}, intent: {} },
   };
@@ -413,9 +350,12 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
   const shadeConfidence: number = shadeAnswer.confidence ?? 0;
   const alternatives = ranked(shadeAnswer.probabilities).filter((x) => x.word !== shadeWord);
 
+  // One line, not two. The axes say how it feels and the intent says what the
+  // writer is doing with it; as separate blocks they read as two verdicts about
+  // the same sentence, which is what they are not.
   const sentence =
     `${VALENCE_CLAUSE[axes.valence.level]} ${AROUSAL_CLAUSE[axes.arousal.level]}, ` +
-    `${CONTROL_CLAUSE[axes.control.level]}.`;
+    `${CONTROL_CLAUSE[axes.control.level]} — and ${intentMeta.label}.`;
 
   const notes: string[] = [];
 
@@ -431,9 +371,6 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
   if (familyConfidence < FAMILY_CLEAR) {
     notes.push(`Even the family was unsettled, so read the word loosely.`);
   }
-  for (const id of SIGNAL_IDS) {
-    if (signals[id] >= PRESENT) notes.push(SIGNALS[id].note);
-  }
   for (const id of AXIS_IDS) {
     if (!axes[id].unsure) continue;
     const order = axes[id].probabilities
@@ -448,12 +385,7 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
   }
 
   const intentP: number = intentProbs[intentId] ?? 0;
-  const summary = [
-    `${title(shadeWord)}.`,
-    sentence,
-    `What it is doing: ${intentMeta.label}.`,
-    ...notes,
-  ].join(" ");
+  const summary = [`${title(shadeWord)}.`, sentence, ...notes].join(" ");
 
   return {
     ok: true,
@@ -479,7 +411,6 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
     notes,
     summary,
     axes,
-    signals,
     isWriting,
     distributions: {
       family: stage1.family?.probabilities ?? {},

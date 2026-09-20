@@ -23,7 +23,7 @@ const EXAMPLES = [
       <p class="wf-say">What am I feeling?</p>
       <p class="wf-sub">
         Write something — a message you have not sent, a note to yourself, anything.
-        You get the feeling, what you are doing with it, and every number behind both.
+        You get the feeling, what you are doing with it, and every number behind it.
       </p>
     </header>
 
@@ -51,12 +51,6 @@ const EXAMPLES = [
       <p class="wf-word" id="wf-word">—</p>
       <p class="wf-gloss" id="wf-gloss"></p>
       <p class="wf-sentence" id="wf-sentence"></p>
-
-      <p class="wf-intent">
-        <span class="wf-intent-k">What it is doing</span>
-        <strong id="wf-intent">—</strong>
-        <span class="wf-intent-p" id="wf-intent-p"></span>
-      </p>
 
       <ul class="wf-notes" id="wf-notes"></ul>
 
@@ -96,17 +90,16 @@ const EXAMPLES = [
           <span class="wf-chev" aria-hidden="true">▸</span> How it works
         </button>
         <div id="wf-panel2" class="wf-panel wf-prose" hidden>
-          <h3>Nine answers, four jobs</h3>
+          <h3>Seven answers, three jobs</h3>
           <p>
             They do not all do the same thing, and only two of them choose the word.
           </p>
           <table class="wf-eval wf-roles">
             <tbody>
               <tr><td>Family, then shade</td><td><strong>The word.</strong> Nothing else picks it</td></tr>
-              <tr><td>Valence, arousal, control</td><td>The sentence and the three meters</td></tr>
+              <tr><td>Valence, arousal, control</td><td>The sentence, and the three meters</td></tr>
+              <tr><td>Intent</td><td>The end of that sentence</td></tr>
               <tr><td>Is this writing at all</td><td>A gate — below 0.50 nothing is scored</td></tr>
-              <tr><td>Intent</td><td>Its own line; it never touches the feeling</td></tr>
-              <tr><td>Not yet happened · held back</td><td>One extra line each, at 0.60</td></tr>
             </tbody>
           </table>
           <p>
@@ -344,16 +337,6 @@ const EXAMPLES = [
   .wf-gloss { margin: 6px 0 0; font-size: 0.95rem; color: var(--dim); font-style: italic; }
   .wf-sentence { margin: 14px 0 0; font-size: 1.05rem; color: var(--ink); }
 
-  .wf-intent {
-    margin: 18px 0 0; padding: 12px 16px; background: var(--track);
-    border-radius: 12px; font-size: 0.98rem;
-  }
-  .wf-intent-k {
-    display: block; font-size: 0.72rem; letter-spacing: 0.14em;
-    text-transform: uppercase; color: var(--dim); margin-bottom: 2px;
-  }
-  .wf-intent strong { color: var(--accent); }
-  .wf-intent-p { color: var(--dim); font-size: 0.85rem; margin-left: 7px; }
 
   .wf-notes { list-style: none; margin: 16px 0 0; padding: 0; }
   .wf-notes :global(li) {
@@ -602,13 +585,6 @@ const EXAMPLES = [
       document.getElementById("wf-gloss").textContent = r.gloss;
       document.getElementById("wf-sentence").textContent = r.sentence;
 
-      document.getElementById("wf-intent").textContent = r.intent.label;
-      document.getElementById("wf-intent-p").textContent =
-        pct(r.intent.p) + (r.intentAlternatives.filter(function (a) { return a.p >= 0.01; }).length
-          ? " · then " + r.intentAlternatives.filter(function (a) { return a.p >= 0.01; })
-              .map(function (a) { return a.word + " " + pct(a.p); }).join(", ")
-          : "");
-
       var notes = document.getElementById("wf-notes");
       notes.innerHTML = "";
       r.notes.forEach(function (n) {
@@ -645,7 +621,7 @@ const EXAMPLES = [
         opts(SPEC.intent.options, r.distributions.intent, r.intent.id)));
 
       SPEC.nouls.forEach(function (q) {
-        var v = q.id === "is_writing" ? r.isWriting : r.signals[q.id];
+        var v = r.isWriting;
         qbs.appendChild(block(q.label, "Noul", q.question, q.role,
           opts([{ key: "yes", text: "yes" }, { key: "no", text: "no" }],
                { yes: v, no: 1 - v }, null)));

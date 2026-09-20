@@ -29,11 +29,13 @@ test("the gloss travels with the word, so the word never works alone", () => {
 });
 
 // What the reader wanted and the first version did not give them.
-test("intent is reported separately from the feeling", () => {
+test("intent finishes the sentence rather than repeating beside it", () => {
   const r = read("askhelp");
   assert.equal(r.intent.id, "asking_for_help");
-  assert.equal(r.intent.label, "asking for help");
-  assert.match(r.summary, /What it is doing: asking for help/);
+  assert.match(r.sentence, / — and asking for help\.$/);
+  // One description line, so the sentence carries it and the summary does not
+  // say it twice.
+  assert.equal(r.summary.split("asking for help").length - 1, 1);
 });
 
 test("the published ratings ride along as reference, never as the mechanism", () => {
@@ -89,5 +91,10 @@ test("the summary is one speakable line carrying word, reading and intent", () =
   const r = read("blocked");
   assert.ok(r.summary.startsWith("Frustration."));
   assert.ok(r.summary.includes(r.sentence));
-  assert.match(r.summary, /What it is doing:/);
+});
+
+test("the removed Nouls leave nothing behind in a reading", () => {
+  const r = read("blocked");
+  assert.equal(r.signals, undefined);
+  assert.ok(!r.notes.some((n) => /held back|not happened yet/.test(n)), r.notes.join(" | "));
 });

@@ -46,7 +46,7 @@ State: `{ question }`. Four questions, one request.
 
 State: `{ text }`. **Two requests**, and the split between them is the design.
 
-**Stage one — eight questions, one request.**
+**Stage one — six questions, one request.**
 
 | id | Primitive | Answers |
 |---|---|---|
@@ -56,8 +56,6 @@ State: `{ text }`. **Two requests**, and the split between them is the design.
 | `family` | Choice, 11 options | Which family does the feeling belong to? |
 | `intent` | Choice, 8 options | What is the writer *doing* — the act, not the feeling? |
 | `is_writing` | Noul | Is this something a person actually wrote? |
-| `ahead` | Noul | Is the feeling about something that has not happened yet? |
-| `restrained` | Noul | Is the feeling held back relative to what is described? |
 
 **Stage two — one question**, asked only if the gate passes: a Choice over the
 chosen family's shades alone, 2–8 options depending on the family.
@@ -75,10 +73,19 @@ at the reader*) and `asking` (*is it asking for something*), which were fragment
 of one judgment. Speech acts are alternatives to each other, so "which one" is
 the right question — the mirror of why emotion words are not.
 
-**A Noul that was cut for saying nothing.** `mixed` (*is more than one feeling
-present*) returned ≥0.6 on **21 of 24** probe texts. That is a property of
-writing, not a signal. What it reached for is now read off the shade Choice's
-spread: a split distribution *is* "between two feelings", and costs nothing.
+**All three descriptive Nouls were cut, and only the gate survives.** `mixed`
+(*is more than one feeling present*) went first, on measurement: it returned
+≥0.6 on **21 of 24** probe texts, which is a property of writing rather than a
+signal — and what it reached for is read off the shade Choice's spread anyway,
+since a split distribution *is* "between two feelings". `ahead` and `restrained`
+followed on use: each could only ever append one line, neither changed the word,
+the sentence or a meter, and a question whose whole effect is an occasional
+footnote costs a reader more attention than it returns.
+
+**One description line, not two.** `intent` used to be reported in its own block
+beside the axes' sentence, which read as two verdicts about the same text. It now
+finishes that sentence — *"Negative and keyed up, with little sense of control —
+and asking for help."*
 
 **A control rubric must not contain an emotion word.** Level 1 once read
 *"Overwhelmed: struggling to keep any grip on it"*, which primed the model with a
@@ -125,7 +132,6 @@ every number as provisional.
 | Constant | Value | Basis |
 |---|---|---|
 | `IS_WRITING` | 0.50 | Real writing scored 0.96–0.98; keyboard mashing 0.08 |
-| `PRESENT` (Nouls) | 0.60 | Separates the signals that fired correctly from near-misses at 0.43–0.49 |
 | `SETTLED` (axis confidence) | 0.50 | Below it the weight is genuinely split; an ambiguous text measured 0.35 on valence while clean ones measured 0.76–0.98 |
 | `MARGIN` (top two levels) | 0.15 | Confidence is computed over the whole distribution, so a two-way split can clear `SETTLED` and still be a coin toss — one probe landed 52% against 47% on control and was reported flatly |
 | `SHADE_CLEAR` | 0.60 | Clean readings scored 0.79–1.00; a genuinely between-two-words text scored 0.20 |
@@ -143,7 +149,7 @@ every number as provisional.
 
 ## Measured cost
 
-`jev-1.13.0`, 2026-09-20. Stage one ~1,400 input tokens; stage two ~444. Input is
+`jev-1.13.0`, 2026-09-20. Stage one ~1,250 input tokens; stage two ~444. Input is
 dominated by rubrics and criteria, which are sent on every call regardless of how
 short the text is, so a one-line input costs almost exactly what a paragraph does.
 **A refusal costs one request, not two** — the gate is checked before stage two is
