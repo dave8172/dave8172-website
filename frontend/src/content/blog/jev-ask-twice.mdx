@@ -1,0 +1,164 @@
+---
+title: "Ask twice: Jev's Choice splits its own vote"
+description: "Sixty emotion words in one Choice splits its own vote. Two Choices in sequence scored 22/24 where a coordinate lookup scored 3/24."
+date: 2026-09-20
+tags: ["AI", "Reliability", "Calibration", "TypeSafe", "Jev"]
+image: "/blogassets/jev-ask-twice.49ca86c0.png"
+---
+
+import RandomColor from '../../components/RandomColor.astro';
+
+Jev is a System One model from TypeSafe. It reads natural language like any LLM,
+and instead of writing a reply it returns a probability distribution over options
+you define. No prose, no reasoning trace, no JSON to repair.
+
+I spent a day building <RandomColor>waif</RandomColor>, which reads a piece of
+text and names the feeling in it. That job has no right answer, which makes it an
+unusually honest test rig: nothing can be graded against a key, so every design
+decision has to be either argued or measured. I measured five.
+
+---
+
+## 1. A Choice splits its own vote between synonyms
+
+The obvious build is one Choice over sixty emotion words. It does not work, and
+the reason is structural rather than a prompting problem you can fix with better
+wording.
+
+*Annoyed*, *irritated* and *frustrated* are one feeling in three wordings. A
+Choice divides probability between them, so a text the model read perfectly
+clearly comes back at 0.19 / 0.17 / 0.15, and confidence collapses for a reason
+that has nothing to do with the input. The distribution is telling you about your
+option list, not about the text.
+
+The rule that falls out of it: **a Choice's options have to be alternatives to
+each other, not the same thing described from different angles.** Anything a
+person might use interchangeably belongs in one option, not two.
+
+---
+
+## 2. So ask twice
+
+Families do not have that problem. Anger, fear, sadness and shame are genuinely
+different answers. And once the family is fixed, so are its shades — *which shade
+of anger* is a fair question, because the context has already ruled out the
+fifty-four words that were never in the running.
+
+So the naming became two Choices in sequence: the first picks the family, the
+second picks the shade from that family alone. TypeSafe's docs say a second
+request is warranted when an earlier answer determines the next question's
+options. This is exactly that, and here is what it bought — scored on 24 texts
+against a list of acceptable answers for each:
+
+| Design | Score |
+|---|---|
+| Nearest word in the whole vocabulary, by published valence / arousal / dominance | 3 / 24 |
+| Nearest word within a family, by rank on the axis that separates that family | 9 / 24 |
+| Nearest word within a family, by distance in those published ratings | 12 / 24 |
+| **Family chosen by the model, then the shade chosen by the model** | **22 / 24** |
+
+Both of the two failures were the wrong *family*. Given the family, the shade was
+right every single time.
+
+The alternative was speculative fan-out: ask all eleven within-family Choices in
+the first request and consume only the relevant answer. That keeps a reading to
+one request, at roughly 3–4k input tokens against 1,250 + 444 for two. Two
+requests won on cost, and on a latency story I could explain.
+
+---
+
+## 3. <RandomColor>Knowing which half</RandomColor> to give the model is a decision you can measure
+
+The first three rows of that table are me trying to do the naming in code.
+
+I had a good reason. Published human ratings exist for exactly the dimensions I
+was measuring — Warriner, Kuperman & Brysbaert's norms give valence, arousal and
+dominance for 13,915 English words, rated by people. Placing the text on those
+axes and taking the nearest word looks like the principled version:
+research-backed coordinates instead of somebody's guesses.
+
+It scored **3/24**, and the three reasons are worth knowing before anyone else
+reaches for an emotion lexicon:
+
+* **Dominance is nearly a copy of valence.** Across these emotion words the two
+  correlate at **+0.87**, so the third dimension carries far less independent
+  information than the theory promises.
+* **Negative emotions occupy almost no space.** Fear, frustration, worry, terror,
+  jealousy and embarrassment sit inside a ball small enough that the nearest
+  neighbour is close to arbitrary — and the coordinates are means from about
+  twenty raters with a standard deviation near 1.7 on a 1–9 scale.
+* **A word rated on its own is not the same measurement as writing read in
+  context.** People rate the *word* "gratitude" as far more activated than a
+  grateful message reads.
+
+I also tried fixing the scale mismatch by z-scoring both sides against a probe
+corpus. Worse, and instructively so: the corpus was negative-skewed, so the
+mapping inherited the skew, and a plainly warm text landed below the mean and got
+named from the sad half of the space.
+
+The lesson is not *don't use lexicons*. It is that **the boundary between what
+code owns and what the model owns is a design decision with a number attached**,
+and my intuition about it was wrong by a factor of seven. The norms kept the job
+they are actually good at: every rubric level is now anchored to words whose
+ratings were measured, so *"as activated as rage or panic"* is a claim a reader
+can check, where *"very aroused"* is not.
+
+---
+
+## 4. Confidence is peakedness — and peakedness misses a coin toss
+
+A Score's confidence summarises how concentrated the distribution is. It is not
+how sure the model is of being right, which is the trap everyone hits first.
+
+Here is the second-order version, which cost me a bug. One reading came back at
+**confidence 0.72** on an axis — comfortably above any threshold I would set —
+with the mass sitting **50% on one level and 49% on the one next to it**. The
+distribution genuinely is peaked: nearly all the weight is in two adjacent
+buckets. It is also a coin toss, and my page reported the winner in exactly the
+voice it uses at 0.98.
+
+Confidence cannot catch that, because concentration across two neighbours is
+still concentration. **The margin between first and second is a separate test** —
+and it is the one a reader actually cares about.
+
+---
+
+## 5. Audit your questions: one of mine fired on 21 of 24 inputs
+
+A question set grows by accretion. Each addition looks free, and none of them
+announce that they have stopped saying anything.
+
+So run them over a corpus and look at the spread. Mine had a Noul asking *is more
+than one feeling present*. It returned ≥0.6 on **twenty-one of twenty-four**
+texts. That is not a signal about the input, it is a property of writing — a
+question paying tokens to tell you something you already knew.
+
+Two more went for a different reason. They were informative, but nothing
+downstream consumed them beyond appending a line to the output. A question whose
+entire effect is an occasional footnote costs a reader more attention than it
+returns.
+
+The check is cheap: for every question, the min, max and spread of its answer
+across a representative corpus. Anything that barely moves is either a gate or a
+mistake.
+
+---
+
+## 6. Two small things that cost real time
+
+**A rubric level must not contain a word from another axis.** My control rubric
+had a level reading *"Overwhelmed: struggling to keep any grip on it"*. That
+primes the model with a feeling while asking it about agency, and it labels the
+output with a word that is not a position on a control scale at all. Every level
+of an axis has to be a point on that axis.
+
+**Input is dominated by your rubrics, not by your input.** Criteria are sent on
+every call, so a one-line text costs almost exactly what a paragraph does. At
+this size requests are the scarce resource and tokens are not — which is the
+whole argument for batching every independent question into one call, and the
+reason a *dependent* second call is a real cost rather than a rounding error.
+
+---
+
+waif is live at [/waif](/waif). Every number in this post is on the page, under
+*How it works*, next to the vocabulary it was scored against.
