@@ -124,6 +124,23 @@ It is an instrument, not help. Nothing you type is stored or logged.
 
 ---
 
+## The loop
+
+Every reading asks whether it fits. Saying no offers the whole vocabulary and the
+eight intents, and sends the reading's numbers alongside whichever you pick.
+**It does not send what you wrote** — a correction does not need it, and the page
+promises it is never stored.
+
+It also cannot train the model, which is hosted and has no fine-tuning surface.
+What accumulates is a **labelled eval set over real inputs**: an accept rate, and
+corrections that point at which rubric line is wrong. A shade corrected the same
+way twenty times is a gloss that needs rewriting, and that is a change you can
+make and re-measure the same afternoon.
+
+The judgments are signed when handed out and verified when they come back, so the
+model's half of every row is provably a real reading. Without that the first
+person to script the endpoint would decide what the eval set says.
+
 ## What is under it
 
 * **Frontend:** Astro, no framework, no dependencies. Light-themed on purpose while

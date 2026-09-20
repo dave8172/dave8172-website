@@ -147,6 +147,29 @@ every number as provisional.
   the mass is not in.
 - **Every threshold above**, and the decision to refuse rather than score.
 
+## The feedback loop
+
+Every reading offers *"Does that fit?"*, and a correction writes one row to
+stuffboard's `waif_feedback` table through `/api/waif/feedback` — which holds
+`WAIF_FEEDBACK_SECRET` and `WAIF_FEEDBACK_URL` server-side, so this public page
+never touches a database credential. With either unset the reading comes back
+`feedback: false` and the page does not offer the ask at all.
+
+**The row is judgments, never text**: the three axis scores and confidences, the
+family, shade and intent with theirs, the character count, a pre-hashed subject,
+and what the person said it should have been.
+
+**The judgments are signed on the way out and verified on the way back**
+(`src/lib/feedback.ts`, HMAC-SHA256, 16 bytes hex). Without that the browser
+could post any row it liked and the set would be worthless the first time
+somebody scripted it. Verified in production 2026-09-20: an edited judgment with
+a valid token is refused.
+
+**It cannot train Jev**, which is hosted and has no fine-tuning surface. What
+accumulates is a labelled eval set over real inputs — an accept rate, and
+corrections that point at which `criteria` string is wrong. That is the loop:
+read the corrections, rewrite a gloss, re-run the probe set.
+
 ## Measured cost
 
 `jev-1.13.0`, 2026-09-20. Stage one ~1,250 input tokens; stage two ~444. Input is
