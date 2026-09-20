@@ -407,6 +407,10 @@ const EXAMPLES = [
   .wf-fb-q { margin: 0 0 10px; font-size: 0.92rem; color: var(--ink); }
   .wf-fb-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .wf-fb-form { margin-top: 14px; display: grid; gap: 6px; }
+  /* `display: flex`/`grid` above outrank the UA stylesheet's
+     [hidden] { display: none }, so a hidden block stays on screen — which put
+     the correction form under every reading before anyone asked for it. */
+  .wf-fb-row[hidden], .wf-fb-form[hidden] { display: none; }
   .wf-fb-l { font-size: 0.8rem; color: var(--dim); margin-top: 6px; }
   .wf-fb select {
     width: 100%; padding: 9px 11px; font-family: inherit; font-size: 15px;
