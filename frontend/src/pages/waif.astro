@@ -125,9 +125,13 @@ const EXAMPLES = [
     </section>
 
     <div class="wf-how">
+      <p class="wf-how-sub">
+        The three axes, why the name takes two steps, what the published ratings can and
+        cannot do, and what happens when you correct a reading.
+      </p>
       <div class="wf-detail">
         <button id="wf-toggle2" class="wf-toggle" aria-expanded="false" aria-controls="wf-panel2">
-          <span class="wf-chev" aria-hidden="true">▸</span> How it works
+          <span class="wf-chev" aria-hidden="true">▸</span> How it works, and what a correction does
         </button>
         <div id="wf-panel2" class="wf-panel wf-prose" hidden>
           <h3>Seven answers, three jobs</h3>
@@ -451,6 +455,17 @@ const EXAMPLES = [
     box-shadow: 0 2px 10px rgba(47, 43, 58, 0.05);
   }
   .wf-how .wf-detail { margin-top: 0; border-top: 0; }
+  /* Collapsed, this card was one low-contrast line that read as a divider.
+     The summary is what tells a reader there is anything inside it. */
+  .wf-how-sub {
+    margin: 4px 0 0; padding: 8px 0 0; order: 2;
+    font-size: 0.82rem; line-height: 1.6; color: var(--dim);
+    border-top: 1px solid var(--line);
+  }
+  .wf-how { display: flex; flex-direction: column; }
+  .wf-how .wf-detail { order: 1; }
+  /* Once it is open the summary is just a repeat of the headings below it. */
+  .wf-how:has(.wf-toggle[aria-expanded="true"]) .wf-how-sub { display: none; }
 
   .wf-detail { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 4px; }
   .wf-toggle {
