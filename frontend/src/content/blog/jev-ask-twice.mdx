@@ -69,57 +69,83 @@ requests won on cost, and on a latency story I could explain.
 
 ## 3. <RandomColor>Knowing which half</RandomColor> to give the model is a decision you can measure
 
-The first three rows of that table are me trying to do the naming in code.
+The job is: read a text, name the feeling. That job splits between the code I
+write and the model I call, and the only real decision is where the line falls —
+how much of the work do I hand over?
 
-I had a good reason. Published human ratings exist for exactly the dimensions I
-was measuring — Warriner, Kuperman & Brysbaert's norms give valence, arousal and
-dominance for 13,915 English words, rated by people. Placing the text on those
-axes and taking the nearest word looks like the principled version:
-research-backed coordinates instead of somebody's guesses.
+The first three rows of that table are me keeping most of it.
 
-It scored **3/24**, and the three reasons are worth knowing before anyone else
-reaches for an emotion lexicon:
+I had a reason. Human ratings exist for exactly the dimensions I was measuring:
+Warriner, Kuperman & Brysbaert scored 13,915 English words for valence, arousal
+and dominance by asking people. So the model's job shrinks to placing the text
+on those three scales, and my code finishes the job — look up the nearest word
+in the table, return it. Research-backed coordinates instead of somebody's
+guesses. It looked like the serious version.
 
-* **Dominance is nearly a copy of valence.** Across these emotion words the two
-  correlate at **+0.87**, so the third dimension carries far less independent
-  information than the theory promises.
-* **Negative emotions occupy almost no space.** Fear, frustration, worry, terror,
-  jealousy and embarrassment sit inside a ball small enough that the nearest
-  neighbour is close to arbitrary — and the coordinates are means from about
-  twenty raters with a standard deviation near 1.7 on a 1–9 scale.
-* **A word rated on its own is not the same measurement as writing read in
-  context.** People rate the *word* "gratitude" as far more activated than a
-  grateful message reads.
+It scored **3/24**. Handing the model the whole naming job scored 22/24.
 
-I also tried fixing the scale mismatch by z-scoring both sides against a probe
-corpus. Worse, and instructively so: the corpus was negative-skewed, so the
-mapping inherited the skew, and a plainly warm text landed below the mean and got
-named from the sad half of the space.
+Three reasons, worth knowing before anyone else reaches for an emotion lexicon:
 
-The lesson is not *don't use lexicons*. It is that **the boundary between what
-code owns and what the model owns is a design decision with a number attached**,
-and my intuition about it was wrong by a factor of seven. The norms kept the job
-they are actually good at: every rubric level is now anchored to words whose
-ratings were measured, so *"as activated as rage or panic"* is a claim a reader
-can check, where *"very aroused"* is not.
+* **Three scales were really about two.** Across these emotion words, valence
+  and dominance move together at **+0.87** — a word that reads pleasant almost
+  always reads in-control. The third scale is close to a copy of the first, so
+  it separates far less than the theory promises.
+* **The unpleasant words are crammed into one corner.** Fear, frustration,
+  worry, terror, jealousy and embarrassment land in a ball small enough that
+  taking the nearest one is close to picking at random. The coordinates are
+  fuzzy to begin with: each is an average over about twenty raters who disagreed
+  by around 1.7 on a 1–9 scale.
+* **Rating a word on its own is not the same measurement as reading a
+  sentence.** People rate the bare word *"gratitude"* as far more activated than
+  an actual grateful message reads. The two sets of numbers were never on the
+  same ruler.
+
+I tried to fix that last mismatch by re-centring both sides against a sample of
+texts. It got worse, and instructively: the sample leaned negative, so the
+correction leaned negative, and a plainly warm text landed below the middle and
+got named from the sad half of the space. That is straightening a bent ruler
+with a bent ruler.
+
+The lesson is not *don't use lexicons*. It is that **where the line falls
+between what code owns and what the model owns is a design decision with a
+number attached**, and my intuition about it was wrong by a factor of seven.
+
+The norms kept the one job they are good at. A Score is not given "rate this 1
+to 5" — it is given a rubric, a written description of what each level means,
+the way a grading key spells out what a B looks like. Every level of mine now
+names words whose ratings were measured, so *"as activated as rage or panic"* is
+a claim a reader can argue with. *"Very aroused"* is only a word getting louder.
 
 ---
 
 ## 4. Confidence is peakedness — and peakedness misses a coin toss
 
-A Score's confidence summarises how concentrated the distribution is. It is not
-how sure the model is of being right, which is the trap everyone hits first.
+A Score's confidence measures how bunched together the answer is. It does not
+measure how likely the model is to be right, which is the trap everyone hits
+first.
 
-Here is the second-order version, which cost me a bug. One reading came back at
-**confidence 0.72** on an axis — comfortably above any threshold I would set —
-with the mass sitting **50% on one level and 49% on the one next to it**. The
-distribution genuinely is peaked: nearly all the weight is in two adjacent
-buckets. It is also a coin toss, and my page reported the winner in exactly the
-voice it uses at 0.98.
+Those two sound like the same thing until a reading like this one turns up.
+Confidence came back at **0.72**, comfortably above any threshold I would set,
+and here is what was underneath it:
 
-Confidence cannot catch that, because concentration across two neighbours is
-still concentration. **The margin between first and second is a separate test** —
-and it is the one a reader actually cares about.
+| Where the answer sat | Share |
+|---|---|
+| The winning level | **50%** |
+| The level right next to it | **49%** |
+| The other three | 1% |
+
+The 0.72 is not lying. Ninety-nine percent of the weight really is in two
+buckets and there is nothing anywhere else — that is about as bunched as an
+answer gets.
+
+It is also a coin toss. Choosing between the top two is 50 against 49, and my
+page announced the winner in exactly the voice it uses at 0.98.
+
+Confidence cannot catch this, because *bunched into two neighbours* is still
+bunched. What I actually wanted was the **gap between first and second place**,
+which is a different number entirely: 98 against 1 is a winner, 50 against 49 is
+a tie with a rounding error. Confidence says the same thing about both — and the
+gap is the one a reader cares about.
 
 ---
 
