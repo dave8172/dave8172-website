@@ -4,25 +4,31 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 /** The product name lives here. Changing it changes every mention on the page. */
 const NAME = "Attune";
 
-const USES = [
+/** `signal` is optional: the last case is about the record, not a thing to measure. */
+type Use = { who: string; what: string; res: string; signal?: { name: string; levels: string[] } };
+const USES: Use[] = [
   {
     who: "If you run an AI companion or character app",
     what: "Attune scores every message for distress, 1 to 4. “Rough day” is a 1. “I have been saving up my pills” is a 3. You decide what happens at each number.",
+    signal: { name: "distress", levels: ["low", "thinking of death", "has a plan", "has acted"] },
     res: "You stop showing a crisis hotline to everyone having a bad Tuesday, and you stop missing the person who needed one.",
   },
   {
     who: "If you run a journaling or mood app",
     what: "Attune scores each entry the same way every time, and re-checks itself whenever your model provider ships an update.",
+    signal: { name: "mood", levels: ["very low", "low", "okay", "good"] },
     res: "Your ninety-day mood chart moves when your user changes, instead of when somebody else changes a model.",
   },
   {
     who: "If you run a support or helpdesk bot",
     what: "Attune follows frustration as the conversation goes. A 2 is a grumble. A 4 is a person deciding to leave.",
+    signal: { name: "frustration", levels: ["calm", "a grumble", "losing patience", "about to leave"] },
     res: "You hand the chat to a human while that still fixes it.",
   },
   {
     who: "If people talk to your app for months",
     what: "Attune tracks how much someone is coming to rely on it, across weeks rather than off one message.",
+    signal: { name: "reliance", levels: ["now and then", "a daily habit", "first place they turn", "instead of people"] },
     res: "You can see which users to point gently back toward real life — the thing app stores and reporters are asking companion apps about right now.",
   },
   {
@@ -102,7 +108,7 @@ const WANT = [
             <span class="rd-tag">Your user types</span>
             <p class="rd-msg">“{READING.text}”</p>
           </div>
-          <p class="rd-step" aria-hidden="true">↓ {NAME} reads it against your scale</p>
+          <p class="rd-step" aria-hidden="true">↓ {NAME} reads it for one signal: distress</p>
           <div class="rd-out">
             <span class="rd-tag">{NAME} returns</span>
             <p class="rd-level">
@@ -142,10 +148,25 @@ const WANT = [
 
     <section class="at-sec">
       <h2>Where it helps</h2>
+      <p class="at-def">
+        Each case below watches one <strong>signal</strong>: one thing you want to know about
+        the person typing, graded from 1 to 4. Distress is a signal. So is frustration, or
+        how attached someone is getting to your bot. Use these, or describe your own.
+      </p>
       {USES.map((u) => (
         <div class="at-use">
           <h3>{u.who}</h3>
           <p>{u.what}</p>
+          {u.signal && (
+            <div class="sg">
+              <span class="sg-name">signal: <strong>{u.signal.name}</strong></span>
+              <ol class="sg-levels">
+                {u.signal.levels.map((l, i) => (
+                  <li class={`sg-${i + 1}`}><span class="sg-n">{i + 1}</span>{l}</li>
+                ))}
+              </ol>
+            </div>
+          )}
           <p class="at-res">{u.res}</p>
         </div>
       ))}
@@ -158,7 +179,7 @@ const WANT = [
       </p>
       <ul class="at-list">
         <li>
-          <strong>It works out the scale with you.</strong> Tell it what you want to know —
+          <strong>It works out the signal with you.</strong> Tell it what you want to know —
           “when someone is getting too attached to my companion” — and it writes the levels,
           makes up examples, asks you to grade a handful yourself, checks whether the levels
           really come apart in practice, and rewrites the ones that do not.
@@ -177,7 +198,7 @@ const WANT = [
           width="360"
           height="392"
           role="img"
-          aria-label="Your app and Attune both run on your side. Your app sends Attune the conversation and gets back a score and whether your rule fired. Attune holds your scale, your examples and your record, which keeps scores and never message text. The only thing that crosses to the outside is the text you choose to score, sent to a model provider, which sends back the reading."
+          aria-label="Your app and Attune both run on your side. Your app sends Attune the conversation and gets back a score and whether your rule fired. Attune holds your signals, your examples and your record, which keeps scores and never message text. The only thing that crosses to the outside is the text you choose to score, sent to a model provider, which sends back the reading."
         >
           <defs>
             <marker id="at-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -203,7 +224,7 @@ const WANT = [
           <rect class="box" x="22" y="118" width="316" height="150" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" />
           <text class="t-b" x="180" y="140" text-anchor="middle">Attune</text>
           <rect class="chip" x="38" y="152" width="134" height="28" rx="6" fill="none" stroke="#858c97" />
-          <text class="t-sm" x="105" y="170" text-anchor="middle">your scale</text>
+          <text class="t-sm" x="105" y="170" text-anchor="middle">your signals</text>
           <rect class="chip" x="188" y="152" width="134" height="28" rx="6" fill="none" stroke="#858c97" />
           <text class="t-sm" x="255" y="170" text-anchor="middle">your examples</text>
           <rect class="chip" x="38" y="190" width="284" height="64" rx="6" fill="none" stroke="#858c97" />
@@ -221,7 +242,7 @@ const WANT = [
           <text class="t-sm t-mute" x="180" y="374" text-anchor="middle">the one hop that leaves</text>
         </svg>
         <figcaption>
-          Your app, your scale, your examples and your record all stay on your side. The one
+          Your app, your signals, your examples and your record all stay on your side. The one
           thing that crosses the line is the text you choose to score, on its way to the model
           that reads it.
         </figcaption>
@@ -229,7 +250,7 @@ const WANT = [
 
       <p>
         It installs as an MCP server or a command-line tool, so it fits into whatever you
-        already run. Your scales, your examples and your records stay on your side.
+        already run. Your signals, your examples and your records stay on your side.
       </p>
       <p class="at-note">
         One honest limit: the reading itself is a call to a model provider, so text you
@@ -240,11 +261,11 @@ const WANT = [
     <section class="at-sec">
       <h2>How it works</h2>
       <p>
-        You write down what you want to know as a short list of levels, with one line
-        saying what belongs in each.
+        A signal is written down as a short list of levels, with one line saying what
+        belongs in each. Here is distress:
       </p>
       <figure class="fig">
-        <ol class="ld" aria-label="A distress scale, four levels">
+        <ol class="ld" aria-label="The distress signal, four levels">
           {LADDER.map((r) => (
             <>
               {r.level === ACT_ON && (
@@ -270,13 +291,13 @@ const WANT = [
         nothing. The number is what tells you whether to do something.
       </p>
       <p>
-        Before you use a scale, {NAME} tests it on examples that a person has already
+        Before you use a signal, {NAME} tests it on examples that a person has already
         graded. That test tells you whether your levels actually come apart, where to draw
         the line for acting, how much you miss if you draw it there, and whether the same
         sentence gets the same score twice. When a model changes, run it again and compare.
       </p>
       <p>
-        The scale above is a second draft. In the first, line 2 said only “thoughts of
+        The distress signal above is a second draft. In the first, line 2 said only “thoughts of
         death”, and one example kept landing on the fence:
       </p>
 
@@ -322,7 +343,7 @@ const WANT = [
         <figcaption>
           One rewritten line, and the coin stopped flipping. The other four examples did not
           move. Real runs on <span class="nw">{MODEL}</span>. Five sentences and one edit is a demonstration, not a
-          test: a real scale is checked against many examples graded by people.
+          test: a real signal is checked against many examples graded by people.
         </figcaption>
       </figure>
       <p>
@@ -437,6 +458,49 @@ const WANT = [
   .at-res {
     color: var(--muted);
     font-size: 0.94rem;
+  }
+  .at-def {
+    margin: 0 0 1.6rem;
+  }
+
+  /* a signal's four levels: one hue, deepening with the level (sequential),
+     so "higher is more" reads before any label does. Ink stays ink on every step. */
+  .sg {
+    margin: 0.45rem 0 0.5rem;
+  }
+  .sg-name {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .sg-name strong {
+    color: var(--text);
+  }
+  .sg-levels {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    padding: 0;
+    margin: 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .sg-levels li {
+    padding: 0.4rem 0.5rem 0.45rem;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    background: var(--surface);
+  }
+  .sg-levels .sg-1 { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .sg-levels .sg-2 { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .sg-levels .sg-3 { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+  .sg-levels .sg-4 { background: color-mix(in srgb, var(--accent) 36%, transparent); }
+  .sg-n {
+    display: block;
+    font-weight: 700;
+    font-size: 0.95rem;
   }
   /* ---- figures ----------------------------------------------------------
      One accent for the element that carries the meaning (the winning level,
