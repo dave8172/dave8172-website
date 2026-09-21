@@ -1,0 +1,258 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+/** The product name lives here. Changing it changes every mention on the page. */
+const NAME = "Attune";
+
+const USES = [
+  {
+    who: "If you run an AI companion or character app",
+    what: "Attune scores every message for distress, 1 to 4. “Rough day” is a 1. “I have been saving up my pills” is a 3. You decide what happens at each number.",
+    res: "You stop showing a crisis hotline to everyone having a bad Tuesday, and you stop missing the person who needed one.",
+  },
+  {
+    who: "If you run a journaling or mood app",
+    what: "Attune scores each entry the same way every time, and re-checks itself whenever your model provider ships an update.",
+    res: "Your ninety-day mood chart moves when your user changes, instead of when somebody else changes a model.",
+  },
+  {
+    who: "If you run a support or helpdesk bot",
+    what: "Attune follows frustration as the conversation goes. A 2 is a grumble. A 4 is a person deciding to leave.",
+    res: "You hand the chat to a human while that still fixes it.",
+  },
+  {
+    who: "If people talk to your app for months",
+    what: "Attune tracks how much someone is coming to rely on it, across weeks rather than off one message.",
+    res: "You can see which users to point gently back toward real life — the thing app stores and reporters are asking companion apps about right now.",
+  },
+  {
+    who: "If anyone ever asks how your app handled a user",
+    what: "Every score is saved with the date, how sure it was, and the rule that acted on it.",
+    res: "You have an answer with dates on it, instead of “the AI decided”.",
+  },
+];
+
+const SCALE = `distress
+  1  hopelessness; no mention of death or self-harm
+  2  thoughts of death; no plan, no method, no timing
+  3  a plan, a method, something acquired, or a time named
+  4  an act in progress or already taken
+
+act on  3 and above`;
+
+const WANT = [
+  "You already try to work out how a user is doing — a prompt, a keyword list, a sentiment call — and you have no idea how well it works.",
+  "Someone has asked you to show how your app handles a user in trouble, and you did not have a good answer.",
+  "You show users a mood or wellbeing number, and it moved last quarter because a model changed rather than because anyone did.",
+];
+---
+
+<BaseLayout
+  title={`${NAME} — know how your users are doing`}
+  description="Attune reads the messages your users type — chat, journal entries, support conversations — and scores how they are doing, from fine to in trouble."
+>
+  <article class="at">
+    <header class="at-head">
+      <h1>{NAME}</h1>
+      <p class="at-claim">Know how your users are doing.</p>
+      <p class="at-sub">
+        Your users type things into your product every day: chat messages, journal
+        entries, support conversations. {NAME} reads them and tells you how that person is
+        doing — and how strongly. Fine, struggling, or in trouble, as a number your app can
+        act on.
+      </p>
+      <p class="at-demo">
+        The engine behind it is already running. <a href="/waif">waif</a> is a small demo
+        of it — type a sentence and watch it come back scored, with every number shown.
+      </p>
+    </header>
+
+    <section class="at-sec">
+      <h2>Where it helps</h2>
+      {USES.map((u) => (
+        <div class="at-use">
+          <h3>{u.who}</h3>
+          <p>{u.what}</p>
+          <p class="at-res">{u.res}</p>
+        </div>
+      ))}
+    </section>
+
+    <section class="at-sec">
+      <h2>It runs as an agent, inside your own setup</h2>
+      <p>
+        {NAME} is meant to sit where your conversations already are. It does two jobs.
+      </p>
+      <ul class="at-list">
+        <li>
+          <strong>It works out the scale with you.</strong> Tell it what you want to know —
+          “when someone is getting too attached to my companion” — and it writes the levels,
+          makes up examples, asks you to grade a handful yourself, checks whether the levels
+          really come apart in practice, and rewrites the ones that do not.
+        </li>
+        <li>
+          <strong>It watches and keeps the record.</strong> It reads conversations as they
+          happen, gives each one a score, applies whatever rule you set, and writes it all
+          down.
+        </li>
+      </ul>
+      <p>
+        It installs as an MCP server or a command-line tool, so it fits into whatever you
+        already run. Your scales, your examples and your records stay on your side.
+      </p>
+      <p class="at-note">
+        One honest limit: the reading itself is a call to a model provider, so text you
+        choose to score does leave your machine. A version that runs entirely on your own
+        hardware needs a local model, and I am not promising that yet.
+      </p>
+    </section>
+
+    <section class="at-sec">
+      <h2>How it works</h2>
+      <p>
+        You write down what you want to know as a short list of levels, with one line
+        saying what belongs in each.
+      </p>
+      <pre class="at-code"><code>{SCALE}</code></pre>
+      <p>
+        Every line there is sad. The feeling is the same at all four, and it tells you
+        nothing. The number is what tells you whether to do something.
+      </p>
+      <p>
+        Before you use a scale, {NAME} tests it on examples that a person has already
+        graded. That test tells you whether your levels actually come apart, where to draw
+        the line for acting, how much you miss if you draw it there, and whether the same
+        sentence gets the same score twice. When a model changes, run it again and compare.
+      </p>
+      <p>
+        After that, every reading is saved: the score, how the rest of the levels ranked,
+        the rule that fired, which model version read it, and when. Scores only — what your
+        user wrote stays in your database.
+      </p>
+    </section>
+
+    <section class="at-sec">
+      <h2>Why a number and not a feeling word</h2>
+      <p>
+        “Sad” cannot be set as a limit, cannot be charted over three months, and cannot be
+        shown to anyone as evidence. A number does all three.
+      </p>
+      <p>
+        And the tools most apps reach for are good at one of those jobs and bad at the
+        other. Measured in September 2026 on 516 posts graded by a psychiatrist, the usual
+        moderation APIs scored <strong>0.86</strong> at spotting that something is wrong,
+        and <strong>0.40</strong> at saying how bad it is. They shout at almost everything.
+      </p>
+    </section>
+
+    <section class="at-sec" id="ask">
+      <h2>Who I am looking for</h2>
+      <p>
+        You ship a chatbot, an AI companion, a journaling or mood app, a support
+        assistant — anything where people type to your software. And one of these is true:
+      </p>
+      <ul class="at-list">
+        {WANT.map((w) => <li>{w}</li>)}
+      </ul>
+      <p>
+        <strong>What I want to know:</strong> what you measure today, what you do with the
+        answer, and what it costs you when it is wrong. Fifteen minutes, or a reply as long
+        or short as you like.
+      </p>
+      <p>
+        There is nothing to sell. There is no product yet, and I will say so plainly if I
+        think it would not help you.
+      </p>
+      <p class="at-mail">
+        <a href="mailto:mdhawal94@gmail.com?subject=Attune">mdhawal94@gmail.com</a>
+      </p>
+    </section>
+
+    <footer class="at-foot">
+      <p>
+        <em>Attunement</em> is the word for reading how another person feels along with how
+        strongly they feel it, rather than only its name. It is also what you do to an
+        instrument before you trust what it reads.
+      </p>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .at {
+    max-width: 38rem;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+  .at-head h1 {
+    margin-bottom: 0.2rem;
+    letter-spacing: -0.02em;
+  }
+  .at-claim {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 0.9rem;
+  }
+  .at-sub {
+    font-size: 1.02rem;
+    margin: 0 0 1.25rem;
+  }
+  .at-demo {
+    border-left: 3px solid var(--accent);
+    padding: 0.6rem 0 0.6rem 0.9rem;
+    margin: 0 0 2.5rem;
+    color: var(--muted);
+  }
+  .at-sec {
+    margin: 0 0 2.75rem;
+  }
+  .at-sec h2 {
+    font-size: 1.15rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.4rem;
+    margin-bottom: 1.2rem;
+  }
+  .at-use {
+    margin-bottom: 1.7rem;
+  }
+  .at-use h3 {
+    font-size: 1rem;
+    margin: 0 0 0.35rem;
+  }
+  .at-use p {
+    margin: 0 0 0.35rem;
+  }
+  .at-res {
+    color: var(--muted);
+    font-size: 0.94rem;
+  }
+  .at-code {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.9rem 1rem;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+  .at-list {
+    padding-left: 1.1rem;
+  }
+  .at-list li {
+    margin-bottom: 0.55rem;
+  }
+  .at-note {
+    color: var(--muted);
+    font-size: 0.93rem;
+  }
+  .at-mail a {
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+  .at-foot {
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+</style>
