@@ -58,6 +58,14 @@ measure the text, and eleven speculative ones that name the shade.
 | `intent` | Choice, 8 options | What is the writer *doing* — the act, not the feeling? |
 | `is_writing` | Noul | Is this something a person actually wrote? |
 
+**Two words, when the shade lands on two.** `interpret` names a pair — stronger
+first — when the shade failed `SHADE_CLEAR` *and* the top two clear `PAIR_MASS`
+between them. `Reading.words` carries them with a gloss and a probability each
+and is what the page renders; **`Reading.word` stays the single strongest word**,
+because that is what a feedback correction is filed against and what the signed
+judgment row records. Below `PAIR_MASS` the weight is spread over three or more,
+so one word is named and the note says it did not settle.
+
 **The shade — eleven questions, same request.** One per family, asked under
 `shade_<family>`, each a Choice over that family's 2–8 shades and each stating
 its own premise in words: *"The feeling behind `text` belongs to the anger
@@ -170,6 +178,7 @@ every number as provisional.
 | `SETTLED` (axis confidence) | 0.50 | Below it the weight is genuinely split; an ambiguous text measured 0.35 on valence while clean ones measured 0.76–0.98 |
 | `MARGIN` (top two levels) | 0.15 | Confidence is computed over the whole distribution, so a two-way split can clear `SETTLED` and still be a coin toss — one probe landed 52% against 47% on control and was reported flatly |
 | `SHADE_CLEAR` | 0.60 | Clean readings scored 0.79–1.00; a genuinely between-two-words text scored 0.20 |
+| `PAIR_MASS` | 0.80 | Re-measured 2026-09-21 over 46 readings. With the shade unsettled the runner-up carried **≥22%**; with it settled, **≤19%** — so `SHADE_CLEAR` alone already separates a real second word from noise, and `PAIR_MASS` then drops the case where the weight is spread across three rather than two (guilt 46 / regret 26 / shame 20 sums to 0.72 and stays one word). Fires on 5 texts in 23 |
 | `FAMILY_CLEAR` | 0.50 | Clear families scored 0.88–1.00; the two probe failures scored 0.37 and 0.68 |
 
 ## What stayed in code

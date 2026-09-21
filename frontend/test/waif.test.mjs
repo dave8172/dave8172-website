@@ -52,12 +52,42 @@ test("gibberish is gated before either stage is reported", () => {
   assert.equal(r.notes.length, 0, "a refusal must not still carry observations");
 });
 
-test("a shade that did not separate names the word it sits beside", () => {
+// Three words at 33 / 28 / rest is not a pair, whatever the top two add up to.
+// It still says it did not settle; it just has no second word worth naming.
+test("a shade spread across three words names one, and says so", () => {
   const r = read("flat");
-  // Recorded confidence on this one was 0.20 — the feeling is genuinely
-  // between two words, and saying so is the point.
   assert.ok(r.shadeConfidence < 0.6);
-  assert.ok(r.notes.some((n) => /sits between/.test(n)), r.notes.join(" | "));
+  assert.equal(r.paired, false);
+  assert.equal(r.words.length, 1);
+  assert.ok(r.notes.some((n) => /did not settle on a word/.test(n)), r.notes.join(" | "));
+});
+
+// The pair: unsettled, and the top two hold the weight between them.
+test("two words carrying the weight between them are both named, strongest first", () => {
+  const between = {
+    ...F.blocked.shade,
+    confidence: 0.35,
+    probabilities: { guilt: 0.48, embarrassment: 0.47, shame: 0.03, regret: 0.02, humiliation: 0 },
+    choice: "guilt",
+  };
+  const r = interpret({ ...F.blocked.stage1, family: { ...F.blocked.stage1.family, choice: "shame" } }, between);
+  assert.equal(r.paired, true);
+  assert.deepEqual(r.words.map((w) => w.word), ["guilt", "embarrassment"]);
+  assert.ok(r.words[0].p > r.words[1].p, "strongest first");
+  assert.ok(r.words.every((w) => w.gloss), "each named word carries its own gloss");
+  assert.ok(r.summary.startsWith("Guilt and embarrassment."), r.summary);
+  assert.ok(r.notes.some((n) => /Both are in it — guilt at 48% and embarrassment at 47%/.test(n)),
+    r.notes.join(" | "));
+  // A correction is still filed against one word.
+  assert.equal(r.word, "Guilt");
+});
+
+// The guard that stops every clean reading becoming a pair.
+test("a settled shade names one word however much the runner-up adds up to", () => {
+  const r = read("blocked");
+  assert.ok(r.shadeConfidence >= 0.6);
+  assert.equal(r.paired, false);
+  assert.equal(r.words.length, 1);
 });
 
 test("an unsettled family is admitted rather than hidden behind a confident word", () => {

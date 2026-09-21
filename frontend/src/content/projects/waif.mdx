@@ -96,6 +96,19 @@ ask costs a whole round trip. Measured on the probe set: **398ms against 762ms**
 faster on 46 of 46 head-to-head pairs, same family every time, and the extra tokens
 come to five hundredths of a cent a reading.
 
+**And sometimes the answer is two words.** A text can genuinely be between guilt and
+embarrassment; the shade Choice comes back 52% and 41%, and that split *is* the
+reading. Two words get named, stronger first, when both conditions hold: the top word
+did not settle on its own (under 0.60) **and** the pair holds more than 80% of the
+weight between them.
+
+Both conditions do work. Drop the first and every clean reading acquires a second
+word at 3%. Drop the second and a text spread thinly across *guilt*, *regret* and
+*shame* gets reported as a pair when it is really none of them — that one keeps a
+single word and says plainly that it did not settle. The thresholds come off the
+probe set: an unsettled shade puts at least 22% on its runner-up, a settled one at
+most 19%. The rule fires on 5 texts in 23.
+
 ---
 
 ## What you are doing, which is not what you are feeling
@@ -125,9 +138,9 @@ than sitting beside it as a second verdict about the same text.
 ## What it refuses to do
 
 It has 62 words and no more, and no coordinate separates feelings that differ only
-by what caused them. Where the shade does not separate, the page names the two words
-it is between rather than picking one and sounding certain. Where even the family is
-unsettled, it says so. Where an axis clears its confidence threshold but the top two
+by what caused them. Where the shade lands on two words, it names both rather than
+picking one and sounding certain; where it lands on none in particular, it names the
+strongest and says it did not settle. Where even the family is unsettled, it says so. Where an axis clears its confidence threshold but the top two
 levels are a coin toss, that is caught too — confidence is computed over the whole
 distribution, so a 50/49 split can look peaked and still be undecided.
 
@@ -161,5 +174,5 @@ person to script the endpoint would decide what the eval set says.
   API key never reaches the build output.
 * **Data:** a 62-word extract of [Warriner, Kuperman & Brysbaert (2013)](https://doi.org/10.3758/s13428-012-0314-x),
   norms of valence, arousal and dominance for 13,915 English lemmas.
-* **Tests:** thirteen, against answer objects recorded from real calls, so the suite
+* **Tests:** fifteen, against answer objects recorded from real calls, so the suite
   needs no key and no network.

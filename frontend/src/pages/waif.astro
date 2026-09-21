@@ -126,8 +126,8 @@ const EXAMPLES = [
 
     <div class="wf-how">
       <p class="wf-how-sub">
-        The three axes, why the name takes two steps, what the published ratings can and
-        cannot do, and what happens when you correct a reading.
+        The three axes, why the name takes two steps, when it takes two words, what the
+        published ratings can and cannot do, and what happens when you correct a reading.
       </p>
       <div class="wf-detail">
         <button id="wf-toggle2" class="wf-toggle" aria-expanded="false" aria-controls="wf-panel2">
@@ -181,6 +181,22 @@ const EXAMPLES = [
             <strong>{ROUNDTRIP.sequential.ms}ms</strong> for two — faster on{" "}
             {ROUNDTRIP.faster} of {ROUNDTRIP.faster} head-to-head pairs, and naming the same
             family every time.
+          </p>
+          <h3>Sometimes the answer is two words</h3>
+          <p>
+            A text can be genuinely between guilt and embarrassment. When it is, the shade
+            question does not fail — it returns 52% and 41%, and that split <em>is</em>{" "}the
+            reading. Picking one of them and printing it in large type would be the failure.
+          </p>
+          <p>
+            So two words get named, stronger first, when both of these hold: the top word did
+            not settle on its own (below 0.60), <strong>and</strong>{" "}the two of them hold
+            more than 80% of the weight between them. Both conditions earn their place. Without
+            the first, every clean reading would be paired with whatever came second at 3%.
+            Without the second, a text spread thinly across <em>guilt</em>, <em>regret</em>{" "}
+            and <em>shame</em>{" "}would be reported as two when it is really none — that one
+            keeps a single word and says plainly that it did not settle. On the probe set the
+            rule fires on 5 texts in 23.
           </p>
           <p>
             What you are <em>doing</em>{" "}is a separate question again: a choice over eight
@@ -280,7 +296,8 @@ const EXAMPLES = [
         One call to <a href="https://docs.typesafe.ai" rel="noopener">Jev</a>, a model that returns
         calibrated probabilities instead of text. It measures the three axes, picks the family and
         the intent, and answers a shade question for every family at once — the one whose family
-        won is the word above. Gibberish is refused rather than scored.
+        won is the word above, or the two words above where it landed on two. Gibberish is
+        refused rather than scored.
       </p>
       <p>Nothing you type is stored or logged — it goes to the model to be scored, and that is all.</p>
       <p class="wf-care">
@@ -411,6 +428,7 @@ const EXAMPLES = [
     margin: 0; font-family: Georgia, "Iowan Old Style", serif;
     font-size: clamp(2rem, 9vw, 2.9rem); line-height: 1.1; color: var(--accent);
   }
+  .wf-and, .wf-w2 { opacity: 0.5; }
   .wf-gloss { margin: 6px 0 0; font-size: 0.95rem; color: var(--dim); font-style: italic; }
   .wf-sentence { margin: 14px 0 0; font-size: 1.05rem; color: var(--ink); }
 
@@ -676,9 +694,10 @@ const EXAMPLES = [
     }
 
     function opts(options, probs, chosen) {
+      var marked = chosen == null ? [] : [].concat(chosen);
       return options.map(function (o) {
         var p = probs[o.key] || 0;
-        return '<li class="wf-opt' + (o.key === chosen ? " at" : "") +
+        return '<li class="wf-opt' + (marked.indexOf(o.key) > -1 ? " at" : "") +
           '" style="--p:' + (p * 100).toFixed(1) + '%"><span>' + o.text +
           '</span><span class="wf-opt-p">' + Math.round(p * 100) + "%</span></li>";
       }).join("");
@@ -699,8 +718,25 @@ const EXAMPLES = [
     function render(r) {
       document.getElementById("wf-fam").textContent =
         r.family.label + " · " + pct(r.family.confidence) + " sure of the family";
-      document.getElementById("wf-word").textContent = r.word;
-      document.getElementById("wf-gloss").textContent = r.gloss;
+      // One word, or two when the weight sits on two of them. The second is
+      // dimmed rather than dropped: the order is the reading, so it has to be
+      // visible that one came first.
+      var wordEl = document.getElementById("wf-word");
+      wordEl.textContent = "";
+      (r.words.length ? r.words : [{ word: r.word, gloss: r.gloss }]).forEach(function (w, i) {
+        if (i) {
+          var and = document.createElement("span");
+          and.className = "wf-and";
+          and.textContent = " and ";
+          wordEl.appendChild(and);
+        }
+        var sp = document.createElement("span");
+        if (i) sp.className = "wf-w2";
+        sp.textContent = i ? w.word : w.word.charAt(0).toUpperCase() + w.word.slice(1);
+        wordEl.appendChild(sp);
+      });
+      document.getElementById("wf-gloss").textContent =
+        r.words.length > 1 ? r.words.map(function (w) { return w.gloss; }).join(" · ") : r.gloss;
       document.getElementById("wf-sentence").textContent = r.sentence;
 
       var notes = document.getElementById("wf-notes");
@@ -730,8 +766,9 @@ const EXAMPLES = [
 
       var sh = SPEC.shades[r.family.id];
       if (sh) {
+        var named = r.words.map(function (w) { return w.word; });
         qbs.appendChild(block("Shade", "Choice, 1 of 11 asked · confidence " + r.shadeConfidence.toFixed(2),
-          sh.question, sh.role, opts(sh.options, r.distributions.shade, r.word.toLowerCase())));
+          sh.question, sh.role, opts(sh.options, r.distributions.shade, named)));
       }
 
       qbs.appendChild(block("Intent", "Choice · confidence " + r.intent.confidence.toFixed(2),
@@ -747,8 +784,11 @@ const EXAMPLES = [
 
       // Mark the chosen word and its family in the vocabulary table.
       document.querySelectorAll(".wf-words tr.at").forEach(function (tr) { tr.classList.remove("at"); });
-      var wr = document.querySelector('[data-word="' + r.word.toLowerCase() + '"]');
-      if (wr) wr.classList.add("at");
+      (r.words.length ? r.words.map(function (w) { return w.word; }) : [r.word.toLowerCase()])
+        .forEach(function (w) {
+          var wr = document.querySelector('[data-word="' + w + '"]');
+          if (wr) wr.classList.add("at");
+        });
       var fr = document.querySelector('[data-famrow="' + r.family.id + '"]');
       if (fr) fr.classList.add("at");
 

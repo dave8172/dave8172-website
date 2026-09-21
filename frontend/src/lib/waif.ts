@@ -160,6 +160,12 @@ const MARGIN = 0.15;
 const SHADE_CLEAR = 0.6;
 /** Below this, even the family is unsettled. */
 const FAMILY_CLEAR = 0.5;
+/**
+ * With the shade unsettled, two words holding this much of the weight between
+ * them are *both* the reading, so both get named. Below it the weight is spread
+ * across three or more and there is no pair to name.
+ */
+const PAIR_MASS = 0.8;
 
 const familyCriteria = () =>
   Object.fromEntries(FAMILIES.map((f) => [f.id, `${f.label}'s family: ${f.gloss}`]));
@@ -258,7 +264,7 @@ export const SPEC = {
         role:
           "Picks the word. Asked for all eleven families at once, on eleven " +
           "different assumptions; only this one is read. Where it does not " +
-          "separate, the page names both.",
+          "separate and two options hold the weight between them, both are named.",
         options: f.shades.map((sh) => ({ key: sh.word, text: `${sh.word} — ${sh.gloss}` })),
       },
     ]),
@@ -286,13 +292,30 @@ export interface Alternative {
   p: number;
 }
 
+/** A word the reading names, with what it means and how much weight it carries. */
+export interface Named {
+  word: string;
+  gloss: string;
+  p: number;
+}
+
 export interface Reading {
   ok: boolean;
   reason: "read" | "not_writing";
-  /** The shade, as shown. */
+  /**
+   * The strongest shade. Stays a single word whatever the page shows, because
+   * this is what a correction is filed against.
+   */
   word: string;
   /** What that shade means, so the word is never left to do the work alone. */
   gloss: string;
+  /**
+   * What the reading is called: one word, or two when the weight sits on two
+   * of them, strongest first. The page reads this rather than `word`.
+   */
+  words: Named[];
+  /** True when two words are named rather than one. */
+  paired: boolean;
   family: { id: string; label: string; gloss: string; confidence: number };
   /** How cleanly the shade separated from its neighbours. */
   shadeConfidence: number;
@@ -383,6 +406,8 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
     reason: "not_writing",
     word: "—",
     gloss: "",
+    words: [],
+    paired: false,
     family: { id: "", label: "—", gloss: "", confidence: 0 },
     shadeConfidence: 0,
     alternatives: [],
@@ -407,6 +432,29 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
   const shadeConfidence: number = shadeAnswer.confidence ?? 0;
   const alternatives = ranked(shadeAnswer.probabilities).filter((x) => x.word !== shadeWord);
 
+  // Two words, when two words are what the model actually found.
+  //
+  // A text can be genuinely between guilt and embarrassment, and asserting one
+  // of them is a worse answer than naming both — the distribution is not noise
+  // there, it is the reading. Two conditions, because either alone is wrong:
+  // the top word must have failed to settle on its own, and the pair must hold
+  // the weight between them. Measured on the probe set, an unsettled shade puts
+  // at least 22% on its runner-up while a settled one puts at most 19%, so
+  // SHADE_CLEAR already separates a real second word from noise; PAIR_MASS then
+  // drops the cases where the weight is spread across three (guilt 46 / regret
+  // 26 / shame 20 stays a single word with a note, as it should).
+  const gloss = (w: string) => family.shades.find((x) => x.word === w)?.gloss ?? "";
+  const runnerUp = alternatives[0];
+  const p1: number = shadeAnswer.probabilities?.[shadeWord] ?? 0;
+  const p2: number = runnerUp?.p ?? 0;
+  const paired = shadeConfidence < SHADE_CLEAR && Boolean(runnerUp) && p1 + p2 > PAIR_MASS;
+  const words: Named[] = paired
+    ? [
+        { word: shadeWord, gloss: gloss(shadeWord), p: p1 },
+        { word: runnerUp.word, gloss: gloss(runnerUp.word), p: p2 },
+      ]
+    : [{ word: shadeWord, gloss: gloss(shadeWord), p: p1 }];
+
   // One line, not two. The axes say how it feels and the intent says what the
   // writer is doing with it; as separate blocks they read as two verdicts about
   // the same sentence, which is what they are not.
@@ -416,13 +464,17 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
 
   const notes: string[] = [];
 
-  // What `mixed` used to ask, answered better: when the shade did not separate,
-  // name the word it is sitting next to instead of asserting one of them.
-  if (shadeConfidence < SHADE_CLEAR && alternatives[0]) {
+  // What `mixed` used to ask, answered better. Both branches report the split;
+  // they differ in whether there is a second word worth putting a name to.
+  const show = (x: number) => `${Math.round(x * 100)}%`;
+  if (paired) {
     notes.push(
-      `It sits between ${shadeWord} and ${alternatives[0].word} — the two came out ` +
-        `${Math.round((shadeAnswer.probabilities[shadeWord] ?? 0) * 100)}% and ` +
-        `${Math.round(alternatives[0].p * 100)}%.`,
+      `Both are in it — ${shadeWord} at ${show(p1)} and ${runnerUp.word} at ${show(p2)}.`,
+    );
+  } else if (shadeConfidence < SHADE_CLEAR && runnerUp) {
+    notes.push(
+      `It did not settle on a word — ${shadeWord} at ${show(p1)}, ${runnerUp.word} at ` +
+        `${show(p2)}, and the rest spread across the family.`,
     );
   }
   if (familyConfidence < FAMILY_CLEAR) {
@@ -442,13 +494,18 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
   }
 
   const intentP: number = intentProbs[intentId] ?? 0;
-  const summary = [`${title(shadeWord)}.`, sentence, ...notes].join(" ");
+  const named = paired
+    ? `${title(shadeWord)} and ${runnerUp.word}`
+    : title(shadeWord);
+  const summary = [`${named}.`, sentence, ...notes].join(" ");
 
   return {
     ok: true,
     reason: "read",
     word: title(shadeWord),
     gloss: shade?.gloss ?? "",
+    words,
+    paired,
     family: { id: family.id, label: family.label, gloss: family.gloss, confidence: familyConfidence },
     shadeConfidence,
     alternatives,
