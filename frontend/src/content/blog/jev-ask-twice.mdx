@@ -1,6 +1,6 @@
 ---
 title: "Ask twice: Jev's Choice splits its own vote"
-description: "Sixty emotion words in one Choice splits its own vote. Two Choices in sequence scored 22/24 where a coordinate lookup scored 3/24."
+description: "Sixty emotion words in one Choice splits its own vote. Two Choices scored 22/24 where a coordinate lookup scored 3/24 — and they fit in one request."
 date: 2026-09-20
 tags: ["AI", "Reliability", "Calibration", "TypeSafe", "Jev"]
 image: "/blogassets/jev-ask-twice.49ca86c0.png"
@@ -61,9 +61,14 @@ Both of the two failures were the wrong *family*. Given the family, the shade wa
 right every single time.
 
 The alternative was speculative fan-out: ask all eleven within-family Choices in
-the first request and consume only the relevant answer. That keeps a reading to
-one request, at roughly 3–4k input tokens against 1,250 + 444 for two. Two
-requests won on cost, and on a latency story I could explain.
+the first request, each stating its own family as a premise, and keep only the
+answer belonging to the family that won. That keeps a reading to one request, at
+roughly 3–4k input tokens against 1,250 + 444 for two. I reasoned about it and
+rejected it: two requests won on cost, and on a latency story I could explain.
+
+That paragraph was wrong when I published it. It is still here because
+[section 7](#7-i-reasoned-where-i-should-have-measured) is the part of this post
+I would keep if I could only keep one.
 
 ---
 
@@ -181,8 +186,61 @@ of an axis has to be a point on that axis.
 **Input is dominated by your rubrics, not by your input.** Criteria are sent on
 every call, so a one-line text costs almost exactly what a paragraph does. At
 this size requests are the scarce resource and tokens are not — which is the
-whole argument for batching every independent question into one call, and the
-reason a *dependent* second call is a real cost rather than a rounding error.
+whole argument for batching every independent question into one call.
+
+I stopped one clause too early, and wrote that a *dependent* second call is
+therefore a real cost rather than a rounding error. Read it again: if requests
+are scarce and tokens are not, the conclusion goes the other way.
+
+---
+
+## 7. I reasoned where I should have measured
+
+Someone read section 2, noticed I had talked myself out of the fan-out, and told
+me to go and time both. It took forty minutes and a dollar's worth of nothing.
+
+Run the same 24 texts through both designs, twice each, back to back on every
+text so neither gets the warmer connection:
+
+| | Requests | Latency | Input tokens | Cost / 1,000 readings |
+|---|---|---|---|---|
+| Two requests, the second dependent | 2 | **762ms** | 1,698 | $0.071 |
+| One request, eleven speculative Choices | 1 | **398ms** | 2,803 | $0.118 |
+
+One request was faster on **46 of 46** pairs. It named the same family **48 out
+of 48 times**, and the same shade 45 of 48 — where all three misses were texts
+under 0.41 confidence that the page already reports as sitting between two
+words, and where the *sequential* design disagreed with itself between rounds on
+one of them. The eleven extra questions barely moved the six that were already
+there: mean drift of 0.022 on a 0–4 axis score, and identical intent 48 times
+out of 48.
+
+So the fan-out is 1.9× faster for **five hundredths of a cent** a thousand
+readings, and it halves the request count against the limit that actually binds.
+
+Two things I had, and did not put together:
+
+**Jev "ingests the state once and evaluates every question against it in
+parallel."** That sentence is in TypeSafe's own model card, and I had quoted the
+half of it that suited me. Question count is nearly free; a round trip is not.
+Ten wasted questions cost less than one extra wait.
+
+**Jev charges for input only — output tokens are free.** The fan-out triples the
+output, returning eleven probability distributions instead of one, and that is
+worth exactly nothing on the bill.
+
+What I actually got wrong is narrower than "I didn't measure it", and more
+useful. The docs say a second request is warranted when the first answer
+determines the second question's *options*. It does — and I read that as
+settling the matter. But *determined* is not *unknown*: there were only ever
+eleven option sets, all of them written down in my own source file, so every one
+of them could be asked on spec. The rule is about what the options are. It says
+nothing about when you are allowed to ask.
+
+The tell was in my own sentence. "A latency story I could explain" is not a
+latency number. Anywhere a design note says *presumably*, *roughly*, or *I could
+explain*, there is a measurement someone is about to make for you, and it is
+cheaper to make it yourself.
 
 ---
 

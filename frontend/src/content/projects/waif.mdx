@@ -81,9 +81,20 @@ alternatives to each other. And once the family is fixed, *"which shade of anger
 is fair too, because the context has already ruled out the fifty-four words that
 were never in the running.
 
-So the naming is two calls: the first measures the axes and picks the family and the
-intent; the second picks the shade from that family alone. Gibberish is refused
-before the second call is spent.
+So the naming is two questions: one measures the axes and picks the family and the
+intent, the other picks the shade from that family alone. Gibberish is refused
+rather than scored.
+
+**Two questions, one request.** The shade question needs to know the family, which
+looks like it needs the first answer in hand before it can be written. It does not:
+there are eleven families, so all eleven shade questions go out in the same request,
+each stating its own family as a premise, and code keeps the answer belonging to the
+family that won. Ten answers are thrown away. That is the right trade because Jev
+reads the text once and answers every question against it in parallel — so ten
+wasted questions cost tokens and almost no time, while waiting to learn which one to
+ask costs a whole round trip. Measured on the probe set: **398ms against 762ms**,
+faster on 46 of 46 head-to-head pairs, same family every time, and the extra tokens
+come to five hundredths of a cent a reading.
 
 ---
 
@@ -145,9 +156,10 @@ person to script the endpoint would decide what the eval set says.
 
 * **Frontend:** Astro, no framework, no dependencies. Light-themed on purpose while
   the rest of the site follows your system theme.
-* **Model:** Jev, two calls — six questions then one — through a server-rendered
-  endpoint so the API key never reaches the build output.
+* **Model:** Jev, one call — six questions measuring the text, and eleven
+  speculative ones naming the shade — through a server-rendered endpoint so the
+  API key never reaches the build output.
 * **Data:** a 62-word extract of [Warriner, Kuperman & Brysbaert (2013)](https://doi.org/10.3758/s13428-012-0314-x),
   norms of valence, arousal and dominance for 13,915 English lemmas.
-* **Tests:** twelve, against answer objects recorded from real calls, so the suite
+* **Tests:** thirteen, against answer objects recorded from real calls, so the suite
   needs no key and no network.

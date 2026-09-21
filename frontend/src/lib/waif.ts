@@ -3,10 +3,14 @@
  *
  * Text in, a reading of the feeling behind it out.
  *
- * Two requests, and the split between them is the whole design. The first
- * measures the text and picks the *family* the feeling belongs to. The second
- * picks the exact shade, choosing only among that family's words — which it
- * can do well precisely because the family is already fixed.
+ * Two Choices name the feeling, and that split is the whole design: one picks
+ * the *family*, the other picks the exact shade from that family's words alone
+ * — which it can do well precisely because the family is already fixed.
+ *
+ * Both happen in **one request**. The eleven within-family shade questions are
+ * asked speculatively, each stating its own premise, and code keeps the answer
+ * belonging to the family that won. It was two sequential requests until
+ * 2026-09-21; see `ROUNDTRIP` for the measurement that collapsed them.
  *
  * This replaced a hand-placed coordinate table on 2026-09-20, and the reason
  * it replaced it is measured rather than argued. See `EVAL` below.
@@ -35,6 +39,33 @@ export const EVAL = [
   { design: "Family chosen by the model, then the shade chosen by the model", score: 22 },
 ] as const;
 export const EVAL_N = 24;
+
+/**
+ * And what asking it in one request rather than two cost, on the same probe
+ * set. Measured against jev-1.13.0 on 2026-09-21, 24 texts × 2 rounds, the two
+ * designs run back to back on each text so neither gets the warmer connection.
+ *
+ * The reason the token column does not matter: Jev charges for input only, at
+ * $0.042 per million, so the extra 1,105 tokens are $0.00005 a reading. The
+ * reason the latency column does: Jev ingests the state once and evaluates
+ * every question against it in parallel, so eleven extra Choices cost almost
+ * nothing, while a second round trip costs a whole round trip.
+ */
+export const ROUNDTRIP = {
+  sequential: { calls: 2, ms: 762, input: 1698 },
+  fanout: { calls: 1, ms: 398, input: 2803 },
+  /** Head-to-head pairs the one-request design won, out of 46. */
+  faster: 46,
+  /** Pairs where the two designs named the same family, out of 48. */
+  sameFamily: 48,
+  /**
+   * Pairs where they named the same shade. All three misses were texts sitting
+   * under 0.41 confidence between two words — which the page already reports
+   * as sitting between two words — and the sequential design disagreed with
+   * *itself* between rounds on one of them.
+   */
+  sameShade: 45,
+} as const;
 
 /**
  * Three axes, and each level is anchored to words with published means.
@@ -133,8 +164,8 @@ const FAMILY_CLEAR = 0.5;
 const familyCriteria = () =>
   Object.fromEntries(FAMILIES.map((f) => [f.id, `${f.label}'s family: ${f.gloss}`]));
 
-/** Stage one: measure it, and decide which family the feeling is in. */
-export const QUESTIONS = {
+/** Measure the text, and decide which family the feeling is in. */
+export const MEASURE = {
   is_writing: {
     type: "noul",
     instructions:
@@ -162,14 +193,30 @@ export const QUESTIONS = {
   },
 } as const;
 
-/** Stage two: which shade, given the family stage one chose. */
+/** Where a family's shade question is asked, and where its answer comes back. */
+export const shadeKey = (familyId: string) => `shade_${familyId}`;
+
+/**
+ * Which shade — asked on the assumption that the feeling is in this family.
+ *
+ * Eleven of these go out together and ten of the answers are discarded, which
+ * is only worth doing because of how Jev is priced and served: the state is
+ * ingested once and every question is evaluated against it in parallel, so the
+ * ten wasted questions cost tokens and almost no time, while waiting to ask
+ * the right one costs a second round trip. Each carries its own premise in
+ * words, because a question that cannot see its siblings cannot inherit one.
+ */
 const shadeQuestion = (family: Family) => ({
-  shade: {
-    type: "choice",
-    instructions: `The feeling behind \`text\` belongs to the ${family.id} family. Which shade of it is it exactly?`,
-    criteria: Object.fromEntries(family.shades.map((s) => [s.word, s.gloss])),
-  },
+  type: "choice",
+  instructions: `The feeling behind \`text\` belongs to the ${family.id} family. Which shade of it is it exactly?`,
+  criteria: Object.fromEntries(family.shades.map((s) => [s.word, s.gloss])),
 });
+
+/** The whole request: the measurement, and every family's shade question with it. */
+export const QUESTIONS = {
+  ...MEASURE,
+  ...Object.fromEntries(FAMILIES.map((f) => [shadeKey(f.id), shadeQuestion(f)])),
+};
 
 /**
  * Everything the panel needs to show what the model was actually asked.
@@ -189,14 +236,14 @@ export const SPEC = {
   family: {
     id: "family",
     label: "Family",
-    question: QUESTIONS.family.instructions,
+    question: MEASURE.family.instructions,
     role: "Picks the word, together with the shade below. Nothing else does.",
     options: FAMILIES.map((f) => ({ key: f.id, text: `${f.label} — ${f.gloss}` })),
   },
   intent: {
     id: "intent",
     label: "Intent",
-    question: QUESTIONS.intent.instructions,
+    question: MEASURE.intent.instructions,
     role: "Finishes the sentence. It does not affect the word.",
     options: (Object.keys(INTENTS) as IntentId[]).map((k) => ({
       key: k,
@@ -208,7 +255,10 @@ export const SPEC = {
       f.id,
       {
         question: `Which shade of ${f.id} is it exactly?`,
-        role: "Picks the word. Where it does not separate, the page names both.",
+        role:
+          "Picks the word. Asked for all eleven families at once, on eleven " +
+          "different assumptions; only this one is read. Where it does not " +
+          "separate, the page names both.",
         options: f.shades.map((sh) => ({ key: sh.word, text: `${sh.word} — ${sh.gloss}` })),
       },
     ]),
@@ -217,8 +267,8 @@ export const SPEC = {
     {
       id: "is_writing",
       label: "Is this writing at all",
-      question: QUESTIONS.is_writing.instructions,
-      role: "A gate. Below 0.50 nothing is scored and the second call is never spent.",
+      question: MEASURE.is_writing.instructions,
+      role: "A gate. Below 0.50 nothing is scored and no reading is shown.",
     },
   ],
 } as const;
@@ -310,6 +360,13 @@ const ranked = (probabilities: Record<string, number>): Alternative[] =>
     .map(([word, p]) => ({ word, p }))
     .sort((x, y) => y.p - x.p);
 
+/**
+ * The reading, from the measurement and the one shade answer that applied.
+ *
+ * Still two arguments after the calls collapsed into one, because the second
+ * is a *selected* answer — which of the eleven the family chose — and the
+ * recorded fixtures are the pair.
+ */
 export function interpret(stage1: any, shadeAnswer: any | null): Reading {
   const isWriting: number = stage1.is_writing?.noul ?? 0;
   const axes = readAxes(stage1);
@@ -342,7 +399,7 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
 
   // Gibberish gate. Scoring a random string produces perfectly real numbers
   // about nothing, which is worse than refusing, because the meters make them
-  // look considered. It also saves the second request.
+  // look considered.
   if (isWriting < IS_WRITING || !family || !shadeAnswer) return blank;
 
   const shadeWord: string = shadeAnswer.choice;
@@ -436,15 +493,14 @@ async function ask(text: string, questions: unknown, apiKey: string): Promise<an
 }
 
 export async function readFeeling(text: string, apiKey: string): Promise<Reading> {
-  const stage1 = await ask(text, QUESTIONS, apiKey);
+  const answers = await ask(text, QUESTIONS, apiKey);
 
-  // The gate is checked before spending the second request, not after.
-  const familyId: string = stage1.family?.choice ?? "";
+  // Eleven shade answers came back. This is the one whose premise held.
+  const familyId: string = answers.family?.choice ?? "";
   const family = FAMILIES.find((f) => f.id === familyId);
-  if ((stage1.is_writing?.noul ?? 0) < IS_WRITING || !family) return interpret(stage1, null);
+  if ((answers.is_writing?.noul ?? 0) < IS_WRITING || !family) return interpret(answers, null);
 
-  const stage2 = await ask(text, shadeQuestion(family), apiKey);
-  return interpret(stage1, stage2.shade);
+  return interpret(answers, answers[shadeKey(family.id)] ?? null);
 }
 
 export { FAMILIES, SOURCE };

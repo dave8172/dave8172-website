@@ -7,7 +7,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
-import { interpret } from "../src/lib/waif.ts";
+import { interpret, QUESTIONS, MEASURE, shadeKey, FAMILIES } from "../src/lib/waif.ts";
 
 const F = JSON.parse(readFileSync(new URL("./waif-fixtures.json", import.meta.url), "utf8"));
 const read = (k) => interpret(F[k].stage1, F[k].shade);
@@ -97,4 +97,21 @@ test("the removed Nouls leave nothing behind in a reading", () => {
   const r = read("blocked");
   assert.equal(r.signals, undefined);
   assert.ok(!r.notes.some((n) => /held back|not happened yet/.test(n)), r.notes.join(" | "));
+});
+
+// The fan-out: one request has to carry a shade question for every family, or
+// the reading silently loses whichever family got left out.
+test("every family's shade question rides in the one request", () => {
+  for (const f of FAMILIES) {
+    const q = QUESTIONS[shadeKey(f.id)];
+    assert.ok(q, `no shade question for ${f.id}`);
+    assert.equal(q.type, "choice");
+    assert.deepEqual(Object.keys(q.criteria), f.shades.map((s) => s.word));
+    // Each one states its own premise: a question cannot see its siblings.
+    assert.match(q.instructions, new RegExp(`belongs to the ${f.id} family`));
+  }
+  assert.equal(
+    Object.keys(QUESTIONS).length,
+    Object.keys(MEASURE).length + FAMILIES.length,
+  );
 });

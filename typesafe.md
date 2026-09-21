@@ -44,9 +44,10 @@ State: `{ question }`. Four questions, one request.
 
 ### `/waif` — `src/lib/waif.ts`, vocabulary in `src/lib/vad.ts`
 
-State: `{ text }`. **Two requests**, and the split between them is the design.
+State: `{ text }`. **One request carrying seventeen questions** — six that
+measure the text, and eleven speculative ones that name the shade.
 
-**Stage one — six questions, one request.**
+**The measurement — six questions.**
 
 | id | Primitive | Answers |
 |---|---|---|
@@ -57,16 +58,50 @@ State: `{ text }`. **Two requests**, and the split between them is the design.
 | `intent` | Choice, 8 options | What is the writer *doing* — the act, not the feeling? |
 | `is_writing` | Noul | Is this something a person actually wrote? |
 
-**Stage two — one question**, asked only if the gate passes: a Choice over the
-chosen family's shades alone, 2–8 options depending on the family.
+**The shade — eleven questions, same request.** One per family, asked under
+`shade_<family>`, each a Choice over that family's 2–8 shades and each stating
+its own premise in words: *"The feeling behind `text` belongs to the anger
+family. Which shade of it is it exactly?"* Code reads only the one whose family
+the `family` Choice picked and discards the other ten.
 
 **Why two Choices instead of one.** A Choice over sixty emotion words splits its
 own vote between synonyms — *annoyed*, *irritated*, *frustrated* are one feeling
 in three wordings. Families do not have that problem, because anger and fear are
 genuinely alternatives; and once the family is fixed, so are its shades, because
 the context has ruled out the fifty-four words that were never in the running.
-This is the one case where a **second request is warranted**: the first answer
-determines the second question's options.
+
+**Why the second Choice is not a second request — measured 2026-09-21, and it
+reversed the previous decision.** Until then the shade was a dependent follow-up
+call, on the reading that a second request is warranted when the first answer
+determines the second question's options. That rule is about *options*, not
+about *requests*: the option set is determined, but it is drawn from eleven
+known possibilities, so all eleven can be asked up front. On 24 probe texts × 2
+rounds against `jev-1.13.0`, the two designs run back to back on each text:
+
+| | Requests | Latency | Input tokens | Cost per 1,000 readings |
+|---|---|---|---|---|
+| Two sequential requests | 2 | **762ms** mean, 828 p90 | 1,698 | $0.071 |
+| One speculative request | 1 | **398ms** mean, 431 p90 | 2,803 | $0.118 |
+
+One request won **46 of 46** head-to-head pairs, named the **same family in
+48/48** and the **same shade in 45/48**. All three shade misses were texts under
+0.41 confidence — which the page already reports as sitting between two words —
+and the sequential design disagreed with *itself* between rounds on one of them.
+Stage-one answers were essentially unmoved by the eleven extra questions: mean
+axis-score drift 0.022 on a 0–4 scale (max 0.16), mean family-confidence drift
+0.016, intent identical 48/48.
+
+**Why it comes out this way, from the vendor's own facts.** Jev *"ingests the
+state once and evaluates every question against it in parallel"*, so question
+count barely touches latency while a round trip costs a round trip. And Jev
+**charges for input only**, at $42/Btok — so the extra 1,105 tokens are
+$0.00005 a reading. Requests, not tokens, are the scarce resource at this size
+(1,200/min against 250,000 tokens/sec), and this halves the request count.
+
+**What it costs: the gibberish path.** The gate used to save the second request;
+now a refusal pays the full 2,794-token request rather than 1,255. At these
+prices that is $0.00006 per refusal, and the gate still exists — it stops
+meaningless numbers being shown, which was always the bigger reason.
 
 **Why `intent` is a Choice and not Nouls.** It replaced `directed` (*is it aimed
 at the reader*) and `asking` (*is it asking for something*), which were fragments
@@ -172,11 +207,17 @@ read the corrections, rewrite a gloss, re-run the probe set.
 
 ## Measured cost
 
-`jev-1.13.0`, 2026-09-20. Stage one ~1,250 input tokens; stage two ~444. Input is
-dominated by rubrics and criteria, which are sent on every call regardless of how
-short the text is, so a one-line input costs almost exactly what a paragraph does.
-**A refusal costs one request, not two** — the gate is checked before stage two is
-spent.
+`jev-1.13.0`. The Magic Jev Ball is one request of four questions. waif is one
+request of seventeen: **~2,803 input tokens**, mean **398ms**, measured
+2026-09-21 over 48 readings. Before the fan-out it was 1,698 tokens across two
+requests at 762ms.
+
+Input is dominated by rubrics and criteria, which are sent on every call
+regardless of how short the text is, so a one-line input costs almost exactly
+what a paragraph does — and with eleven shade questions aboard, that is more
+true than ever. **Output tokens are free**, which is why returning eleven
+distributions instead of one (971 tokens against 322) does not appear in the
+bill at all.
 
 Rate limit on the account is 1,200 requests/minute against 250,000 tokens/second,
 so on calls this small it is *requests* that are scarce. Both endpoints sit behind

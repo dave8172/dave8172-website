@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { AXES, AXIS_IDS, INTENTS, SPEC, EVAL, EVAL_N, FAMILIES, SOURCE } from "../lib/waif";
+import { AXES, AXIS_IDS, INTENTS, SPEC, EVAL, EVAL_N, ROUNDTRIP, FAMILIES, SOURCE } from "../lib/waif";
 
 const AXIS_LIST = AXIS_IDS.map((id) => ({ id, ...AXES[id] }));
 /** A correction names a shade; the family it belongs to follows from it. */
@@ -165,8 +165,22 @@ const EXAMPLES = [
             <em>annoyed</em>, <em>irritated</em>{" "}and <em>frustrated</em>{" "}are one feeling
             in three wordings, so the probability divides between them and confidence collapses
             for a reason that has nothing to do with the text. Families do not have that problem
-            — anger, fear and sadness are genuinely alternatives to each other. So the first call
-            picks the family, and the second picks the shade from that family alone.
+            — anger, fear and sadness are genuinely alternatives to each other. So one question
+            picks the family, and a second picks the shade from that family alone.
+          </p>
+          <p>
+            Both happen in <strong>one request</strong>. The second question has to know the
+            family, which reads like it needs the first answer back before it can be written —
+            and it did, for a day. It does not: there are only eleven families, so all eleven
+            shade questions go out together, each one assuming its own family, and the answer
+            belonging to the family that won is the word you see. The other ten are discarded.
+            Asking questions on a guess is cheap here because the model reads your text once and
+            answers every question against it at the same time; waiting to hear which one to ask
+            costs a whole round trip. Measured over {ROUNDTRIP.sameFamily} readings, one request
+            came back in <strong>{ROUNDTRIP.fanout.ms}ms</strong> against{" "}
+            <strong>{ROUNDTRIP.sequential.ms}ms</strong> for two — faster on{" "}
+            {ROUNDTRIP.faster} of {ROUNDTRIP.faster} head-to-head pairs, and naming the same
+            family every time.
           </p>
           <p>
             What you are <em>doing</em>{" "}is a separate question again: a choice over eight
@@ -263,10 +277,10 @@ const EXAMPLES = [
 
     <footer class="wf-foot">
       <p>
-        Two calls to <a href="https://docs.typesafe.ai" rel="noopener">Jev</a>, a model that returns
-        calibrated probabilities instead of text. The first measures the three axes and picks the
-        family and the intent; the second picks the exact shade from that family alone. Gibberish is
-        refused before the second call is spent.
+        One call to <a href="https://docs.typesafe.ai" rel="noopener">Jev</a>, a model that returns
+        calibrated probabilities instead of text. It measures the three axes, picks the family and
+        the intent, and answers a shade question for every family at once — the one whose family
+        won is the word above. Gibberish is refused rather than scored.
       </p>
       <p>Nothing you type is stored or logged — it goes to the model to be scored, and that is all.</p>
       <p class="wf-care">
@@ -716,7 +730,7 @@ const EXAMPLES = [
 
       var sh = SPEC.shades[r.family.id];
       if (sh) {
-        qbs.appendChild(block("Shade", "Choice, second call · confidence " + r.shadeConfidence.toFixed(2),
+        qbs.appendChild(block("Shade", "Choice, 1 of 11 asked · confidence " + r.shadeConfidence.toFixed(2),
           sh.question, sh.role, opts(sh.options, r.distributions.shade, r.word.toLowerCase())));
       }
 
