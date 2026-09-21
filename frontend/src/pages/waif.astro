@@ -139,8 +139,8 @@ const EXAMPLES = [
 
     <div class="wf-how">
       <p class="wf-how-sub">
-        The three axes, why the name takes two steps, when it takes two words, what the
-        published ratings can and cannot do, and what happens when you correct a reading.
+        The three axes, why the name is two questions asked at once, when it comes back as two
+        words, what the published ratings can and cannot do, and what a correction does.
       </p>
       <div class="wf-detail">
         <button id="wf-toggle2" class="wf-toggle" aria-expanded="false" aria-controls="wf-panel2">
@@ -172,28 +172,35 @@ const EXAMPLES = [
             or panic</em>{" "}is a claim you can check where <em>very aroused</em>{" "}is not.
           </p>
 
-          <h3>The name comes in two steps</h3>
+          <h3>Two questions, asked at the same time</h3>
           <p>
-            Ask for one of sixty emotion words and the model splits its own vote:{" "}
-            <em>annoyed</em>, <em>irritated</em>{" "}and <em>frustrated</em>{" "}are one feeling
-            in three wordings, so the probability divides between them and confidence collapses
-            for a reason that has nothing to do with the text. Families do not have that problem
-            — anger, fear and sadness are genuinely alternatives to each other. So one question
-            picks the family, and a second picks the shade from that family alone.
+            Naming the feeling is two decisions, not one. Which family is it in — anger, fear,
+            sadness, shame? And which shade of that family exactly? Families are genuinely
+            alternatives to one another, and once a family is settled its shades are a short
+            list of near neighbours rather than sixty-two strangers.
           </p>
           <p>
-            Both happen in <strong>one request</strong>. The second question has to know the
-            family, which reads like it needs the first answer back before it can be written —
-            and it did, for a day. It does not: there are only eleven families, so all eleven
-            shade questions go out together, each one assuming its own family, and the answer
-            belonging to the family that won is the word you see. The other ten are discarded.
-            Asking questions on a guess is cheap here because the model reads your text once and
-            answers every question against it at the same time; waiting to hear which one to ask
-            costs a whole round trip. Measured over {ROUNDTRIP.sameFamily} readings, one request
-            came back in <strong>{ROUNDTRIP.fanout.ms}ms</strong> against{" "}
-            <strong>{ROUNDTRIP.sequential.ms}ms</strong> for two — faster on{" "}
+            <strong>Neither is asked second.</strong> All eleven shade questions go out in the
+            same request as the family question, each one assuming its own family — <em>if this
+            is anger, which anger?</em>{" "}— and the code keeps the answer whose assumption
+            turned out to hold. The other ten are thrown away. That is worth doing because the
+            model reads your text once and answers every question against it at the same time,
+            so ten wasted questions cost almost nothing, while waiting to hear which one to ask
+            costs a whole round trip. Measured over {ROUNDTRIP.sameFamily} readings:{" "}
+            <strong>{ROUNDTRIP.fanout.ms}ms</strong> against{" "}
+            <strong>{ROUNDTRIP.sequential.ms}ms</strong> when it was two requests, faster on{" "}
             {ROUNDTRIP.faster} of {ROUNDTRIP.faster} head-to-head pairs, and naming the same
-            family every time.
+            family every time. It <em>was</em>{" "}two requests, for a day.
+          </p>
+          <p>
+            The split was originally argued for on the grounds that one Choice over sixty-two
+            near-synonyms would divide its own vote between wordings. Measured, it does not:
+            one Choice scores 44 against this design's 43 on the same 46 readings, and is
+            slightly the more certain of the two. What the split actually buys is <strong>two
+            separate doubts</strong>. <em>Is this sadness or affection</em>{" "}is a different
+            failure from <em>it is clearly shame, but guilt or embarrassment</em>, and the page
+            says different things in each case; one Choice returns a single number that cannot
+            tell them apart.
           </p>
           <h3>Sometimes the answer is two words</h3>
           <p>

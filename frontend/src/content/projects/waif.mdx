@@ -44,7 +44,7 @@ list of acceptable words for each one.
 | Nearest word in the whole vocabulary, by published valence/arousal/dominance | 3/24 |
 | Nearest word within a family, by rank on the axis that separates that family | 9/24 |
 | Nearest word within a family, by distance in published valence/arousal/dominance | 12/24 |
-| **Family chosen by the model, then the shade chosen by the model** | **22/24** |
+| **Family chosen by the model, and the shade chosen by the model within it** | **22/24** |
 
 **The norms turned out to be a poor way to pick a word, and the measurement said so
 before I had a chance to argue.** Three things went wrong at once, and all three are
@@ -69,32 +69,41 @@ count and spread.
 
 ---
 
-## <RandomColor>Two questions</RandomColor>, in that order
+## <RandomColor>Two questions</RandomColor>, asked at the same time
 
-Ask a model to pick one of sixty emotion words and it splits its own vote:
-*annoyed*, *irritated* and *frustrated* are one feeling in three wordings, so
-probability divides between them and confidence collapses for a reason that has
-nothing to do with the text.
+Naming the feeling is two decisions, not one. Which family is it in — anger, fear,
+sadness, shame? And which shade of that family exactly? Families are genuinely
+alternatives to one another, and once a family is settled its shades are a short
+list of near neighbours rather than sixty-two strangers.
 
-**Families do not have that problem.** Anger, fear, sadness and shame are genuinely
-alternatives to each other. And once the family is fixed, *"which shade of anger"*
-is fair too, because the context has already ruled out the fifty-four words that
-were never in the running.
-
-So the naming is two questions: one measures the axes and picks the family and the
-intent, the other picks the shade from that family alone. Gibberish is refused
-rather than scored.
-
-**Two questions, one request.** The shade question needs to know the family, which
+**Neither is asked second.** The shade question needs to know the family, which
 looks like it needs the first answer in hand before it can be written. It does not:
-there are eleven families, so all eleven shade questions go out in the same request,
-each stating its own family as a premise, and code keeps the answer belonging to the
-family that won. Ten answers are thrown away. That is the right trade because Jev
-reads the text once and answers every question against it in parallel — so ten
-wasted questions cost tokens and almost no time, while waiting to learn which one to
-ask costs a whole round trip. Measured on the probe set: **398ms against 762ms**,
-faster on 46 of 46 head-to-head pairs, same family every time, and the extra tokens
-come to five hundredths of a cent a reading.
+there are eleven families and all eleven shade lists are already in my own source
+file, so all eleven questions go out in the same request, each stating its own
+family as a premise — *if this is anger, which anger?* — and code keeps the answer
+whose premise held. Ten answers are thrown away.
+
+That trade works because Jev reads the text once and answers every question against
+it in parallel, so ten wasted questions cost tokens and almost no time, while
+waiting to learn which one to ask costs a whole round trip. Measured on the probe
+set: **398ms against 762ms**, faster on 46 of 46 head-to-head pairs, same family
+every time, and the extra tokens come to five hundredths of a cent a reading. It
+*was* two sequential requests, for a day.
+
+**What the split is actually worth is not what I claimed.** The argument for it was
+that one Choice over sixty-two near-synonyms divides its own vote between wordings,
+so *annoyed / irritated / frustrated* would come back split three ways. Measured,
+it does not: one Choice over all 62 scores **44 against this design's 43** on the
+same 46 readings, and is the more certain of the two (mean 0.812 against 0.689 on
+the word it picks). Both designs flatten on the same four texts, because what
+flattens them is the *text* sitting between two words, not the length of the list.
+
+The split earns its place on something else: **two separate doubts**. *Is this
+sadness or affection* is a different failure from *it is clearly shame, but guilt
+or embarrassment*, and the page says different things in each case. One Choice
+returns one number that cannot tell them apart. The cost is honest too — a wobble
+in the family answer corrupts the word, because once the family says sadness,
+*nostalgia* is not on the ballot. That cost one text in 23.
 
 **And sometimes the answer is two words.** A text can genuinely be between guilt and
 embarrassment; the shade Choice comes back 52% and 41%, and that split *is* the

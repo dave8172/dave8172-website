@@ -36,7 +36,7 @@ export const EVAL = [
   { design: "Nearest word in the whole vocabulary, by published valence/arousal/dominance", score: 3 },
   { design: "Nearest word within a family, by rank on the axis that separates that family", score: 9 },
   { design: "Nearest word within a family, by distance in published valence/arousal/dominance", score: 12 },
-  { design: "Family chosen by the model, then the shade chosen by the model", score: 22 },
+  { design: "Family chosen by the model, and the shade chosen by the model within it", score: 22 },
 ] as const;
 export const EVAL_N = 24;
 
