@@ -92,6 +92,10 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       familyConf: reading.family.confidence,
       shade: reading.word.toLowerCase(),
       shadeConf: reading.shadeConfidence,
+      // "" when the reading named one word. What was *shown* has to travel
+      // with the correction, or "they said shame" cannot be told apart from
+      // "we offered guilt and embarrassment and they still said shame".
+      shade2: reading.paired ? reading.words[1].word : "",
       intent: reading.intent.id,
       intentConf: reading.intent.confidence,
       valence: reading.axes.valence.score,

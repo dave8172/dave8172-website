@@ -7,7 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "node --experimental-strip-types --test 'test/*.mjs'"
+    "test": "node --experimental-strip-types --test 'test/*.mjs'",
+    "feedback": "node scripts/pull-feedback.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^8.0.1",

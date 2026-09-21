@@ -201,7 +201,25 @@ never touches a database credential. With either unset the reading comes back
 
 **The row is judgments, never text**: the three axis scores and confidences, the
 family, shade and intent with theirs, the character count, a pre-hashed subject,
-and what the person said it should have been.
+and what the person said it should have been. Verified 2026-09-21 by running the
+whole path against a local receiver and reading what arrived — no `text` field
+is present in the payload at any point.
+
+**`shade2` carries the second word when the reading named two** (added
+2026-09-21, nullable column, additive migration). Empty string rather than
+absent, because it is inside the signed set and a field that can vanish is a
+field whose absence cannot be proved. It matters because *"they corrected guilt
+to shame"* and *"we offered guilt **and** embarrassment and they still said
+shame"* argue for different fixes — the first about one gloss, the second about
+the whole region the reading landed in. The read-back reports paired rows and
+their accept rate separately, and keys a correction on both words shown.
+
+**A correction may be a word that is not in the sixty-two.** The select carries
+*"none of these; let me type it"*, and a typed word is sent with **no family** —
+which is exactly how the read-back separates the two lessons. A word with a
+family means a gloss needs rewriting. A word without one means the vocabulary is
+missing something, and no rewording fixes that; `offVocabulary` ranks those on
+their own.
 
 **The judgments are signed on the way out and verified on the way back**
 (`src/lib/feedback.ts`, HMAC-SHA256, 16 bytes hex). Without that the browser
@@ -213,6 +231,24 @@ a valid token is refused.
 accumulates is a labelled eval set over real inputs — an accept rate, and
 corrections that point at which `criteria` string is wrong. That is the loop:
 read the corrections, rewrite a gloss, re-run the probe set.
+
+**The rows are read from one file: `waif-feedback.md`.** They live in a database
+on another deployment, which makes them invisible — nobody opens a database to
+ask whether a gloss is wrong. `npm run feedback` (in `frontend/`) pulls them
+into a file in this repo, next to the words they are about, where a diff shows
+them changing. Only the block between the `pulled:` markers is generated; above
+it is the hand-written log of *what was changed because of a correction*, which
+is the half that makes it a loop rather than a collection. The file also carries
+the rule that a single correction never moves anything — one person's reading of
+a feeling is not a fact, and only a repeated correction is a claim about a gloss.
+
+**Testing it needed a way to untest it.** The loop could not be verified end to
+end without writing a row, and a probe row left in the eval set corrupts the
+eval set. So stuffboard's route grew a `DELETE` restricted to subjects beginning
+`test:` — which a real subject, a 24-character hex digest, can never be — and
+`GET` excludes them, so a probe cannot move the numbers the loop is read by. The
+delete path was proven to work *before* the first probe row was written, and the
+three rows written on 2026-09-21 were removed and confirmed gone.
 
 ## Measured cost
 

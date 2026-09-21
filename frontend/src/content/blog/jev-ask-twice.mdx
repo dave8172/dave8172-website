@@ -1,6 +1,6 @@
 ---
-title: "Ask twice: Jev's Choice splits its own vote"
-description: "Sixty emotion words in one Choice splits its own vote. Two Choices scored 22/24 where a coordinate lookup scored 3/24 — and they fit in one request."
+title: "Ask twice: seven measurements from building with Jev"
+description: "A coordinate lookup scored 3/24 where handing the model the naming job scored 22/24. Then two claims I had argued rather than measured turned out to be wrong."
 date: 2026-09-20
 tags: ["AI", "Reliability", "Calibration", "TypeSafe", "Jev"]
 image: "/blogassets/jev-ask-twice.49ca86c0.png"
@@ -15,34 +15,87 @@ you define. No prose, no reasoning trace, no JSON to repair.
 I spent a day building <RandomColor>waif</RandomColor>, which reads a piece of
 text and names the feeling in it. That job has no right answer, which makes it an
 unusually honest test rig: nothing can be graded against a key, so every design
-decision has to be either argued or measured. I measured five.
+decision has to be either argued or measured.
+
+I measured five, argued two, and the two I argued were both wrong. Sections 1
+and 7 are those, kept in place with the measurement underneath rather than
+quietly edited out.
 
 ---
 
-## 1. A Choice splits its own vote between synonyms
+## 1. A Choice splits its own vote between synonyms — but less than I claimed
 
-The obvious build is one Choice over sixty emotion words. It does not work, and
-the reason is structural rather than a prompting problem you can fix with better
-wording.
+Here is the argument I built on, and I am leaving it in its original words
+because the correction under it is the useful part.
 
 *Annoyed*, *irritated* and *frustrated* are one feeling in three wordings. A
 Choice divides probability between them, so a text the model read perfectly
-clearly comes back at 0.19 / 0.17 / 0.15, and confidence collapses for a reason
-that has nothing to do with the input. The distribution is telling you about your
-option list, not about the text.
+clearly comes back split three ways, and confidence collapses for a reason that
+has nothing to do with the input. The distribution is telling you about your
+option list, not about the text. Therefore: never put sixty near-synonyms in one
+Choice.
 
-The rule that falls out of it: **a Choice's options have to be alternatives to
-each other, not the same thing described from different angles.** Anything a
-person might use interchangeably belongs in one option, not two.
+**Then I measured it, and the effect is real but far smaller than the argument
+needs.** One Choice over all 62 words, same glosses, 23 texts:
+
+| | Mean P(chosen word) | Score vs acceptable words |
+|---|---|---|
+| Two Choices — family, then shade within it | 0.689 | 43 / 46 |
+| **One Choice over all 62 words** | **0.812** | **44 / 46** |
+
+The one-Choice version is *more* certain, not less. It picks the same word 21
+times out of 23. On a plainly frustrated text it returns *frustration* at 0.98.
+Stripping the glosses and asking with 62 bare words barely moves it: 0.79.
+
+So where does the splitting go? It shows up exactly where you would want it to:
+
+```
+shipped   pride 0.38  →  excitement 0.36
+scan      worry 0.54  →  anxiety    0.39
+sentit    guilt 0.60  →  embarrassment 0.26
+```
+
+Every one of those lost ground to a near-synonym — that *is* vote splitting. But
+the two-Choice design flattens on **the same four texts** (0.33, 0.53, 0.35,
+0.32). The splitting is not caused by the option list being long. It is caused
+by the text genuinely sitting between two words, and both designs report it
+because both are calibrated. *"I snapped at her in front of the kids"* really is
+guilt and regret at once.
+
+**A long option list does not flatten a clear text.** That is the part I had
+backwards, and the rule has to be narrower than I wrote it:
+
+> A Choice splits its vote when two options are **the same answer in different
+> wordings**. The fix is criteria that separate them — not fewer options.
+
+Sixty-two words each carrying a gloss that distinguishes it (*annoyance: a small
+thing, quickly over* against *resentment: an old grievance still carried*) are
+sixty-two alternatives, not sixty-two synonyms. The count was never the problem.
 
 ---
 
-## 2. So ask twice
+## 2. Ask twice anyway — for a reason that survived
 
-Families do not have that problem. Anger, fear, sadness and shame are genuinely
-different answers. And once the family is fixed, so are its shades — *which shade
-of anger* is a fair question, because the context has already ruled out the
-fifty-four words that were never in the running.
+Section 1 was the reason I split the question in two, and section 1 did not
+hold. The split stayed, and it is worth being precise about what is now holding
+it up, because "it scored the same and I had already built it" is not a reason.
+
+Families are genuinely different answers — anger, fear, sadness and shame are
+not wordings of each other. And once the family is fixed, so are its shades:
+*which shade of anger* is a fair question, because the context has already ruled
+out the fifty-four words that were never in the running.
+
+What that buys, and one Choice over 62 words cannot, is **two separate
+uncertainty signals**. Family confidence and word confidence are different
+doubts: *"I do not know whether this is sadness or affection"* is not the same
+failure as *"it is clearly shame, but guilt or embarrassment?"*. The page says
+different things in each case. One Choice gives you one number that cannot tell
+them apart.
+
+The cost is honest too: a wobble in the family answer corrupts the word, because
+once family says sadness, *nostalgia* is not on the ballot. That cost me one
+text out of 23 — *"drove past the old house, the tree we planted is taller than
+the roof"* came back **sorrow**.
 
 So the naming became two Choices in sequence: the first picks the family, the
 second picks the shade from that family alone. TypeSafe's docs say a second

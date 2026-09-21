@@ -17,6 +17,12 @@ export interface Judgment {
   familyConf: number;
   shade: string;
   shadeConf: number;
+  /**
+   * The second word, when the reading named two. The empty string when it
+   * named one — not `undefined`, because this is signed, and a field that can
+   * vanish is a field whose absence cannot be proved.
+   */
+  shade2: string;
   intent: string;
   intentConf: number;
   valence: number;
@@ -28,9 +34,12 @@ export interface Judgment {
 }
 
 const FIELDS: (keyof Judgment)[] = [
-  "chars", "family", "familyConf", "shade", "shadeConf", "intent", "intentConf",
+  "chars", "family", "familyConf", "shade", "shadeConf", "shade2", "intent", "intentConf",
   "valence", "valenceConf", "arousal", "arousalConf", "control", "controlConf",
 ];
+
+/** The string fields, which are checked as labels rather than as numbers. */
+const TEXT_FIELDS: (keyof Judgment)[] = ["family", "shade", "shade2", "intent"];
 
 /**
  * Fixed order, fixed precision. A float formatted one way going out and
@@ -66,8 +75,11 @@ export function judgmentOf(src: Record<string, unknown>): Judgment | null {
   const out = {} as Judgment;
   for (const k of FIELDS) {
     const v = src[k];
-    if (k === "family" || k === "shade" || k === "intent") {
-      if (typeof v !== "string" || !v || v.length > 40) return null;
+    if (TEXT_FIELDS.includes(k)) {
+      // `shade2` alone may be empty: that is what "one word was named" looks
+      // like, and it still has to survive the round trip byte for byte.
+      if (typeof v !== "string" || v.length > 40) return null;
+      if (!v && k !== "shade2") return null;
       (out[k] as string) = v;
     } else {
       if (typeof v !== "number" || !Number.isFinite(v) || v < 0) return null;

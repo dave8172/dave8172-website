@@ -92,7 +92,17 @@ const EXAMPLES = [
                 {f.shades.map((sh) => <option value={sh.word}>{sh.word}</option>)}
               </optgroup>
             ))}
+            <option value="__other">— none of these; let me type it —</option>
           </select>
+          <input
+            id="wf-fb-other"
+            class="wf-fb-other"
+            type="text"
+            maxlength="40"
+            autocomplete="off"
+            placeholder="your word for it"
+            hidden
+          />
           <label class="wf-fb-l" for="wf-fb-intent">And what were you doing?</label>
           <select id="wf-fb-intent">
             <option value="">— leave blank if you are not sure —</option>
@@ -104,8 +114,11 @@ const EXAMPLES = [
         </div>
         <p class="wf-fb-done" id="wf-fb-done" hidden></p>
         <p class="wf-fb-note">
-          A correction sends the reading's numbers and the word you picked. It does not send
-          what you wrote, which is never stored anywhere.
+          A correction sends the reading's numbers and the word you picked — including which
+          words were offered, so a word that beat two of them counts differently from a word
+          that beat one. It does not send what you wrote, which is never stored anywhere.
+          A word that is not in the sixty-two is the most useful correction there is: it says
+          the vocabulary is missing something, which no amount of rewording fixes.
         </p>
       </div>
 
@@ -246,6 +259,20 @@ const EXAMPLES = [
             bad luck, it is one line of the rubric describing the wrong thing — and that line can
             be rewritten and scored again the same afternoon, against the same probe set. The
             learning is real; it just happens in the wording rather than in the weights.
+          </p>
+          <p>
+            <strong>A correction records what it beat.</strong> When two words were named, both
+            travel with it, because <em>guilt was wrong</em>{" "}and <em>neither guilt nor
+            embarrassment was right</em>{" "}are different complaints and want different fixes.
+            And if none of the sixty-two is the word, you can type your own — that one is sent
+            with no family attached, which is how it gets counted separately. It is the most
+            useful correction there is: it says the vocabulary is short a word, and no amount of
+            rewriting an existing gloss can answer it.
+          </p>
+          <p>
+            One thing it deliberately will not do is move on a single answer. A feeling is not
+            something anyone is objectively right about, and one person disagreeing is data, not
+            a verdict. Only a correction that <em>repeats</em>{" "}says anything about the wording.
           </p>
 
           <h3>What it cannot do</h3>
@@ -477,6 +504,12 @@ const EXAMPLES = [
   }
   .wf-fb select:focus { outline: none; border-color: var(--accent); }
   .wf-fb-done { margin: 10px 0 0; font-size: 0.9rem; color: var(--accent); }
+  .wf-fb-other {
+    width: 100%; margin-top: 8px; padding: 9px 11px;
+    font: inherit; font-size: 0.92rem; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  }
+  .wf-fb-other:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .wf-fb-note { margin: 12px 0 0; font-size: 0.78rem; color: var(--dim); }
 
   /* Always on the page, reading or no reading. It carries the card's surface so
@@ -801,6 +834,7 @@ const EXAMPLES = [
     var fbForm = document.getElementById("wf-fb-form");
     var fbDone = document.getElementById("wf-fb-done");
     var fbShade = document.getElementById("wf-fb-shade");
+    var fbOther = document.getElementById("wf-fb-other");
     var fbIntent = document.getElementById("wf-fb-intent");
     var current = null;
 
@@ -811,8 +845,18 @@ const EXAMPLES = [
       fbForm.hidden = true;
       fbDone.hidden = true;
       fbShade.value = "";
+      fbOther.value = "";
+      fbOther.hidden = true;
       fbIntent.value = "";
     }
+
+    // A word outside the sixty-two is a real answer, and the one the vocabulary
+    // cannot give you. It is sent with no family, which is how the read-back
+    // tells "this gloss is wrong" apart from "this word is missing".
+    fbShade.addEventListener("change", function () {
+      fbOther.hidden = fbShade.value !== "__other";
+      if (!fbOther.hidden) fbOther.focus();
+    });
 
     function sendFeedback(fits, extra) {
       if (!current) return;
@@ -842,10 +886,12 @@ const EXAMPLES = [
       fbShade.focus();
     });
     document.getElementById("wf-fb-send").addEventListener("click", function () {
-      var shade = fbShade.value;
+      var picked = fbShade.value;
+      var own = picked === "__other";
+      var shade = own ? fbOther.value.trim().slice(0, 40).toLowerCase() : picked;
       sendFeedback(false, {
         trueShade: shade || undefined,
-        trueFamily: shade ? SHADE_FAMILY[shade] : undefined,
+        trueFamily: shade && !own ? SHADE_FAMILY[shade] : undefined,
         trueIntent: fbIntent.value || undefined,
       });
     });

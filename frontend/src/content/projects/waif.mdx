@@ -161,9 +161,28 @@ corrections that point at which rubric line is wrong. A shade corrected the same
 way twenty times is a gloss that needs rewriting, and that is a change you can
 make and re-measure the same afternoon.
 
+**A correction records what it beat.** Where the reading named two words, both
+travel with it — *guilt was wrong* and *neither guilt nor embarrassment was
+right* are different complaints, and the second one is about the region the
+reading landed in rather than about one gloss. And where none of the sixty-two
+is the word, you can type your own; it is sent with **no family**, which is what
+separates *this gloss is wrong* from *this word is missing*. The second is the
+more valuable correction and the one no rewording can answer.
+
+It will not move on a single answer, either. A feeling is not something anyone
+is objectively right about, so one person disagreeing is data and not a verdict;
+only a repeated correction is a claim about the wording.
+
 The judgments are signed when handed out and verified when they come back, so the
 model's half of every row is provably a real reading. Without that the first
 person to script the endpoint would decide what the eval set says.
+
+The rows live in a database on another deployment, which makes them invisible —
+nobody opens a database to ask whether a gloss is wrong. So they are pulled into
+**one file in the repo, `waif-feedback.md`**, next to the words they are about,
+where a diff shows them changing. Above the pulled table is the hand-written log
+of what was changed because of a correction, which is the half that makes it a
+loop rather than a collection.
 
 ## What is under it
 
