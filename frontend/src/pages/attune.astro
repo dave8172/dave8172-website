@@ -102,8 +102,7 @@ const WANT = [
       </p>
       <p class="at-note">
         One honest limit: the reading itself is a call to a model provider, so text you
-        choose to score does leave your machine. A version that runs entirely on your own
-        hardware needs a local model, and I am not promising that yet.
+        choose to score does leave your machine.
       </p>
     </section>
 
@@ -154,17 +153,9 @@ const WANT = [
       <ul class="at-list">
         {WANT.map((w) => <li>{w}</li>)}
       </ul>
-      <p>
-        <strong>What I want to know:</strong> what you measure today, what you do with the
-        answer, and what it costs you when it is wrong. Fifteen minutes, or a reply as long
-        or short as you like.
-      </p>
-      <p>
-        There is nothing to sell. There is no product yet, and I will say so plainly if I
-        think it would not help you.
-      </p>
-      <p class="at-mail">
-        <a href="mailto:mdhawal94@gmail.com?subject=Attune">mdhawal94@gmail.com</a>
+      <p class="at-early">
+        Early access. I am working with the first few teams by hand, and building this
+        around what they actually need.
       </p>
     </section>
 
@@ -245,8 +236,10 @@ const WANT = [
     color: var(--muted);
     font-size: 0.93rem;
   }
-  .at-mail a {
-    font-size: 1.05rem;
+  .at-early {
+    border-left: 3px solid var(--accent);
+    padding: 0.6rem 0 0.6rem 0.9rem;
+    margin-top: 1.4rem;
     font-weight: 600;
   }
   .at-foot {
