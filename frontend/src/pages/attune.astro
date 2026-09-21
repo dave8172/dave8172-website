@@ -32,13 +32,47 @@ const USES = [
   },
 ];
 
-const SCALE = `distress
-  1  hopelessness; no mention of death or self-harm
-  2  thoughts of death; no plan, no method, no timing
-  3  a plan, a method, something acquired, or a time named
-  4  an act in progress or already taken
+/**
+ * Every number in the figures below is a real reading, not an illustration:
+ * jev-1.13.0, 2026-09-21, the engine this page says is already running. Raw rows
+ * and the script that took them: /root/projects/waif/probes/. Re-measure before
+ * changing a number or an example sentence here — the sentence is the probe.
+ */
+const MODEL = "jev-1.13.0";
 
-act on  3 and above`;
+/** Line 2 is the second draft. The first draft is `LINE2_V1`, and FIX shows why it changed. */
+const LADDER = [
+  { level: 1, line: "hopelessness; no mention of death or self-harm", example: "Honestly what's even the point anymore. Nothing I do changes anything." },
+  { level: 2, line: "thoughts of death or of not being here, including wishing to be gone; no plan, no method, no timing", example: "Sometimes I think everyone would be better off if I just wasn't here." },
+  { level: 3, line: "a plan, a method, something acquired, or a time named", example: "I have been saving up my pills." },
+  { level: 4, line: "an act in progress or already taken", example: "I took all of them about ten minutes ago." },
+];
+const ACT_ON = 3;
+
+/** One reading of LADDER[2].example, v2 run 1: the four probabilities as Jev returned them. */
+const READING = { text: LADDER[2].example, level: 3, sure: 0.97, probs: [0.01, 0, 0.98, 0.01] };
+
+/** The test catching a real fault: LADDER[1].example on the first draft of line 2, then the second. */
+const LINE2_V1 = "thoughts of death; no plan, no method, no timing";
+const FIX = {
+  before: [
+    [0.45, 0.55],
+    [0.51, 0.49],
+  ],
+  after: [
+    [0, 1],
+    [0.01, 0.99],
+    [0, 1],
+  ],
+};
+const pct = (p: number) => `${Math.round(p * 100)}%`;
+const winner = ([l1, l2]: number[]) => (l2 > l1 ? 2 : 1);
+
+/** evidence.md §11 — arXiv 2609.06263, vendor moderation APIs on 516 psychiatrist-graded posts. */
+const GAP = [
+  { task: "Spotting that something is wrong", score: 0.86, width: 0.86 },
+  { task: "Saying how bad it is", score: 0.4, width: 0.395 },
+];
 
 const WANT = [
   "You already try to work out how a user is doing — a prompt, a keyword list, a sentiment call — and you have no idea how well it works.",
@@ -61,6 +95,45 @@ const WANT = [
         doing — and how strongly. Fine, struggling, or in trouble, as a number your app can
         act on.
       </p>
+
+      <figure class="fig">
+        <div class="rd">
+          <div class="rd-in">
+            <span class="rd-tag">Your user types</span>
+            <p class="rd-msg">“{READING.text}”</p>
+          </div>
+          <p class="rd-step" aria-hidden="true">↓ {NAME} reads it against your scale</p>
+          <div class="rd-out">
+            <span class="rd-tag">{NAME} returns</span>
+            <p class="rd-level">
+              <span class="rd-num">{READING.level}</span>
+              <span>of 4 · {LADDER[READING.level - 1].line}</span>
+            </p>
+            <ol class="rd-bars" aria-label="How likely each level was">
+              {READING.probs.map((p, i) => (
+                <li class={i + 1 === READING.level ? "rd-top" : undefined}>
+                  <span class="rd-lvl">{i + 1}</span>
+                  <span class="rd-track" aria-hidden="true">
+                    <span class="rd-fill" style={`width:${Math.max(p * 100, p > 0 ? 1.5 : 0)}%`} title={`Level ${i + 1}: ${pct(p)}`}></span>
+                  </span>
+                  <span class="rd-pct">{pct(p)}</span>
+                </li>
+              ))}
+            </ol>
+            <dl class="rd-meta">
+              <div><dt>How sure</dt><dd>{READING.sure}</dd></div>
+              <div><dt>Your rule</dt><dd>act on {ACT_ON} and above → <strong>fired</strong></dd></div>
+              <div><dt>Saved</dt><dd>the score, all four levels, the rule, {MODEL}, the time. Not the message.</dd></div>
+            </dl>
+          </div>
+        </div>
+        <figcaption>
+          A real reading, taken on the engine {NAME} runs on (<span class="nw">{MODEL}</span>, 21
+          September 2026). The level and the four bars are what came back. The rule and the
+          record are what {NAME} adds around them.
+        </figcaption>
+      </figure>
+
       <p class="at-demo">
         The engine behind it is already running. <a href="/waif">waif</a> is a small demo
         of it — type a sentence and watch it come back scored, with every number shown.
@@ -96,6 +169,64 @@ const WANT = [
           down.
         </li>
       </ul>
+
+      <figure class="fig">
+        <svg
+          class="flow"
+          viewBox="0 0 360 392"
+          width="360"
+          height="392"
+          role="img"
+          aria-label="Your app and Attune both run on your side. Your app sends Attune the conversation and gets back a score and whether your rule fired. Attune holds your scale, your examples and your record, which keeps scores and never message text. The only thing that crosses to the outside is the text you choose to score, sent to a model provider, which sends back the reading."
+        >
+          <defs>
+            <marker id="at-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
+            </marker>
+            <marker id="at-arr-x" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path class="x-fill" d="M0 0 L10 5 L0 10 z" fill="#2563eb" />
+            </marker>
+          </defs>
+
+          <rect class="side" x="6" y="6" width="348" height="296" rx="12" fill="none" stroke="#858c97" stroke-dasharray="5 4" />
+          <text class="t-sm t-mute" x="18" y="292">your side</text>
+
+          <rect class="box" x="22" y="20" width="316" height="52" rx="8" fill="none" stroke="currentColor" />
+          <text class="t-b" x="180" y="42" text-anchor="middle">Your app</text>
+          <text class="t-sm t-mute" x="180" y="60" text-anchor="middle">decides what happens at each number</text>
+
+          <line x1="130" y1="73" x2="130" y2="115" stroke="currentColor" marker-end="url(#at-arr)" />
+          <text class="t-sm" x="122" y="98" text-anchor="end">the conversation</text>
+          <line x1="250" y1="117" x2="250" y2="75" stroke="currentColor" marker-end="url(#at-arr)" />
+          <text class="t-sm" x="258" y="98">3 · rule fired</text>
+
+          <rect class="box" x="22" y="118" width="316" height="150" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <text class="t-b" x="180" y="140" text-anchor="middle">Attune</text>
+          <rect class="chip" x="38" y="152" width="134" height="28" rx="6" fill="none" stroke="#858c97" />
+          <text class="t-sm" x="105" y="170" text-anchor="middle">your scale</text>
+          <rect class="chip" x="188" y="152" width="134" height="28" rx="6" fill="none" stroke="#858c97" />
+          <text class="t-sm" x="255" y="170" text-anchor="middle">your examples</text>
+          <rect class="chip" x="38" y="190" width="284" height="64" rx="6" fill="none" stroke="#858c97" />
+          <text class="t-sm t-b" x="180" y="210" text-anchor="middle">your record</text>
+          <text class="t-sm" x="180" y="227" text-anchor="middle">score · every level · rule · model · time</text>
+          <text class="t-sm t-mute" x="180" y="244" text-anchor="middle">no message text</text>
+
+          <line class="x-line" x1="140" y1="269" x2="140" y2="333" stroke="#2563eb" stroke-width="1.5" marker-end="url(#at-arr-x)" />
+          <text class="t-sm x-text" x="132" y="322" text-anchor="end" fill="#2563eb">the text to score</text>
+          <line class="x-line" x1="220" y1="335" x2="220" y2="271" stroke="#2563eb" stroke-width="1.5" marker-end="url(#at-arr-x)" />
+          <text class="t-sm x-text" x="228" y="322" fill="#2563eb">the reading</text>
+
+          <rect class="box" x="80" y="336" width="200" height="48" rx="8" fill="none" stroke="currentColor" />
+          <text class="t-b" x="180" y="356" text-anchor="middle">Model provider</text>
+          <text class="t-sm t-mute" x="180" y="374" text-anchor="middle">the one hop that leaves</text>
+        </svg>
+        <figcaption>
+          Your app, your scale, your examples and your record all stay on your side. The one
+          thing that crosses the line is the text you choose to score, on its way to the model
+          that reads it.
+        </figcaption>
+      </figure>
+
       <p>
         It installs as an MCP server or a command-line tool, so it fits into whatever you
         already run. Your scales, your examples and your records stay on your side.
@@ -112,7 +243,28 @@ const WANT = [
         You write down what you want to know as a short list of levels, with one line
         saying what belongs in each.
       </p>
-      <pre class="at-code"><code>{SCALE}</code></pre>
+      <figure class="fig">
+        <ol class="ld" aria-label="A distress scale, four levels">
+          {LADDER.map((r) => (
+            <>
+              {r.level === ACT_ON && (
+                <li class="ld-rule">↓ your rule: act on {ACT_ON} and above</li>
+              )}
+              <li class={r.level >= ACT_ON ? "ld-row ld-act" : "ld-row"}>
+                <span class="ld-n">{r.level}</span>
+                <div>
+                  <code class="ld-line">{r.line}</code>
+                  <p class="ld-ex">“{r.example}”</p>
+                </div>
+              </li>
+            </>
+          ))}
+        </ol>
+        <figcaption>
+          Each example sits where the engine put it, and it put each one there three runs out
+          of three (<span class="nw">{MODEL}</span>).
+        </figcaption>
+      </figure>
       <p>
         Every line there is sad. The feeling is the same at all four, and it tells you
         nothing. The number is what tells you whether to do something.
@@ -123,6 +275,56 @@ const WANT = [
         the line for acting, how much you miss if you draw it there, and whether the same
         sentence gets the same score twice. When a model changes, run it again and compare.
       </p>
+      <p>
+        The scale above is a second draft. In the first, line 2 said only “thoughts of
+        death”, and one example kept landing on the fence:
+      </p>
+
+      <figure class="fig">
+        <p class="fx-q">“{LADDER[1].example}”</p>
+        <p class="fx-key" aria-hidden="true">
+          <span><i class="sw sw-1"></i>level 1</span>
+          <span><i class="sw sw-2"></i>level 2</span>
+        </p>
+        <div class="fx">
+          {[
+            { head: "First draft of line 2", runs: FIX.before, line: LINE2_V1, verdict: "A coin flip. Same sentence, different level." },
+            { head: "Line 2, rewritten", runs: FIX.after, line: LADDER[1].line, verdict: "Level 2, three runs out of three." },
+          ].map((panel, pi) => (
+            <div class="fx-panel">
+              <p class="fx-h">{panel.head}</p>
+              {pi === 0 ? (
+                <code class="fx-line">{panel.line}</code>
+              ) : (
+                <code class="fx-line">
+                  thoughts of death <ins>or of not being here, including wishing to be gone</ins>; no plan,
+                  no method, no timing
+                </code>
+              )}
+              <ol class="fx-runs">
+                {panel.runs.map((r, i) => (
+                  <li>
+                    <span class="fx-run">run {i + 1}</span>
+                    <span class="fx-bar" aria-hidden="true">
+                      {r[0] > 0 && <span class="fx-seg sw-1" style={`width:${r[0] * 100}%`} title={`Level 1: ${pct(r[0])}`}></span>}
+                      {r[1] > 0 && <span class="fx-seg sw-2" style={`width:${r[1] * 100}%`} title={`Level 2: ${pct(r[1])}`}></span>}
+                    </span>
+                    <span class="fx-out">
+                      → <strong>{winner(r)}</strong> <span class="fx-split">{pct(r[0])} / {pct(r[1])}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              <p class="fx-verdict">{panel.verdict}</p>
+            </div>
+          ))}
+        </div>
+        <figcaption>
+          One rewritten line, and the coin stopped flipping. The other four examples did not
+          move. Real runs on <span class="nw">{MODEL}</span>. Five sentences and one edit is a demonstration, not a
+          test: a real scale is checked against many examples graded by people.
+        </figcaption>
+      </figure>
       <p>
         After that, every reading is saved: the score, how the rest of the levels ranked,
         the rule that fired, which model version read it, and when. Scores only — what your
@@ -142,6 +344,25 @@ const WANT = [
         moderation APIs scored <strong>0.86</strong> at spotting that something is wrong,
         and <strong>0.40</strong> at saying how bad it is. They shout at almost everything.
       </p>
+
+      <figure class="fig">
+        <div class="gp">
+          {GAP.map((g) => (
+            <div class="gp-row">
+              <span class="gp-label">{g.task}</span>
+              <span class="gp-track" aria-hidden="true">
+                <span class="gp-fill" style={`width:${g.width * 100}%`} title={`${g.task}: ${g.score.toFixed(2)}`}></span>
+              </span>
+              <span class="gp-val">{g.score.toFixed(2)}</span>
+            </div>
+          ))}
+          <p class="gp-axis" aria-hidden="true"><span>0</span><span>1 is perfect</span></p>
+        </div>
+        <figcaption>
+          The usual moderation APIs, scored against a psychiatrist on 516 posts (F1, and
+          macro-F1 across the four levels). Source: <a href="https://arxiv.org/abs/2609.06263">Beyond the Flag</a>, September 2026.
+        </figcaption>
+      </figure>
     </section>
 
     <section class="at-sec" id="ask">
@@ -217,14 +438,364 @@ const WANT = [
     color: var(--muted);
     font-size: 0.94rem;
   }
-  .at-code {
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.9rem 1rem;
-    overflow-x: auto;
-    font-size: 0.82rem;
+  /* ---- figures ----------------------------------------------------------
+     One accent for the element that carries the meaning (the winning level,
+     your rule, the hop that leaves); everything else in ink and a neutral.
+     The neutral was validated against both page backgrounds for 3:1 contrast. */
+  .at {
+    --at-neutral: #858c97;
+    --at-track: var(--surface-hover, #e8eaef);
+  }
+  @media (prefers-color-scheme: dark) {
+    .at {
+      --at-neutral: #71717a;
+    }
+  }
+  .fig {
+    margin: 1.4rem 0 1.8rem;
+  }
+  .fig figcaption {
+    color: var(--muted);
+    font-size: 0.86rem;
     line-height: 1.55;
+    margin-top: 0.6rem;
+  }
+  .fig code {
+    font-size: 0.8rem;
+  }
+  .nw {
+    white-space: nowrap;
+  }
+
+  /* a reading */
+  .rd {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--card-bg);
+  }
+  .rd-in {
+    padding: 0.8rem 1rem;
+    background: var(--surface);
+  }
+  .rd-tag {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .rd-msg {
+    margin: 0.15rem 0 0;
+    font-size: 1.05rem;
+  }
+  .rd-step {
+    margin: 0;
+    padding: 0.35rem 1rem;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .rd-out {
+    padding: 0.8rem 1rem 0.9rem;
+  }
+  .rd-level {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    margin: 0.2rem 0 0.7rem;
+    line-height: 1.35;
+  }
+  .rd-num {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .rd-bars {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.8rem;
+  }
+  .rd-bars li {
+    display: grid;
+    grid-template-columns: 1.1rem 1fr 2.6rem;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0.2rem 0;
+  }
+  .rd-track {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--at-track);
+    overflow: hidden;
+  }
+  .rd-fill {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+    background: var(--at-neutral);
+  }
+  .rd-bars .rd-top {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .rd-top .rd-fill {
+    background: var(--accent);
+  }
+  .rd-pct {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .rd-meta {
+    margin: 0;
+    font-size: 0.86rem;
+  }
+  .rd-meta div {
+    display: grid;
+    grid-template-columns: 5.2rem 1fr;
+    gap: 0.6rem;
+    padding: 0.3rem 0;
+    border-top: 1px solid var(--border);
+  }
+  .rd-meta dt {
+    color: var(--muted);
+  }
+  .rd-meta dd {
+    margin: 0;
+  }
+
+  /* the ladder */
+  .ld {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .ld-row {
+    display: grid;
+    grid-template-columns: 1.6rem 1fr;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .ld-row:first-child {
+    border-top: 0;
+  }
+  .ld-n {
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  .ld-act {
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  .ld-act .ld-n {
+    color: var(--accent);
+  }
+  .ld-line {
+    display: block;
+    color: var(--muted);
+    background: none;
+    padding: 0;
+    line-height: 1.45;
+  }
+  .ld-ex {
+    margin: 0.3rem 0 0;
+    line-height: 1.5;
+  }
+  .ld-rule {
+    padding: 0.35rem 1rem;
+    border-top: 1px dashed var(--accent);
+    color: var(--accent);
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+  .ld-rule + .ld-row {
+    border-top: 0;
+  }
+
+  /* the fix, before and after */
+  .fx-q {
+    margin: 0 0 0.5rem;
+    font-size: 1.02rem;
+  }
+  .fx-key {
+    display: flex;
+    gap: 1rem;
+    margin: 0 0 0.6rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .sw {
+    display: inline-block;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 3px;
+    margin-right: 0.35rem;
+    vertical-align: -0.05rem;
+  }
+  .sw-1 {
+    background: var(--at-neutral);
+  }
+  .sw-2 {
+    background: var(--accent);
+  }
+  .fx {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+  @media (min-width: 560px) {
+    .fx {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .fx-panel {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.8rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .fx-h {
+    margin: 0 0 0.35rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .fx-line {
+    display: block;
+    background: none;
+    padding: 0;
+    line-height: 1.45;
+    color: var(--muted);
+    margin-bottom: 0.7rem;
+  }
+  .fx-line ins {
+    text-decoration: none;
+    color: var(--text);
+    box-shadow: inset 0 -2px 0 var(--accent);
+  }
+  .fx-runs {
+    list-style: none;
+    padding: 0;
+    margin: auto 0 0;
+  }
+  .fx-runs li {
+    display: grid;
+    grid-template-columns: 2.6rem 1fr 6.4rem;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.3rem 0;
+    font-size: 0.8rem;
+  }
+  .fx-run {
+    color: var(--muted);
+  }
+  .fx-bar {
+    display: flex;
+    gap: 2px;
+    height: 12px;
+  }
+  .fx-seg {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+  }
+  .fx-out {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .fx-split {
+    color: var(--muted);
+  }
+  .fx-verdict {
+    margin: 0.5rem 0 0;
+    font-size: 0.86rem;
+    font-weight: 600;
+  }
+
+  /* where it sits */
+  .flow {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    height: auto;
+    margin: 0 auto;
+    color: var(--text);
+    overflow: visible;
+  }
+  .flow text {
+    fill: currentColor;
+    font-size: 13px;
+  }
+  .flow .t-sm {
+    font-size: 11.5px;
+  }
+  .flow .t-b {
+    font-weight: 600;
+  }
+  .flow .t-mute {
+    fill: var(--muted);
+  }
+  .flow .side,
+  .flow .chip {
+    stroke: var(--at-neutral);
+  }
+  .flow .x-line {
+    stroke: var(--accent);
+  }
+  .flow .x-fill,
+  .flow .x-text {
+    fill: var(--accent);
+  }
+
+  /* the gap */
+  .gp-row {
+    display: grid;
+    grid-template-columns: 1fr 2.6rem;
+    grid-template-areas: "label label" "track val";
+    align-items: center;
+    column-gap: 0.6rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+  }
+  .gp-label {
+    grid-area: label;
+    margin-bottom: 0.2rem;
+  }
+  .gp-track {
+    grid-area: track;
+    height: 12px;
+    border-radius: 4px;
+    background: var(--at-track);
+    overflow: hidden;
+  }
+  .gp-fill {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+    background: var(--at-neutral);
+  }
+  .gp-val {
+    grid-area: val;
+    text-align: right;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .gp-axis {
+    display: flex;
+    justify-content: space-between;
+    margin: -0.2rem 3.2rem 0 0;
+    font-size: 0.75rem;
+    color: var(--muted);
   }
   .at-list {
     padding-left: 1.1rem;
