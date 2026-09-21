@@ -164,6 +164,14 @@ const FAMILY_CLEAR = 0.5;
  * With the shade unsettled, two words holding this much of the weight between
  * them are *both* the reading, so both get named. Below it the weight is spread
  * across three or more and there is no pair to name.
+ *
+ * **Inclusive, and that is not a detail.** Every probability Jev returns is an
+ * exact hundredth — 6,796 values checked on 2026-09-21, not one of them
+ * otherwise — so a top-two sum does not approach 0.80, it *lands* on it. The
+ * page's own `flat` example does: apathy 0.46 + emptiness 0.34, which a strict
+ * `>` silently dropped. On a quantized distribution a threshold has to say
+ * which side the lattice point belongs to, and 80% held between two words is
+ * the case this rule exists for.
  */
 const PAIR_MASS = 0.8;
 
@@ -447,7 +455,9 @@ export function interpret(stage1: any, shadeAnswer: any | null): Reading {
   const runnerUp = alternatives[0];
   const p1: number = shadeAnswer.probabilities?.[shadeWord] ?? 0;
   const p2: number = runnerUp?.p ?? 0;
-  const paired = shadeConfidence < SHADE_CLEAR && Boolean(runnerUp) && p1 + p2 > PAIR_MASS;
+  // `>=`, because Jev's probabilities are whole hundredths and the sum lands on
+  // the threshold rather than near it. See PAIR_MASS.
+  const paired = shadeConfidence < SHADE_CLEAR && Boolean(runnerUp) && p1 + p2 >= PAIR_MASS;
   const words: Named[] = paired
     ? [
         { word: shadeWord, gloss: gloss(shadeWord), p: p1 },

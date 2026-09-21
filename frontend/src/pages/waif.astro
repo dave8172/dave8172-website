@@ -211,12 +211,21 @@ const EXAMPLES = [
           <p>
             So two words get named, stronger first, when both of these hold: the top word did
             not settle on its own (below 0.60), <strong>and</strong>{" "}the two of them hold
-            more than 80% of the weight between them. Both conditions earn their place. Without
+            80% or more of the weight between them. Both conditions earn their place. Without
             the first, every clean reading would be paired with whatever came second at 3%.
             Without the second, a text spread thinly across <em>guilt</em>, <em>regret</em>{" "}
             and <em>shame</em>{" "}would be reported as two when it is really none — that one
             keeps a single word and says plainly that it did not settle. On the probe set the
             rule fires on 5 texts in 23.
+          </p>
+          <p>
+            <em>Or more</em>{" "}is load-bearing, and it took a bug to notice.{" "}
+            <strong>Every probability this model returns is a whole hundredth</strong>{" "}— 6,796
+            of them checked, not one otherwise — so a top-two sum does not approach 80%, it
+            lands on it. The <em>flat</em>{" "}example above does exactly that: apathy 46% plus
+            emptiness 34%, which a rule reading <em>more than</em>{" "}dropped while the page
+            showed the two numbers adding to 80. On a scale that moves in steps, a threshold has
+            to say which side the step itself falls on.
           </p>
           <p>
             What you are <em>doing</em>{" "}is a separate question again: a choice over eight

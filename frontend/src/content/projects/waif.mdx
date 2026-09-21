@@ -108,7 +108,7 @@ in the family answer corrupts the word, because once the family says sadness,
 **And sometimes the answer is two words.** A text can genuinely be between guilt and
 embarrassment; the shade Choice comes back 52% and 41%, and that split *is* the
 reading. Two words get named, stronger first, when both conditions hold: the top word
-did not settle on its own (under 0.60) **and** the pair holds more than 80% of the
+did not settle on its own (under 0.60) **and** the pair holds 80% or more of the
 weight between them.
 
 Both conditions do work. Drop the first and every clean reading acquires a second
@@ -117,6 +117,14 @@ word at 3%. Drop the second and a text spread thinly across *guilt*, *regret* an
 single word and says plainly that it did not settle. The thresholds come off the
 probe set: an unsettled shade puts at least 22% on its runner-up, a settled one at
 most 19%. The rule fires on 5 texts in 23.
+
+*Or more* is load-bearing, and it took a bug to find. **Every probability Jev
+returns is a whole hundredth** — 6,796 values checked, not one otherwise — so a
+top-two sum does not approach the threshold, it lands on it. The page's own
+*flat* example does: apathy 46% and emptiness 34%, printed as adding to 80, and
+silently dropped by a rule that read *more than*. My probe set contained no such
+case in 46 readings, which is exactly why a quantized scale needs the boundary
+decided deliberately rather than discovered.
 
 ---
 

@@ -25,6 +25,12 @@ Two handling rules, both learned the hard way on 2026-09-18:
 
 ## SDK
 
+**Probabilities come back quantized to whole hundredths** (measured 2026-09-21
+across 6,796 values, zero exceptions), and a Choice's distribution therefore
+does not always sum to exactly 1. Any threshold compared against a sum of them
+has to decide explicitly whether the lattice point is in or out — see
+`PAIR_MASS`.
+
 None. Raw HTTP `POST https://api.typesafe.ai/v1/systemone`, `model: "jev-latest"`,
 `fetch` with a 20s `AbortSignal.timeout`. The site has no runtime dependencies
 and this does not add one.
@@ -178,7 +184,7 @@ every number as provisional.
 | `SETTLED` (axis confidence) | 0.50 | Below it the weight is genuinely split; an ambiguous text measured 0.35 on valence while clean ones measured 0.76–0.98 |
 | `MARGIN` (top two levels) | 0.15 | Confidence is computed over the whole distribution, so a two-way split can clear `SETTLED` and still be a coin toss — one probe landed 52% against 47% on control and was reported flatly |
 | `SHADE_CLEAR` | 0.60 | Clean readings scored 0.79–1.00; a genuinely between-two-words text scored 0.20 |
-| `PAIR_MASS` | 0.80 | Re-measured 2026-09-21 over 46 readings. With the shade unsettled the runner-up carried **≥22%**; with it settled, **≤19%** — so `SHADE_CLEAR` alone already separates a real second word from noise, and `PAIR_MASS` then drops the case where the weight is spread across three rather than two (guilt 46 / regret 26 / shame 20 sums to 0.72 and stays one word). Fires on 5 texts in 23 |
+| `PAIR_MASS` | 0.80, **inclusive** | Re-measured 2026-09-21 over 46 readings. With the shade unsettled the runner-up carried **≥22%**; with it settled, **≤19%** — so `SHADE_CLEAR` alone already separates a real second word from noise, and `PAIR_MASS` then drops the case where the weight is spread across three rather than two (guilt 46 / regret 26 / shame 20 sums to 0.72 and stays one word). Fires on 5 texts in 23. **The comparison is `>=` and that is not cosmetic:** every probability Jev returns is a whole hundredth (6,796 values checked, zero exceptions), so a top-two sum lands *on* 0.80 rather than near it. The `flat` example on the page does — apathy 0.46 + emptiness 0.34 — and a strict `>` dropped it while the page displayed two numbers summing to 80%. Zero of the 46 probe readings hit the boundary, which is why it survived to production |
 | `FAMILY_CLEAR` | 0.50 | Clear families scored 0.88–1.00; the two probe failures scored 0.37 and 0.68 |
 
 ## What stayed in code

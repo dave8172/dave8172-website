@@ -145,3 +145,30 @@ test("every family's shade question rides in the one request", () => {
     Object.keys(MEASURE).length + FAMILIES.length,
   );
 });
+
+// The boundary. Jev returns whole hundredths, so a top-two sum lands exactly on
+// the threshold rather than near it — the page's own "flat" example does, and a
+// strict > dropped it. 0.46 + 0.34 is 80% held between two words.
+test("a top-two sum landing exactly on the threshold still pairs", () => {
+  const onBoundary = {
+    ...F.blocked.shade,
+    choice: "apathy",
+    confidence: 0.34,
+    probabilities: { apathy: 0.46, emptiness: 0.34, boredom: 0.12, fatigue: 0.08, indifference: 0, exhaustion: 0 },
+  };
+  const r = interpret({ ...F.blocked.stage1, family: { ...F.blocked.stage1.family, choice: "flat" } }, onBoundary);
+  assert.equal(r.paired, true, "0.46 + 0.34 = 0.80 is the case the rule exists for");
+  assert.deepEqual(r.words.map((w) => w.word), ["apathy", "emptiness"]);
+});
+
+// And one hundredth under it still does not.
+test("a hundredth below the threshold does not pair", () => {
+  const under = {
+    ...F.blocked.shade,
+    choice: "apathy",
+    confidence: 0.34,
+    probabilities: { apathy: 0.45, emptiness: 0.34, boredom: 0.13, fatigue: 0.08, indifference: 0, exhaustion: 0 },
+  };
+  const r = interpret({ ...F.blocked.stage1, family: { ...F.blocked.stage1.family, choice: "flat" } }, under);
+  assert.equal(r.paired, false);
+});
