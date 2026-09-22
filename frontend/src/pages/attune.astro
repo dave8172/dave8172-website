@@ -39,12 +39,12 @@ const USES: Use[] = [
 ];
 
 /**
- * Every number in the figures below is a real reading, not an illustration:
- * jev-1.13.0, 2026-09-21, the engine this page says is already running. Raw rows
- * and the script that took them: /root/projects/waif/probes/. Re-measure before
+ * Every number in the figures below is a real reading, not an illustration,
+ * taken 2026-09-21/22 on the engine this page says is already running. Raw rows and
+ * the scripts that took them are in the waif project, probes/. Re-measure before
  * changing a number or an example sentence here — the sentence is the probe.
+ * The engine is not named anywhere on this page, at his call.
  */
-const MODEL = "jev-1.13.0";
 
 /** Line 2 is the second draft. The first draft is `LINE2_V1`, and FIX shows why it changed. */
 const LADDER = [
@@ -226,7 +226,7 @@ const WANT = [
                   <dl class="rd-meta">
                     <div><dt>How sure</dt><dd>{e.sure.toFixed(2)}</dd></div>
                     <div><dt>Your rule</dt><dd>{e.rule}{e.fired && <> → <strong>fired</strong></>}</dd></div>
-                    <div><dt>Saved</dt><dd>the score, all four levels, the rule, {MODEL}, the time. Not the message.</dd></div>
+                    <div><dt>Saved</dt><dd>the score, all four levels, the rule, the model version, the time. Not the message.</dd></div>
                   </dl>
                 </div>
               </div>
@@ -234,8 +234,8 @@ const WANT = [
           ))}
         </div>
         <figcaption>
-          Four real readings, taken on the engine {NAME} runs on (<span class="nw">{MODEL}</span>,
-          21–22 September 2026), each the same on three runs of three. The level and the bars
+          Four real readings, taken on the engine {NAME} runs on in September 2026, each the
+          same on three runs of three. The level and the bars
           are what came back. The rule and the record are what {NAME} adds around them.
         </figcaption>
       </figure>
@@ -378,7 +378,7 @@ const WANT = [
         </ol>
         <figcaption>
           Each example sits where the engine put it, and it put each one there three runs out
-          of three (<span class="nw">{MODEL}</span>).
+          of three.
         </figcaption>
       </figure>
       <p>
@@ -437,7 +437,7 @@ const WANT = [
         </div>
         <figcaption>
           One rewritten line, and the coin stopped flipping. The other four examples did not
-          move. Real runs on <span class="nw">{MODEL}</span>. Five sentences and one edit is a demonstration, not a
+          move. These are real runs, but five sentences and one edit is a demonstration, not a
           test: a real signal is checked against many examples graded by people.
         </figcaption>
       </figure>
