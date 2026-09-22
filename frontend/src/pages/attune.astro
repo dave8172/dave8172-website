@@ -55,8 +55,92 @@ const LADDER = [
 ];
 const ACT_ON = 3;
 
-/** One reading of LADDER[2].example, v2 run 1: the four probabilities as Jev returned them. */
-const READING = { text: LADDER[2].example, level: 3, sure: 0.97, probs: [0.01, 0, 0.98, 0.01] };
+/**
+ * The carousel at the top: one real reading per use case, each the same on three
+ * runs of three. `lines` are the level lines the engine was given, so the card
+ * quotes exactly what it chose between. Distress is v2 run 1 of 2026-09-21; the
+ * other three are 2026-09-22 (waif probes/signals-2026-09-22.json). Positive first,
+ * at his call: the page should not open on a crisis.
+ */
+type Example = {
+  id: string;
+  where: string;
+  signal: string;
+  lines: string[];
+  text: string;
+  level: number;
+  sure: number;
+  probs: number[];
+  rule: string;
+  fired: boolean;
+  note?: string;
+};
+const EXAMPLES: Example[] = [
+  {
+    id: "mood",
+    where: "In a journaling app",
+    signal: "mood",
+    lines: [
+      "very low: sad, hopeless or drained for most of the entry",
+      "low: more bad than good, but coping",
+      "okay: mixed or neutral, nothing much either way",
+      "good: content, hopeful, proud, energised or happy",
+    ],
+    text: "Finally finished the garden today. Sore back, but I sat outside with tea after and felt proud of myself.",
+    level: 4,
+    sure: 1.0,
+    probs: [0, 0, 0, 1],
+    rule: "it goes on their mood chart",
+    fired: false,
+  },
+  {
+    id: "frustration",
+    where: "In a support chat",
+    signal: "frustration",
+    lines: [
+      "calm: asking or explaining, no irritation",
+      "a grumble: mildly annoyed but still patient",
+      "losing patience: a repeated problem, a sharper tone, wants it fixed now",
+      "about to leave: threatens to cancel, switch or give up on the product",
+    ],
+    text: "Third time asking about this. The export is still broken. Can someone please just fix it?",
+    level: 3,
+    sure: 1.0,
+    probs: [0, 0, 1, 0],
+    rule: "hand the chat to a human at 3 and above",
+    fired: true,
+  },
+  {
+    id: "reliance",
+    where: "In a companion app",
+    signal: "reliance",
+    lines: [
+      "now and then: uses the app occasionally, their life is clearly centred elsewhere",
+      "a daily habit: talks to it regularly, still leans on people too",
+      "first place they turn: comes here before anyone else when something happens",
+      "instead of people: the app is replacing friends, family or plans with people",
+    ],
+    text: "You're the only one I really talk to now. I cancelled on my friends again so we could chat tonight.",
+    level: 4,
+    sure: 1.0,
+    probs: [0, 0, 0, 1],
+    rule: "at 4, nudge them back toward people",
+    fired: true,
+    note: "In the app this builds across weeks of messages. This is one of them.",
+  },
+  {
+    id: "distress",
+    where: "In a companion app",
+    signal: "distress",
+    lines: LADDER.map((r) => r.line),
+    text: LADDER[2].example,
+    level: 3,
+    sure: 0.97,
+    probs: [0.01, 0, 0.98, 0.01],
+    rule: "act on 3 and above",
+    fired: true,
+  },
+];
 
 /** The test catching a real fault: LADDER[1].example on the first draft of line 2, then the second. */
 const LINE2_V1 = "thoughts of death; no plan, no method, no timing";
@@ -88,55 +172,71 @@ const WANT = [
 ---
 
 <BaseLayout
-  title={`${NAME} — know how your users are doing`}
-  description="Attune reads the messages your users type — chat, journal entries, support conversations — and scores how they are doing, from fine to in trouble."
+  title={`${NAME} — understand how your users feel`}
+  description="Attune reads what people write in your app for signals like mood, patience or reliance, and hands back a number from 1 to 4 your app can act on."
 >
   <article class="at">
     <header class="at-head">
       <h1>{NAME}</h1>
-      <p class="at-claim">Know how your users are doing.</p>
+      <p class="at-claim">Understand how your users feel, from what they write.</p>
       <p class="at-sub">
-        Your users type things into your product every day: chat messages, journal
-        entries, support conversations. {NAME} reads them and tells you how that person is
-        doing — and how strongly. Fine, struggling, or in trouble, as a number your app can
-        act on.
+        People type into your app every day: chat messages, journal entries, support
+        conversations. {NAME} reads each one for what you want to know — their mood, their
+        patience, how much they rely on you — and hands your app a number from 1 to 4 to act
+        on. Each signal is tested before you rely on it, and every reading is saved.
       </p>
 
-      <figure class="fig">
-        <div class="rd">
-          <div class="rd-in">
-            <span class="rd-tag">Your user types</span>
-            <p class="rd-msg">“{READING.text}”</p>
-          </div>
-          <p class="rd-step" aria-hidden="true">↓ {NAME} reads it for one signal: distress</p>
-          <div class="rd-out">
-            <span class="rd-tag">{NAME} returns</span>
-            <p class="rd-level">
-              <span class="rd-num">{READING.level}</span>
-              <span>of 4 · {LADDER[READING.level - 1].line}</span>
-            </p>
-            <ol class="rd-bars" aria-label="How likely each level was">
-              {READING.probs.map((p, i) => (
-                <li class={i + 1 === READING.level ? "rd-top" : undefined}>
-                  <span class="rd-lvl">{i + 1}</span>
-                  <span class="rd-track" aria-hidden="true">
-                    <span class="rd-fill" style={`width:${Math.max(p * 100, p > 0 ? 1.5 : 0)}%`} title={`Level ${i + 1}: ${pct(p)}`}></span>
-                  </span>
-                  <span class="rd-pct">{pct(p)}</span>
-                </li>
-              ))}
-            </ol>
-            <dl class="rd-meta">
-              <div><dt>How sure</dt><dd>{READING.sure}</dd></div>
-              <div><dt>Your rule</dt><dd>act on {ACT_ON} and above → <strong>fired</strong></dd></div>
-              <div><dt>Saved</dt><dd>the score, all four levels, the rule, {MODEL}, the time. Not the message.</dd></div>
-            </dl>
-          </div>
+      <figure class="fig car">
+        <div class="car-tabs" aria-label="Pick a signal">
+          {EXAMPLES.map((e, i) => (
+            <button type="button" class="car-tab" aria-controls={`ex-${e.id}`} aria-current={i === 0 ? "true" : "false"}>
+              {e.signal}
+            </button>
+          ))}
+        </div>
+        <div class="car-rail" tabindex="0" aria-label="Four example readings. Scroll sideways for more.">
+          {EXAMPLES.map((e) => (
+            <div class="car-slide" id={`ex-${e.id}`} role="group" aria-label={`${e.where}, the ${e.signal} signal`}>
+              <div class="rd">
+                <div class="rd-in">
+                  <span class="rd-tag">{e.where}, your user writes</span>
+                  <p class="rd-msg">“{e.text}”</p>
+                </div>
+                <p class="rd-step">
+                  ↓ {NAME} reads it for one signal: <strong>{e.signal}</strong>
+                  {e.note && <span class="rd-note">{e.note}</span>}
+                </p>
+                <div class="rd-out">
+                  <span class="rd-tag">{NAME} returns</span>
+                  <p class="rd-level">
+                    <span class="rd-num">{e.level}</span>
+                    <span>of 4 · {e.lines[e.level - 1]}</span>
+                  </p>
+                  <ol class="rd-bars" aria-label="How likely each level was">
+                    {e.probs.map((p, i) => (
+                      <li class={i + 1 === e.level ? "rd-top" : undefined}>
+                        <span class="rd-lvl">{i + 1}</span>
+                        <span class="rd-track" aria-hidden="true">
+                          <span class="rd-fill" style={`width:${Math.max(p * 100, p > 0 ? 1.5 : 0)}%`} title={`Level ${i + 1}: ${pct(p)}`}></span>
+                        </span>
+                        <span class="rd-pct">{pct(p)}</span>
+                      </li>
+                    ))}
+                  </ol>
+                  <dl class="rd-meta">
+                    <div><dt>How sure</dt><dd>{e.sure.toFixed(2)}</dd></div>
+                    <div><dt>Your rule</dt><dd>{e.rule}{e.fired && <> → <strong>fired</strong></>}</dd></div>
+                    <div><dt>Saved</dt><dd>the score, all four levels, the rule, {MODEL}, the time. Not the message.</dd></div>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
         <figcaption>
-          A real reading, taken on the engine {NAME} runs on (<span class="nw">{MODEL}</span>, 21
-          September 2026). The level and the four bars are what came back. The rule and the
-          record are what {NAME} adds around them.
+          Four real readings, taken on the engine {NAME} runs on (<span class="nw">{MODEL}</span>,
+          21–22 September 2026), each the same on three runs of three. The level and the bars
+          are what came back. The rule and the record are what {NAME} adds around them.
         </figcaption>
       </figure>
 
@@ -242,19 +342,14 @@ const WANT = [
           <text class="t-sm t-mute" x="180" y="374" text-anchor="middle">the one hop that leaves</text>
         </svg>
         <figcaption>
-          Your app, your signals, your examples and your record all stay on your side. The one
-          thing that crosses the line is the text you choose to score, on its way to the model
-          that reads it.
+          One honest limit: the text you choose to score leaves your side, on its way to the
+          model that reads it. Everything else stays with you.
         </figcaption>
       </figure>
 
       <p>
         It installs as an MCP server or a command-line tool, so it fits into whatever you
-        already run. Your signals, your examples and your records stay on your side.
-      </p>
-      <p class="at-note">
-        One honest limit: the reading itself is a call to a model provider, so text you
-        choose to score does leave your machine.
+        already run.
       </p>
     </section>
 
@@ -411,6 +506,34 @@ const WANT = [
   </article>
 </BaseLayout>
 
+<script>
+  // Tabs scroll the rail to a slide; the rail's own scrolling moves the highlight.
+  // Without this script the rail still scrolls and every slide is still there.
+  for (const car of document.querySelectorAll<HTMLElement>(".car")) {
+    const rail = car.querySelector<HTMLElement>(".car-rail")!;
+    const slides = [...rail.children] as HTMLElement[];
+    const tabs = [...car.querySelectorAll<HTMLButtonElement>(".car-tab")];
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    car.classList.add("has-js");
+    tabs.forEach((tab, i) =>
+      tab.addEventListener("click", () =>
+        rail.scrollTo({ left: slides[i].offsetLeft, behavior: still ? "auto" : "smooth" }),
+      ),
+    );
+    const seen = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          const i = slides.indexOf(e.target as HTMLElement);
+          tabs.forEach((t, j) => t.setAttribute("aria-current", String(i === j)));
+        }
+      },
+      { root: rail, threshold: 0.6 },
+    );
+    slides.forEach((sl) => seen.observe(sl));
+  }
+</script>
+
 <style>
   .at {
     max-width: 38rem;
@@ -529,6 +652,60 @@ const WANT = [
   }
   .nw {
     white-space: nowrap;
+  }
+
+  /* the carousel: a native scroll-snap rail, like the home shelves. Every slide is
+     in the served HTML; the tabs are an enhancement that appears only with JS. */
+  .car-tabs {
+    display: none;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin: 0 0 0.7rem;
+  }
+  .car.has-js .car-tabs {
+    display: flex;
+  }
+  .car-tab {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .car-tab:hover {
+    background: var(--surface-hover);
+  }
+  .car-tab[aria-current="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .car-rail {
+    position: relative;
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    padding-bottom: 0.5rem;
+    overscroll-behavior-x: contain;
+  }
+  .car-slide {
+    flex: 0 0 88%;
+    scroll-snap-align: start;
+    display: flex;
+  }
+  .car-slide > .rd {
+    flex: 1;
+  }
+  .rd-note {
+    display: block;
+    font-size: 0.8rem;
+    margin-top: 0.15rem;
   }
 
   /* a reading */
@@ -866,10 +1043,6 @@ const WANT = [
   }
   .at-list li {
     margin-bottom: 0.55rem;
-  }
-  .at-note {
-    color: var(--muted);
-    font-size: 0.93rem;
   }
   .at-early {
     border-left: 3px solid var(--accent);
